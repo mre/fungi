@@ -19,7 +19,7 @@ fn main() {
             println!("{}: {:?}", key, val);
             println!("The secret number is: {}", secret_number);
         }
-        Err(_) => () // println!("couldn't interpret {}: {}", key, e),
+        Err(_) => (),
     }
 
     loop {

@@ -1,6 +1,7 @@
 extern crate rand;
 
 use std::io;
+use std::env;
 use std::cmp::Ordering;
 use rand::Rng;
 
@@ -11,7 +12,15 @@ fn main() {
     // operating system
     let secret_number = rand::thread_rng().gen_range(1, 101);
 
-    println!("The secret number is: {}", secret_number);
+    // https://doc.rust-lang.org/std/env/fn.var.html
+    let key = "VERBOSE";
+    match env::var(key) {
+        Ok(val) => {
+            println!("{}: {:?}", key, val);
+            println!("The secret number is: {}", secret_number);
+        }
+        Err(_) => () // println!("couldn't interpret {}: {}", key, e),
+    }
 
     loop {
         println!("Please input your guess.");

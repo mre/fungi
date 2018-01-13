@@ -45,12 +45,40 @@ fn main() {
     };
 
     println!("The value of y is: {}", y);
+
+    let x = five();
+    println!("The value of x is: {}", x);
+    let mut number = 3;
+
+    while number != 0 {
+        println!("{}!", number);
+
+        number = number - 1;
+    }
+    let a = [10, 20, 30, 40, 50];
+    let mut index = 0;
+
+    while index < 5 {
+        println!("the value is: {}", a[index]);
+
+        index = index + 1;
+    }
+    let a = [10, 20, 30, 40, 50];
+
+    for element in a.iter() {
+        println!("the value is: {}", element);
+    }
 }
 
 fn another_function(x: i32) {
     println!("The value of x is: {}", x);
 }
 
+// the line let x = five(); shows that we’re using the return value of a
+// function to initialize a variable. Second, the five function has no
+// parameters and defines the type of the return value, but the body of the
+// function is a lonely 5 with no semicolon because it’s an expression whose
+// value we want to return.
 fn five() -> i32 {
     5
 }

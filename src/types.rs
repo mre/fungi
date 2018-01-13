@@ -1,6 +1,6 @@
 const MAX_POINTS: u32 = 100_000;
 
-fn main() {
+fn types() {
     println!("MAX_POINTS: {}", MAX_POINTS);
     let spaces = "   ";
     let spaces = spaces.len();

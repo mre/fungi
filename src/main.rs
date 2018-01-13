@@ -13,24 +13,35 @@ fn main() {
 
     println!("The secret number is: {}", secret_number);
 
-    println!("Please input your guess.");
+    loop {
+        println!("Please input your guess.");
 
-    let mut guess = String::new();
+        let mut guess = String::new();
 
-    // returns a Result, the variants are Ok or Err.
-    io::stdin()
-        .read_line(&mut guess)
-        .expect("Failed to read line");
+        // returns a Result, the variants are Ok or Err.
+        io::stdin()
+            .read_line(&mut guess)
+            .expect("Failed to read line");
 
-    // https://doc.rust-lang.org/std/primitive.str.html#method.parse
-    let guess: u32 = guess.trim().parse().expect("Please type a number!");
+        // https://doc.rust-lang.org/std/primitive.str.html#method.parse
+        let guess: u32 = match guess.trim().parse() {
+            Ok(num) => num,
+            Err(_) => {
+                println!("Please type a number!");
+                continue;
+            }
+        };
 
-    println!("You guessed: {}", guess);
+        println!("You guessed: {}", guess);
 
-    // variants for Ordering are Less, Greater, and Equal.
-    match guess.cmp(&secret_number) {
-        Ordering::Less => println!("Too small!"),
-        Ordering::Greater => println!("Too big!"),
-        Ordering::Equal => println!("You win!"),
+        // variants for Ordering are Less, Greater, and Equal.
+        match guess.cmp(&secret_number) {
+            Ordering::Less => println!("Too small!"),
+            Ordering::Greater => println!("Too big!"),
+            Ordering::Equal => {
+                println!("You win!");
+                break;
+            }
+        }
     }
 }

@@ -4,3 +4,5 @@ version = "0.1.0"
 authors = ["Edoardo Rossi <edd.rossi@gmail.com>"]
 
 [dependencies]
+# https://crates.io/crates/rand
+rand = "0.4.0"

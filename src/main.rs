@@ -6,6 +6,8 @@ use rand::Rng;
 fn main() {
     println!("Guess the number!");
 
+    // a RNG that is local to the current thread of execution and seeded by the
+    // operating system
     let secret_number = rand::thread_rng().gen_range(1, 101);
 
     println!("The secret number is: {}", secret_number);

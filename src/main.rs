@@ -3,6 +3,7 @@ mod types;
 mod fibonacci;
 mod modules;
 mod to_string;
+mod formatting;
 
 fn main() {
     types::sample();
@@ -10,6 +11,7 @@ fn main() {
     modules::try();
     println!("fib(10) = {}", x);
     to_string::sample();
+    formatting::try();
     guess_game::play();
 }
 

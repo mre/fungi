@@ -10,3 +10,11 @@ fn main() {
     println!("fib(10) = {}", x);
     guess_game::play();
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        println!("it works... for now");
+    }
+}

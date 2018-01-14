@@ -7,11 +7,11 @@ mod formatting;
 
 fn main() {
     types::sample();
+    modules::sample();
     let x: u32 = fibonacci::fib(10);
-    modules::try();
     println!("fib(10) = {}", x);
     to_string::sample();
-    formatting::try();
+    formatting::sample();
     guess_game::play();
 }
 

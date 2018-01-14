@@ -1,7 +1,7 @@
 // https://doc.rust-lang.org/std/fmt/
 use std::fmt;
 
-pub fn try() {
+pub fn sample() {
     // In general, the `{}` will be automatically replaced with any
     // arguments. These will be stringified.
     println!("{} days", 31);

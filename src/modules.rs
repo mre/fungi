@@ -41,7 +41,7 @@ impl fmt::Debug for TrafficLight {
 
 use self::TrafficLight::{Red, Yellow};
 
-pub fn try() {
+pub fn sample() {
     a::series::of::nested_modules();
     of::nested_modules();
     let red = Red;

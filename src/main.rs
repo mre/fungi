@@ -4,6 +4,7 @@ mod fibonacci;
 mod modules;
 mod to_string;
 mod formatting;
+mod ownership;
 
 fn main() {
     types::sample();
@@ -12,6 +13,7 @@ fn main() {
     println!("fib(10) = {}", x);
     to_string::sample();
     formatting::sample();
+    ownership::sample();
     guess_game::play();
 }
 

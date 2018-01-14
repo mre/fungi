@@ -74,6 +74,15 @@ pub fn sample() {
     for element in a.iter() {
         println!("the value is: {}", element);
     }
+
+    lift_off(10);
+}
+
+fn lift_off(start: i32) {
+    for number in (1..start).rev() {
+        println!("{}!", number);
+    }
+    println!("LIFTOFF!!!");
 }
 
 fn another_function(x: i32) {

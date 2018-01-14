@@ -1,25 +1,28 @@
 const MAX_POINTS: u32 = 100_000;
 
-fn types() {
-    println!("MAX_POINTS: {}", MAX_POINTS);
+pub fn sample() {
+    println!("The value of MAX_POINTS is: {}", MAX_POINTS);
+
     let spaces = "   ";
+    println!("spaces is '{}'", spaces);
     let spaces = spaces.len();
+    println!("There were {} spaces in spaces", spaces);
+
     let t = true;
-
     let f: bool = false; // with explicit type annotation
+    println!("true {} or {} false", t, f);
+
     let tup: (i32, f64, u8) = (500, 6.4, 1);
-
     let (x, y, z) = tup;
-
+    println!("The value of x is: {}", x);
     println!("The value of y is: {}", y);
+    println!("The value of z is: {}", z);
 
     let x: (i32, f64, u8) = (500, 6.4, 1);
-
     let five_hundred = x.0;
-
     let six_point_four = x.1;
-
     let one = x.2;
+    println!("{} {} {}", five_hundred, six_point_four, one);
 
     // arrays in Rust have a fixed length: once declared, they cannot grow or
     // shrink in size.
@@ -29,8 +32,11 @@ fn types() {
     // An array is a single chunk of memory allocated on the stack
     let first = a[0];
     let second = a[1];
+    println!("{} {}", first, second);
+
     another_function(5);
     let x = 5;
+    println!("x from another_function: {}", x);
 
     // Expressions evaluate to something and make up most of the rest of the
     // code that you’ll write in Rust.

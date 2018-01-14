@@ -52,4 +52,5 @@ pub fn try() {
     // However, custom types such as this structure require more complicated
     // handling. This will not work.
     println!("This struct `{}` will print...", Structure(3));
+    println!("{} is {number:.prec$}", "Pi", prec = 3, number = 3.141592);
 }

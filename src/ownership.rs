@@ -36,6 +36,25 @@ pub fn sample() {
     let mut s = String::from("hello");
 
     change(&mut s);
+
+    // slices
+    let s = String::from("hello world");
+    let _hello = &s[0..5];
+    let _world = &s[6..11];
+
+    let s = String::from("hello");
+    let _slice = &s[0..2];
+    let _slice = &s[..2];
+
+    let s = String::from("hello");
+    let len = s.len();
+    let _slice = &s[3..len];
+    let _slice = &s[3..];
+
+    let s = String::from("hello");
+    let len = s.len();
+    let _slice = &s[0..len];
+    let _slice = &s[..];
 }
 // Here, x goes out of scope, then s. But since s's value was moved, nothing
 // special happens.
@@ -97,6 +116,7 @@ fn change(some_string: &mut String) {
 // } // Here, s goes out of scope, and is dropped. Its memory goes away.
 // // Danger!
 
+#[allow(dead_code)]
 fn first_word(s: &String) -> usize {
     let bytes = s.as_bytes();
 

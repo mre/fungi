@@ -50,3 +50,33 @@ fn calculate_length(s: String) -> (String, usize) {
     (s, length)
 }
 
+fn calculate_length_with_ref(s: &String) -> usize {
+    // s is a reference to a String
+    s.len()
+} // Here, s goes out of scope. But because it does not have ownership of what
+  // it refers to, nothing happens.
+
+fn change(some_string: &mut String) {
+    some_string.push_str(", world");
+}
+
+// Dangling reference
+// fn dangle() -> &String { // dangle returns a reference to a String
+//
+//     let s = String::from("hello"); // s is a new String
+//
+//     &s // we return a reference to the String, s
+// } // Here, s goes out of scope, and is dropped. Its memory goes away.
+// // Danger!
+
+fn first_word(s: &String) -> usize {
+    let bytes = s.as_bytes();
+
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return i;
+        }
+    }
+
+    s.len()
+}

@@ -82,11 +82,21 @@ fn three() {
     // 7 | }
     //   | - immutable borrow ends here
     // s.clear(); // Error!
+
+    let my_string = String::from("hello world");
+
+    // first_word works on slices of `String`s
+    let word = first_word(&my_string[..]);
+
+    let my_string_literal = "hello world";
+
+    // first_word works on slices of string literals
+    let word = first_word(&my_string_literal[..]);
+
+    // since string literals *are* string slices already,
+    // this works too, without the slice syntax!
+    let word = first_word(my_string_literal);
 }
-// Here, x goes out of scope, then s. But since s's value was moved, nothing
-// special happens.
-// Here, s3 goes out of scope and is dropped. s2 goes out of scope but was
-// moved, so nothing happens. s1 goes out of scope and is dropped.
 
 fn takes_ownership(some_string: String) {
     // some_string comes into scope.
@@ -156,7 +166,8 @@ fn first_word_simple(s: &String) -> usize {
     s.len()
 }
 
-fn first_word(s: &String) -> &str {
+// fn first_word(s: &String) -> &str {
+fn first_word(s: &str) -> &str {
     let bytes = s.as_bytes();
 
     for (i, &item) in bytes.iter().enumerate() {

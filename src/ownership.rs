@@ -86,16 +86,16 @@ fn three() {
     let my_string = String::from("hello world");
 
     // first_word works on slices of `String`s
-    let word = first_word(&my_string[..]);
+    let _word = first_word(&my_string[..]);
 
     let my_string_literal = "hello world";
 
     // first_word works on slices of string literals
-    let word = first_word(&my_string_literal[..]);
+    let _word = first_word(&my_string_literal[..]);
 
     // since string literals *are* string slices already,
     // this works too, without the slice syntax!
-    let word = first_word(my_string_literal);
+    let _word = first_word(my_string_literal);
 }
 
 fn takes_ownership(some_string: String) {

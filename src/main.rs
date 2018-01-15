@@ -5,6 +5,7 @@ mod modules;
 mod to_string;
 mod formatting;
 mod ownership;
+mod structs;
 
 fn main() {
     types::sample();
@@ -14,6 +15,7 @@ fn main() {
     to_string::sample();
     formatting::sample();
     ownership::sample();
+    structs::sample();
     guess_game::play();
 }
 

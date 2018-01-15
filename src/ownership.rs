@@ -1,6 +1,12 @@
 // https://doc.rust-lang.org/book/second-edition/ch04-01-what-is-ownership.html
 
 pub fn sample() {
+    one();
+    two();
+    three();
+}
+
+fn one() {
     let s = String::from("hello"); // s comes into scope.
 
     takes_ownership(s); // s's value moves into the function...
@@ -11,6 +17,10 @@ pub fn sample() {
     makes_copy(x); // x would move into the function,
                    // but i32 is Copy, so it’s okay to still
                    // use x afterward.
+} // Here, x goes out of scope, then s. But since s's value was moved, nothing
+  // special happens.
+
+fn two() {
     let _s1 = gives_ownership(); // gives_ownership moves its return
                                  // value into s1.
 
@@ -19,6 +29,10 @@ pub fn sample() {
     let _s3 = takes_and_gives_back(s2); // s2 is moved into
                                         // takes_and_gives_back, which also
                                         // moves its return value into s3.
+} // Here, s3 goes out of scope and is dropped. s2 goes out of scope but was
+  // moved, so nothing happens. s1 goes out of scope and is dropped.
+
+fn three() {
     let s1 = String::from("hello");
 
     let (s2, len) = calculate_length(s1);

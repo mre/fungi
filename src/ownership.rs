@@ -55,6 +55,19 @@ pub fn sample() {
     let len = s.len();
     let _slice = &s[0..len];
     let _slice = &s[..];
+
+    // let mut s = String::from("hello world");
+    // let _word = first_word(&s);
+    // Here’s the compiler error:
+    // error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable
+    // 4 |     let word = first_word(&s);
+    //   |                            - immutable borrow occurs here
+    // 5 |
+    // 6 |     s.clear(); // Error!
+    //   |     ^ mutable borrow occurs here
+    // 7 | }
+    //   | - immutable borrow ends here
+    // s.clear(); // Error!
 }
 // Here, x goes out of scope, then s. But since s's value was moved, nothing
 // special happens.
@@ -117,7 +130,7 @@ fn change(some_string: &mut String) {
 // // Danger!
 
 #[allow(dead_code)]
-fn first_word(s: &String) -> usize {
+fn first_word_simple(s: &String) -> usize {
     let bytes = s.as_bytes();
 
     for (i, &item) in bytes.iter().enumerate() {
@@ -127,4 +140,16 @@ fn first_word(s: &String) -> usize {
     }
 
     s.len()
+}
+
+fn first_word(s: &String) -> &str {
+    let bytes = s.as_bytes();
+
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return &s[0..i];
+        }
+    }
+
+    &s[..]
 }

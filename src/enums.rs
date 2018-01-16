@@ -73,10 +73,10 @@ fn four() {
 
 fn five() {
     enum Message {
-        Quit,
-        Move { x: i32, y: i32 },
-        Write(String),
-        ChangeColor(i32, i32, i32),
+        #[allow(dead_code)] Quit,
+        #[allow(dead_code)] Move { x: i32, y: i32 },
+        #[allow(dead_code)] Write(String),
+        #[allow(dead_code)] ChangeColor(i32, i32, i32),
     }
 
     // struct QuitMessage; // unit struct

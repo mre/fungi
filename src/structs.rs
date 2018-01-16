@@ -16,7 +16,10 @@ pub struct Rectangle {
 
 pub fn sample() {
     one();
+    two();
+}
 
+fn two() {
     let width1 = 30;
     let height1 = 50;
 
@@ -41,6 +44,32 @@ pub fn sample() {
         "The area of the rectangle is {} square pixels.",
         area(&rect1)
     );
+
+    let rect1 = Rectangle {
+        width: 30,
+        height: 50,
+    };
+
+    println!(
+        "The area of the rectangle is {} square pixels.",
+        rect1.area()
+    );
+
+    let rect1 = Rectangle {
+        width: 30,
+        height: 50,
+    };
+    let rect2 = Rectangle {
+        width: 10,
+        height: 40,
+    };
+    let rect3 = Rectangle {
+        width: 60,
+        height: 45,
+    };
+
+    println!("Can rect1 hold rect2? {}", rect1.can_hold(&rect2));
+    println!("Can rect1 hold rect3? {}", rect1.can_hold(&rect3));
 }
 
 fn one() {
@@ -116,3 +145,20 @@ fn area_confusing(dimensions: (u32, u32)) -> u32 {
 fn area(rectangle: &Rectangle) -> u32 {
     rectangle.width * rectangle.height
 }
+
+impl Rectangle {
+    // Methods can take ownership of self, borrow self immutably as we’ve done
+    // here, or borrow self mutably, just like any other parameter.
+    // If we wanted to change the instance that we’ve called the method on as
+    // part of what the method does, we’d use &mut self as the first parameter.
+    fn area(&self) -> u32 {
+        self.width * self.height
+    }
+
+    fn can_hold(&self, other: &Rectangle) -> bool {
+        self.width > other.width && self.height > other.height
+    }
+}
+
+// Rust doesn’t have an equivalent to the (C's) -> operator; instead, Rust has a
+// feature called automatic referencing and dereferencing.

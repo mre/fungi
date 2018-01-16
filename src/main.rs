@@ -6,6 +6,7 @@ mod to_string;
 mod formatting;
 mod ownership;
 mod structs;
+mod enums;
 
 fn main() {
     types::sample();
@@ -16,6 +17,7 @@ fn main() {
     formatting::sample();
     ownership::sample();
     structs::sample();
+    enums::sample();
     guess_game::play();
 }
 

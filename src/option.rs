@@ -285,8 +285,22 @@ fn six() {
     //     Some(3) => println!("three"),
     //     _ => (),
     // }
+    // if let takes a pattern and an expression separated by an =. It works the
+    // same way as a match, where the expression is given to the match and the
+    // pattern is its first arm.
     if let Some(3) = some_u8_value {
         println!("three");
+    }
+
+    let mut count = 0;
+    // match coin {
+    //     Coin::Quarter(state) => println!("State quarter from {:?}!", state),
+    //     _ => count += 1,
+    // }
+    if let Coin::Quarter(state) = coin {
+        println!("State quarter from {:?}!", state);
+    } else {
+        count += 1;
     }
 }
 

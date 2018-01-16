@@ -30,8 +30,7 @@ fn one() {
     }
 }
 
-pub fn sample() {
-    one();
+fn two() {
     // fn is_some(&self) -> bool
     // Returns true if the option is a Some value.
     let x: Option<u32> = Some(2);
@@ -201,4 +200,28 @@ pub fn sample() {
     let mut x: Option<u32> = None;
     x.take();
     assert_eq!(x, None);
+}
+
+fn three() {
+    enum Coin {
+        Penny,
+        Nickel,
+        Dime,
+        Quarter,
+    }
+
+    fn value_in_cents(coin: Coin) -> u32 {
+        match coin {
+            Coin::Penny => 1,
+            Coin::Nickel => 5,
+            Coin::Dime => 10,
+            Coin::Quarter => 25,
+        }
+    }
+}
+
+pub fn sample() {
+    one();
+    two();
+    three();
 }

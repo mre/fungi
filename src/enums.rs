@@ -52,7 +52,55 @@ fn three() {
 
 fn route(_ip_type: IpAddrKind) {}
 
+// https://doc.rust-lang.org/stable/std/net/enum.IpAddr.html
+fn four() {
+    #[allow(dead_code)]
+    struct Ipv4Addr {
+        // details elided
+    }
+
+    #[allow(dead_code)]
+    struct Ipv6Addr {
+        // details elided
+    }
+
+    #[allow(dead_code)]
+    enum IpAddr {
+        V4(Ipv4Addr),
+        V6(Ipv6Addr),
+    }
+}
+
+fn five() {
+    enum Message {
+        Quit,
+        Move { x: i32, y: i32 },
+        Write(String),
+        ChangeColor(i32, i32, i32),
+    }
+
+    // struct QuitMessage; // unit struct
+    // struct MoveMessage {
+    //     x: i32,
+    //     y: i32,
+    // }
+    // struct WriteMessage(String); // tuple struct
+    // struct ChangeColorMessage(i32, i32, i32); // tuple struct
+
+    impl Message {
+        fn call(&self) {
+            // method body would be defined here
+        }
+    }
+
+    let m = Message::Write(String::from("hello"));
+    m.call();
+}
+
 pub fn sample() {
     one();
     two();
+    three();
+    four();
+    five();
 }

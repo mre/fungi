@@ -221,23 +221,27 @@ fn three() {
             Coin::Quarter => 25,
         }
     }
+    value_in_cents(Coin::Dime);
+    value_in_cents(Coin::Quarter);
+    value_in_cents(Coin::Penny);
+    value_in_cents(Coin::Nickel);
 }
 
 fn four() {
     #[derive(Debug)]
     enum UsState {
-        Alabama,
-        Alaska,
+        #[allow(dead_code)] Alabama,
+        #[allow(dead_code)] Alaska,
         // ... etc
     }
 
+    #[derive(Debug)]
     enum Coin {
-        Penny,
-        Nickel,
-        Dime,
+        #[allow(dead_code)] Penny,
+        #[allow(dead_code)] Nickel,
+        #[allow(dead_code)] Dime,
         Quarter(UsState),
     }
-
     fn value_in_cents(coin: Coin) -> u32 {
         match coin {
             Coin::Penny => 1,
@@ -275,9 +279,22 @@ fn five() {
     }
 }
 
+fn six() {
+    let some_u8_value = Some(0u8);
+    // match some_u8_value {
+    //     Some(3) => println!("three"),
+    //     _ => (),
+    // }
+    if let Some(3) = some_u8_value {
+        println!("three");
+    }
+}
+
 pub fn sample() {
     one();
     two();
     three();
     four();
+    five();
+    six();
 }

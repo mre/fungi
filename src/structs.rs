@@ -70,6 +70,8 @@ fn two() {
 
     println!("Can rect1 hold rect2? {}", rect1.can_hold(&rect2));
     println!("Can rect1 hold rect3? {}", rect1.can_hold(&rect3));
+
+    let _sq = Rectangle::square(3);
 }
 
 fn one() {
@@ -157,6 +159,16 @@ impl Rectangle {
 
     fn can_hold(&self, other: &Rectangle) -> bool {
         self.width > other.width && self.height > other.height
+    }
+}
+
+impl Rectangle {
+    // associated function
+    fn square(size: u32) -> Rectangle {
+        Rectangle {
+            width: size,
+            height: size,
+        }
     }
 }
 

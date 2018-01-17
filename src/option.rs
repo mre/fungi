@@ -280,6 +280,19 @@ fn five() {
 }
 
 fn six() {
+    #[derive(Debug)]
+    enum UsState {
+        #[allow(dead_code)] Alabama,
+        #[allow(dead_code)] Alaska,
+        // ... etc
+    }
+    #[derive(Debug)]
+    enum Coin {
+        #[allow(dead_code)] Penny,
+        #[allow(dead_code)] Nickel,
+        #[allow(dead_code)] Dime,
+        #[allow(dead_code)] Quarter(UsState),
+    }
     let some_u8_value = Some(0u8);
     // match some_u8_value {
     //     Some(3) => println!("three"),
@@ -292,7 +305,8 @@ fn six() {
         println!("three");
     }
 
-    let mut count = 0;
+    let coin: Coin = Coin::Dime;
+    let mut _count = 0;
     // match coin {
     //     Coin::Quarter(state) => println!("State quarter from {:?}!", state),
     //     _ => count += 1,
@@ -300,7 +314,7 @@ fn six() {
     if let Coin::Quarter(state) = coin {
         println!("State quarter from {:?}!", state);
     } else {
-        count += 1;
+        _count += 1;
     }
 }
 

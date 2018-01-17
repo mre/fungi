@@ -87,4 +87,48 @@ pub fn sample() {
             *i += 50;
         }
     }
+
+    {
+        #[derive(Debug)]
+        enum SpreadsheetCell {
+            Int(i32),
+            Float(f64),
+            Text(String),
+        }
+
+        let row = vec![
+            SpreadsheetCell::Int(3),
+            SpreadsheetCell::Text(String::from("blue")),
+            SpreadsheetCell::Float(10.12),
+        ];
+
+        println!("spreadsheet row is {:?}", row)
+    }
+
+    {
+        let mut vec1 = vec![1, 2, 3, 4];
+        let vec2 = vec![10, 20, 30, 40];
+        vec1.extend(vec2);
+        println!("{:?}", vec1);
+    }
+
+    {
+        use std::collections::VecDeque;
+
+        let vec = vec![1, 2, 3, 4];
+        let _buf: VecDeque<_> = vec.into_iter().collect();
+    }
+
+    // Among the adapters are functional favorites like map, fold, skip and
+    // take. Of particular interest to collections is the rev adapter, that
+    // reverses any iterator that supports this operation. Most collections
+    // provide reversible iterators as the way to iterate over them in reverse
+    // order.
+
+    {
+        let vec = vec![1, 2, 3, 4];
+        for x in vec.iter().rev() {
+            println!("vec contained {}", x);
+        }
+    }
 }

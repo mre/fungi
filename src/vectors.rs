@@ -326,6 +326,14 @@ fn four() {
     let vec2 = vec.split_off(1);
     assert_eq!(vec, [1]);
     assert_eq!(vec2, [2, 3]);
+
+    // fn dedup(&mut self)
+    //     Removes consecutive repeated elements in the vector.
+    //     If the vector is sorted, this removes all duplicates.
+
+    let mut vec = vec![1, 2, 2, 3, 2];
+    vec.dedup();
+    assert_eq!(vec, [1, 2, 3, 2]);
 }
 
 pub fn sample() {

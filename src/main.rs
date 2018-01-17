@@ -8,6 +8,7 @@ mod ownership;
 mod structs;
 mod enums;
 mod option;
+mod vectors;
 
 fn main() {
     types::sample();
@@ -20,6 +21,7 @@ fn main() {
     structs::sample();
     enums::sample();
     option::sample();
+    vectors::sample();
     guess_game::play();
 }
 

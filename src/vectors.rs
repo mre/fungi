@@ -218,6 +218,47 @@ fn four() {
 
     // ...but this may make the vector reallocate
     vec.push(11);
+
+    // let mut vec = vec![1, 2, 3];
+    vec.insert(1, 4);
+    assert_eq!(vec, [1, 4, 2, 3]);
+    vec.insert(4, 5);
+    assert_eq!(vec, [1, 4, 2, 3, 5]);
+
+    let mut v = vec![1, 2, 3];
+    assert_eq!(v.remove(1), 2);
+    assert_eq!(v, [1, 3]);
+
+    // fn retain<F>(&mut self, f: F)
+    // where F: FnMut(&T) -> bool,
+    //     Retains only the elements specified by the predicate.
+    //     In other words, remove all elements e such that f(&e) returns false.
+    //     This method operates in place and preserves the order of the retained
+    //     elements.
+
+    let mut vec = vec![1, 2, 3, 4];
+    vec.retain(|&x| x % 2 == 0);
+    assert_eq!(vec, [2, 4]);
+
+    // fn dedup_by_key<F, K>(&mut self, key: F)
+    // where F: FnMut(&mut T) -> K, K: PartialEq<K>,
+    // Removes all but the first of consecutive elements in the vector that resolve to the same key.
+    // If the vector is sorted, this removes all duplicates.
+
+    let mut vec = vec![10, 20, 21, 30, 20];
+    vec.dedup_by_key(|i| *i / 10);
+    assert_eq!(vec, [10, 20, 30, 20]);
+
+    // fn dedup_by<F>(&mut self, same_bucket: F)
+    // where F: FnMut(&mut T, &mut T) -> bool,
+
+    // Removes all but the first of consecutive elements in the vector satisfying a given equality relation.
+    // The same_bucket function is passed references to two elements from the vector, and returns true if the elements compare equal, or false if they do not. The elements are passed in opposite order from their order in the vector, so if same_bucket(a, b) returns true, a is removed.
+    // If the vector is sorted, this removes all duplicates.
+
+    let mut vec = vec!["foo", "bar", "Bar", "baz", "bar"];
+    vec.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
+    assert_eq!(vec, ["foo", "bar", "baz", "bar"]);
 }
 
 pub fn sample() {

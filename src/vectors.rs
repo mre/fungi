@@ -1,4 +1,17 @@
 // https://doc.rust-lang.org/stable/book/second-edition/ch08-01-vectors.html
+//
+// https://doc.rust-lang.org/stable/std/collections/
+// Use a Vec when:
+// You want to collect items up to be processed or sent elsewhere later, and don't care about any properties of the actual values being stored.
+//     You want a sequence of elements in a particular order, and will only be appending to (or near) the end.
+//     You want a stack.
+//     You want a resizable array.
+//     You want a heap-allocated array.
+//
+// |     | get(i) | insert(i) | remove(i) | append | split_off(i) |
+// |-----+--------+-----------+-----------+--------+--------------|
+// | Vec | O(1)   | O(n-i)*   | O(n-i)    | O(m)*  | O(n-i)       |
+//
 pub fn sample() {
     let _v: Vec<i32> = Vec::new();
 

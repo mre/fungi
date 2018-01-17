@@ -35,4 +35,43 @@ pub fn sample() {
         // the ownership and borrowing rules to ensure this reference and any
         // other references to the contents of the vector remain valid.
     }
+
+    {
+        // we can’t have mutable and immutable references in the same scope.
+        // let mut v = vec![1, 2, 3, 4, 5];
+        // let first = &v[0];
+        // v.push(6);
+        //
+        //     error[E0502]: cannot borrow `v` as mutable because it is also borrowed as immutable
+        //         -->
+        //       |
+        //     4 |     let first = &v[0];
+        //                         - immutable borrow occurs here
+        //     5 |
+        //     6 |     v.push(6);
+        //       |     ^ mutable borrow occurs here
+        //     7 |
+        //     8 | }
+        //       | - immutable borrow ends here
+    }
+
+    // Note: For more on the implementation details of the Vec<T> type, see “The
+    // Nomicon” at https://doc.rust-lang.org/stable/nomicon/vec.html.
+
+    {
+        let v = vec![100, 32, 57];
+        for i in &v {
+            println!("{}", i);
+        }
+    }
+
+    {
+        // To change the value that the mutable reference refers to, we have to
+        // use the dereference operator (*) to get to the value in i before we
+        // can use the += operator .
+        let mut v = vec![100, 32, 57];
+        for i in &mut v {
+            *i += 50;
+        }
+    }
 }

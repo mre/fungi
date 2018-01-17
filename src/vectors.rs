@@ -276,6 +276,56 @@ fn four() {
     vec.append(&mut vec2);
     assert_eq!(vec, [1, 2, 3, 4, 5, 6]);
     assert_eq!(vec2, []);
+
+    // fn drain<R>(&mut self, range: R) -> Drain<T>
+    // where R: RangeArgument<usize>,
+    // Creates a draining iterator that removes the specified range in the vector and yields the removed items.
+    // Note 1: The element range is removed even if the iterator is only partially consumed or not consumed at all.
+    // Note 2: It is unspecified how many elements are removed from the vector if the Drain value is leaked.
+    // Panics if the starting point is greater than the end point or if the end point is greater than the length of the vector.
+
+    let mut v = vec![1, 2, 3];
+    let u: Vec<_> = v.drain(1..).collect();
+    assert_eq!(v, &[1]);
+    assert_eq!(u, &[2, 3]);
+
+    // A full range clears the vector
+    v.drain(..);
+    assert_eq!(v, &[]);
+
+    // fn clear(&mut self)
+    // Clears the vector, removing all values.
+    // Note that this method has no effect on the allocated capacity of the vector.
+
+    let mut v = vec![1, 2, 3];
+    v.clear();
+    assert!(v.is_empty());
+
+    // fn len(&self) -> usize[src][−]
+    // Returns the number of elements in the vector, also referred to as its 'length'.
+
+    let a = vec![1, 2, 3];
+    assert_eq!(a.len(), 3);
+
+    // fn is_empty(&self) -> bool[src][−]
+    // Returns true if the vector contains no elements.
+
+    let mut v = Vec::new();
+    assert!(v.is_empty());
+
+    v.push(1);
+    assert!(!v.is_empty());
+
+    // fn split_off(&mut self, at: usize) -> Vec<T>
+    // Splits the collection into two at the given index.
+    // Returns a newly allocated Self. self contains elements [0, at), and the returned Self contains elements [at, len).
+    // Note that the capacity of self does not change.
+    // Panics if at > len.
+
+    let mut vec = vec![1, 2, 3];
+    let vec2 = vec.split_off(1);
+    assert_eq!(vec, [1]);
+    assert_eq!(vec2, [2, 3]);
 }
 
 pub fn sample() {

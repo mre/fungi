@@ -12,7 +12,9 @@
 // |-----+--------+-----------+-----------+--------+--------------|
 // | Vec | O(1)   | O(n-i)*   | O(n-i)    | O(m)*  | O(n-i)       |
 //
-pub fn sample() {
+// https://doc.rust-lang.org/stable/std/vec/struct.Vec.html
+
+fn one() {
     let _v: Vec<i32> = Vec::new();
 
     let mut v = Vec::new();
@@ -131,4 +133,96 @@ pub fn sample() {
             println!("vec contained {}", x);
         }
     }
+}
+
+fn two() {
+    let mut vec = Vec::new();
+    vec.push(1);
+    vec.push(2);
+
+    assert_eq!(vec.len(), 2);
+    assert_eq!(vec[0], 1);
+
+    assert_eq!(vec.pop(), Some(2));
+    assert_eq!(vec.len(), 1);
+
+    vec[0] = 7;
+    assert_eq!(vec[0], 7);
+
+    vec.extend([1, 2, 3].iter().cloned());
+
+    for x in &vec {
+        println!("{}", x);
+    }
+    assert_eq!(vec, [7, 1, 2, 3]);
+
+    let mut vec = vec![1, 2, 3];
+    vec.push(4);
+    assert_eq!(vec, [1, 2, 3, 4]);
+
+    // It can also initialize each element of a Vec<T> with a given value:
+    let vec = vec![0; 5];
+    assert_eq!(vec, [0, 0, 0, 0, 0]);
+
+    let mut stack = Vec::new();
+
+    stack.push(1);
+    stack.push(2);
+    stack.push(3);
+
+    while let Some(top) = stack.pop() {
+        // Prints 3, 2, 1
+        println!("{}", top);
+    }
+}
+
+fn three() {
+    // A Vec can be mutable. Slices, on the other hand, are read-only objects.
+    // To get a slice, use &. Example:
+
+    fn read_slice(slice: &[usize]) {
+        // ...
+    }
+
+    let v = vec![0, 1];
+    read_slice(&v);
+
+    // ... and that's all!
+    // you can also do it like this:
+    let x: &[usize] = &v;
+    // In Rust, it's more common to pass slices as arguments rather than vectors
+    // when you just want to provide a read access.
+}
+
+fn four() {
+    // Vec is and always will be a (pointer, capacity, length) triplet. No more,
+    // no less.
+
+    // However, the pointer may not actually point to allocated memory. In
+    // particular, if you construct a Vec with capacity 0 via Vec::new, vec![],
+    // Vec::with_capacity(0), or by calling shrink_to_fit on an empty Vec, it
+    // will not allocate memory. Similarly, if you store zero-sized types inside
+    // a Vec, it will not allocate space for them. Note that in this case the
+    // Vec may not report a capacity of 0. Vec will allocate if and only if
+    // mem::size_of::<T>() * capacity() > 0.
+
+    let mut vec = Vec::with_capacity(10);
+
+    // The vector contains no items, even though it has capacity for more
+    assert_eq!(vec.len(), 0);
+
+    // These are all done without reallocating...
+    for i in 0..10 {
+        vec.push(i);
+    }
+
+    // ...but this may make the vector reallocate
+    vec.push(11);
+}
+
+pub fn sample() {
+    one();
+    two();
+    three();
+    four();
 }

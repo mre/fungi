@@ -180,7 +180,7 @@ fn three() {
     // A Vec can be mutable. Slices, on the other hand, are read-only objects.
     // To get a slice, use &. Example:
 
-    fn read_slice(slice: &[usize]) {
+    fn read_slice(_slice: &[usize]) {
         // ...
     }
 
@@ -189,7 +189,7 @@ fn three() {
 
     // ... and that's all!
     // you can also do it like this:
-    let x: &[usize] = &v;
+    let _x: &[usize] = &v;
     // In Rust, it's more common to pass slices as arguments rather than vectors
     // when you just want to provide a read access.
 }
@@ -259,6 +259,23 @@ fn four() {
     let mut vec = vec!["foo", "bar", "Bar", "baz", "bar"];
     vec.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
     assert_eq!(vec, ["foo", "bar", "baz", "bar"]);
+
+    // fn pop(&mut self) -> Option<T>
+    //     Removes the last element from a vector and returns it, or None if it is empty.
+
+    let mut vec = vec![1, 2, 3];
+    assert_eq!(vec.pop(), Some(3));
+    assert_eq!(vec, [1, 2]);
+
+    // fn append(&mut self, other: &mut Vec<T>)
+    //     Moves all the elements of other into Self, leaving other empty.
+    //     Panics if the number of elements in the vector overflows a usize.
+
+    let mut vec = vec![1, 2, 3];
+    let mut vec2 = vec![4, 5, 6];
+    vec.append(&mut vec2);
+    assert_eq!(vec, [1, 2, 3, 4, 5, 6]);
+    assert_eq!(vec2, []);
 }
 
 pub fn sample() {

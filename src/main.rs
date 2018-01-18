@@ -9,6 +9,8 @@ mod structs;
 mod enums;
 mod option;
 mod vectors;
+mod maps;
+mod strings;
 
 fn main() {
     types::sample();
@@ -22,6 +24,8 @@ fn main() {
     enums::sample();
     option::sample();
     vectors::sample();
+    maps::sample();
+    strings::sample();
     guess_game::play();
 }
 

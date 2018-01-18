@@ -34,7 +34,7 @@ fn bar() {
     }
 }
 
-fn sample() {
+pub fn sample() {
     let mut count = BTreeMap::new();
     let message = "she sells sea shells by the sea shore";
 

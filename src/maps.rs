@@ -94,8 +94,51 @@ fn two() {
     }
 }
 
+fn three() {
+    use std::collections::HashMap;
+
+    let mut scores = HashMap::new();
+
+    scores.insert(String::from("Blue"), 10);
+    scores.insert(String::from("Blue"), 25);
+
+    println!("{:?}", scores);
+
+    let mut scores = HashMap::new();
+    scores.insert(String::from("Blue"), 10);
+
+    // It’s common to check whether a particular key has a value, and if it
+    // doesn’t, insert a value for it. Hash maps have a special API for this
+    // called entry that takes the key we want to check as a parameter. The
+    // return value of the entry function is an enum called Entry that
+    // represents a value that might or might not exist.
+    scores.entry(String::from("Yellow")).or_insert(50);
+    scores.entry(String::from("Blue")).or_insert(50);
+
+    println!("{:?}", scores);
+
+    let text = "hello world wonderful world";
+
+    let mut map = HashMap::new();
+
+    for word in text.split_whitespace() {
+        let count = map.entry(word).or_insert(0);
+        *count += 1;
+    }
+
+    println!("{:?}", map);
+}
+
+// By default, HashMap uses a cryptographically secure hashing function that can
+// provide resistance to Denial of Service (DoS) attacks. This is not the
+// fastest hashing algorithm available, but the trade-off for better security
+// that comes with the drop in performance is worth it. If you profile your code
+// and find that the default hash function is too slow for your purposes, you
+// can switch to another function by specifying a different hasher. A hasher is
+// a type that implements the BuildHasher trait.
 pub fn sample() {
     one();
     two();
+    three();
     bar();
 }

@@ -51,4 +51,19 @@ pub fn sample() {
     // returns a String with the contents. The version of the code using format!
     // is much easier to read and also doesn’t take ownership of any of its
     // parameters.
+
+    let hello = "Здравствуйте";
+
+    let _s = &hello[0..4];
+    // Here, s will be a &str that contains the first four bytes of the string.
+    // Earlier, we mentioned that each of these characters was two bytes, which
+    // means s will be Зд.
+
+    for c in "नमस्ते".chars() {
+        println!("{}", c);
+    }
+
+    for b in "नमस्ते".bytes() {
+        println!("{}", b);
+    }
 }

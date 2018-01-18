@@ -1,22 +1,22 @@
 pub fn sample() {
     let data = "initial contents";
 
-    let s = data.to_string();
+    let _s = data.to_string();
 
     // the method also works on a literal directly:
-    let s = "initial contents".to_string();
-    let s = String::from("initial contents");
-    let hello = String::from("السلام عليكم");
-    let hello = String::from("Dobrý den");
-    let hello = String::from("Hello");
-    let hello = String::from("שָׁלוֹם");
-    let hello = String::from("नमस्ते");
-    let hello = String::from("こんにちは");
-    let hello = String::from("안녕하세요");
-    let hello = String::from("你好");
-    let hello = String::from("Olá");
-    let hello = String::from("Здравствуйте");
-    let hello = String::from("Hola");
+    let _s = "initial contents".to_string();
+    let _s = String::from("initial contents");
+    let _hello = String::from("السلام عليكم");
+    let _hello = String::from("Dobrý den");
+    let _hello = String::from("Hello");
+    let _hello = String::from("שָׁלוֹם");
+    let _hello = String::from("नमस्ते");
+    let _hello = String::from("こんにちは");
+    let _hello = String::from("안녕하세요");
+    let _hello = String::from("你好");
+    let _hello = String::from("Olá");
+    let _hello = String::from("Здравствуйте");
+    let _hello = String::from("Hola");
     let mut s = String::from("foo");
     s.push_str("bar");
 
@@ -32,19 +32,19 @@ pub fn sample() {
 
     let s1 = String::from("Hello, ");
     let s2 = String::from("world!");
-    let s3 = s1 + &s2; // Note that s1 has been moved here and can no longer be used
+    let _s3 = s1 + &s2; // Note that s1 has been moved here and can no longer be used
 
     let s1 = String::from("tic");
     let s2 = String::from("tac");
     let s3 = String::from("toe");
 
-    let s = s1 + "-" + &s2 + "-" + &s3;
+    let _s = s1 + "-" + &s2 + "-" + &s3;
 
     let s1 = String::from("tic");
     let s2 = String::from("tac");
     let s3 = String::from("toe");
 
-    let s = format!("{}-{}-{}", s1, s2, s3);
+    let _s = format!("{}-{}-{}", s1, s2, s3);
 
     // This code also sets s to tic-tac-toe. The format! macro works in the same
     // way as println!, but instead of printing the output to the screen, it

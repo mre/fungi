@@ -346,6 +346,65 @@ fn mean(arr: &[f64]) -> f64 {
     sum(arr) / arr.len() as f64
 }
 
+// The mode of a set of data values is the value that appears most often.
+// It is the value x at which its probability mass function takes its maximum
+// value. In other words, it is the value that is most likely to be sampled. A
+// mode of a continuous probability distribution is often considered to be any
+// value x at which its probability density function has a locally maximum
+// value, so any peak is a mode.
+//
+// [0]Rust intentionally does not implement Eq for float types. This reddit
+// discussion[1] may shed some more light on why, but the tl;dr is that floating
+// point numbers aren't totally orderable so bizarre edge cases are
+// unavoidable[3].
+// [0]: https://stackoverflow.com/a/26958547
+// [1]: https://www.reddit.com/r/rust/comments/2h86qk/dealing_with_floats_and_lack_of_eq/
+// [3]: http://floating-point-gui.de
+
+// use std::hash::Hash;
+// use std::hash::Hasher;
+//
+// #[derive(PartialEq, PartialOrd)]
+// struct Flt {
+//     f: f64,
+// }
+//
+// impl Hash for Flt {
+//     fn hash<H>(&self, state: &mut H)
+//     where
+//         H: Hasher,
+//     {
+//         // TODO: implement me!
+//     }
+// }
+
+fn mode(vs: &Vec<i32>) -> Vec<i32> {
+    use std::collections::HashMap;
+
+    let mut vec_mode = Vec::new();
+    let mut seen_map = HashMap::new();
+    let mut max_val = 0;
+
+    for i in vs {
+        let ctr = seen_map.entry(i).or_insert(0);
+        *ctr += 1;
+        if *ctr > max_val {
+            max_val = *ctr;
+        }
+    }
+
+    for (key, val) in seen_map {
+        // To find the type of a variable:
+        // key.foo();
+        // no method named `foo` found for type `&i32` in the current scope
+        println!("{:?} and *{:?}", key, *key);
+        if val == max_val {
+            vec_mode.push(*key);
+        }
+    }
+    vec_mode
+}
+
 pub fn sample() {
     one();
     two();
@@ -354,6 +413,8 @@ pub fn sample() {
 
     let v = &[1.0, 2.0, 3.0, 4.0, 5.0, 10.0, 20.0, 40.0];
     println!("mean of {:?}: {:?}", v, mean(v));
+    let v = vec![1, 2, 3, 3, 3, 4, 5, 10, 20, 40];
+    println!("mode of {:?}: {:?}", &v, mode(&v));
 
     let w = &[];
     println!("mean of {:?}: {:?}", w, mean(w));

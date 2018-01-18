@@ -11,6 +11,7 @@ mod option;
 mod vectors;
 mod maps;
 mod strings;
+mod palindrome;
 
 fn main() {
     types::sample();
@@ -26,6 +27,7 @@ fn main() {
     vectors::sample();
     maps::sample();
     strings::sample();
+    palindrome::sample();
     guess_game::play();
 }
 

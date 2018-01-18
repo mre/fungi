@@ -338,9 +338,23 @@ fn four() {
     assert_eq!(vec, [1, 2, 3, 2]);
 }
 
+fn sum(arr: &[f64]) -> f64 {
+    arr.iter().fold(0.0, |p, &q| p + q)
+}
+
+fn mean(arr: &[f64]) -> f64 {
+    sum(arr) / arr.len() as f64
+}
+
 pub fn sample() {
     one();
     two();
     three();
     four();
+
+    let v = &[1.0, 2.0, 3.0, 4.0, 5.0, 10.0, 20.0, 40.0];
+    println!("mean of {:?}: {:?}", v, mean(v));
+
+    let w = &[];
+    println!("mean of {:?}: {:?}", w, mean(w));
 }

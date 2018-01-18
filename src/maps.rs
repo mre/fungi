@@ -1,3 +1,5 @@
+// https://doc.rust-lang.org/stable/book/second-edition/ch08-03-hash-maps.html
+
 use std::collections::btree_map::BTreeMap;
 
 // https://doc.rust-lang.org/stable/std/collections/
@@ -34,7 +36,7 @@ fn bar() {
     }
 }
 
-pub fn sample() {
+fn one() {
     let mut count = BTreeMap::new();
     let message = "she sells sea shells by the sea shore";
 
@@ -48,4 +50,19 @@ pub fn sample() {
     for (char, count) in &count {
         println!("{}: {}", char, count);
     }
+}
+
+fn two() {
+    use std::collections::HashMap;
+
+    let mut scores = HashMap::new();
+
+    scores.insert(String::from("Blue"), 10);
+    scores.insert(String::from("Yellow"), 50);
+}
+
+pub fn sample() {
+    one();
+    two();
+    bar();
 }

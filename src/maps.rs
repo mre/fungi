@@ -55,10 +55,43 @@ fn one() {
 fn two() {
     use std::collections::HashMap;
 
+    // Just like vectors, hash maps store their data on the heap. This HashMap
+    // has keys of type String and values of type i32. Like vectors, hash maps
+    // are homogeneous: all of the keys must have the same type, and all of the
+    // values must have the same type.
     let mut scores = HashMap::new();
 
     scores.insert(String::from("Blue"), 10);
     scores.insert(String::from("Yellow"), 50);
+
+    let teams = vec![String::from("Blue"), String::from("Yellow")];
+    let initial_scores = vec![10, 50];
+
+    let _scores: HashMap<_, _> = teams.iter().zip(initial_scores.iter()).collect();
+
+    // For types that implement the Copy trait, like i32, the values are copied
+    // into the hash map. For owned values like String, the values will be moved
+    // and the hash map will be the owner of those values.
+
+    let field_name = String::from("Favorite color");
+    let field_value = String::from("Blue");
+
+    let mut map = HashMap::new();
+    map.insert(field_name, field_value);
+    // field_name and field_value are invalid at this point, try using them and
+    // see what compiler error you get!
+
+    let mut scores = HashMap::new();
+
+    scores.insert(String::from("Blue"), 10);
+    scores.insert(String::from("Yellow"), 50);
+
+    let team_name = String::from("Blue");
+    let _score = scores.get(&team_name);
+
+    for (key, value) in &scores {
+        println!("{}: {}", key, value);
+    }
 }
 
 pub fn sample() {

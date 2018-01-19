@@ -29,6 +29,7 @@ fn main() {
     strings::sample();
     palindrome::sample();
     boxes_and_trees::samples::boxes();
+    boxes_and_trees::samples::left_right();
 }
 
 #[cfg(test)]

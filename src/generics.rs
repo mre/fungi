@@ -42,6 +42,27 @@ fn largest<T>(list: &[T]) -> T {
     largest
 }
 
+struct Point<T> {
+    x: T,
+    y: T,
+}
+
+impl<T> Point<T> {
+    fn x(&self) -> &T {
+        &self.x
+    }
+}
+
+// enum Option<T> {
+//     Some(T),
+//     None,
+// }
+//
+// enum Result<T, E> {
+//     Ok(T),
+//     Err(E),
+// }
+
 pub fn sample() {
     let number_list = vec![34, 50, 25, 100, 65];
 
@@ -57,4 +78,10 @@ pub fn sample() {
     println!("The largest number is {}", result);
     let result = largest(&char_list);
     println!("The largest char is {}", result);
+
+    let integer = Point { x: 5, y: 10 };
+    let float = Point { x: 1.0, y: 4.0 };
+
+    println!("p.x = {}", integer.x());
+    println!("p.x = {}", float.x());
 }

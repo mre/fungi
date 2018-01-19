@@ -1,4 +1,3 @@
-mod guess_game;
 mod types;
 mod fibonacci;
 mod modules;
@@ -12,6 +11,7 @@ mod vectors;
 mod maps;
 mod strings;
 mod palindrome;
+mod boxes_and_trees;
 
 fn main() {
     types::sample();
@@ -28,7 +28,7 @@ fn main() {
     maps::sample();
     strings::sample();
     palindrome::sample();
-    guess_game::play();
+    boxes_and_trees::samples::boxes();
 }
 
 #[cfg(test)]

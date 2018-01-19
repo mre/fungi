@@ -5,7 +5,7 @@ use std::env;
 use std::cmp::Ordering;
 use self::rand::Rng;
 
-pub fn play() {
+fn main() {
     println!("Guess the number!");
 
     // a RNG that is local to the current thread of execution and seeded by the

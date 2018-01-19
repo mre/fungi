@@ -47,9 +47,26 @@ struct Point<T> {
     y: T,
 }
 
+// Note that we have to declare T just after impl in order to use T in the type
+// Point<T>. Declaring T as a generic type after the impl is how Rust knows the
+// type in the angle brackets in Point is a generic type rather than a concrete
+// type.
 impl<T> Point<T> {
     fn x(&self) -> &T {
         &self.x
+    }
+}
+
+// Building an impl block which only applies to a struct with a specific type is
+// used for the generic type parameter T.
+// This code means the type Point<f32> will have a method named
+// distance_from_origin, and other instances of Point<T> where T is not of type
+// f32 will not have this method defined. This method measures how far our point
+// is from the point of coordinates (0.0, 0.0) and uses mathematical operations
+// which are only available for floating-point types.
+impl Point<f32> {
+    fn distance_from_origin(&self) -> f32 {
+        (self.x.powi(2) + self.y.powi(2)).sqrt()
     }
 }
 
@@ -62,6 +79,20 @@ impl<T> Point<T> {
 //     Ok(T),
 //     Err(E),
 // }
+
+struct PointM<T, U> {
+    x: T,
+    y: U,
+}
+
+impl<T, U> PointM<T, U> {
+    fn mixup<V, W>(self, other: PointM<V, W>) -> PointM<T, W> {
+        PointM {
+            x: self.x,
+            y: other.y,
+        }
+    }
+}
 
 pub fn sample() {
     let number_list = vec![34, 50, 25, 100, 65];
@@ -84,4 +115,22 @@ pub fn sample() {
 
     println!("p.x = {}", integer.x());
     println!("p.x = {}", float.x());
+
+    let p1 = PointM { x: 5, y: 10.4 };
+    let p2 = PointM { x: "Hello", y: 'c' };
+    let p3 = p1.mixup(p2);
+    println!("p3.x = {}, p3.y = {}", p3.x, p3.y);
 }
+
+// the way that Rust has implemented generics means that your code will not run
+// any slower than if you had specified concrete types instead of generic type
+// parameters!
+//
+// Rust accomplishes this by performing monomorphization of code using generics
+// at compile time. Monomorphization is the process of turning generic code into
+// specific code with the concrete types that are actually used filled in.
+//
+// What the compiler does is the opposite of the steps that we performed to
+// create the generic function. The compiler looks at all the places that
+// generic code is called and generates code for the concrete types that the
+// generic code is called with.

@@ -1,3 +1,5 @@
+// https://doc.rust-lang.org/stable/book/second-edition/ch09-02-recoverable-errors-with-result.html
+
 use std::io;
 use std::io::Read;
 use std::fs::File;
@@ -57,3 +59,30 @@ pub fn read_username_from_file_question_mark_chained() -> Result<String, io::Err
 
     Ok(s)
 }
+
+pub fn not_necessary_to_defend_against_errors() {
+    use std::net::IpAddr;
+
+    let _home = "127.0.0.1".parse::<IpAddr>().unwrap();
+}
+
+pub fn validation_loop() {
+    loop {
+        // snip
+
+        let guess: i32 = match guess.trim().parse() {
+            Ok(num) => num,
+            Err(_) => continue,
+        };
+
+        if guess < 1 || guess > 100 {
+            println!("The secret number will be between 1 and 100.");
+            continue;
+        }
+
+        match guess.cmp(&secret_number) {
+            // snip
+        }
+}
+
+fn main() {}

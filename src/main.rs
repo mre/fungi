@@ -12,6 +12,7 @@ mod maps;
 mod strings;
 mod palindrome;
 mod boxes_and_trees;
+mod generics;
 
 fn main() {
     types::sample();
@@ -30,6 +31,7 @@ fn main() {
     palindrome::sample();
     boxes_and_trees::samples::boxes();
     boxes_and_trees::samples::left_right();
+    generics::sample();
 }
 
 #[cfg(test)]

@@ -105,3 +105,24 @@ let article = NewsArticle {
 };
 
 println!("New article available! {}", article.summary());
+
+pub trait SummarizableWithAuthorSummary {
+    fn author_summary(&self) -> String;
+
+    fn summary(&self) -> String {
+        format!("(Read more from {}...)", self.author_summary())
+    }
+}
+
+pub struct TweetWithAuthorSummary {
+    pub username: String,
+    pub content: String,
+    pub reply: bool,
+    pub retweet: bool,
+}
+
+impl SummarizableWithAuthorSummary for TweetWithAuthorSummary {
+    fn author_summary(&self) -> String {
+        format!("@{}", self.username)
+    }
+}

@@ -33,7 +33,19 @@ fn largest_char(list: &[char]) -> char {
 // https://doc.rust-lang.org/std/cmp/trait.PartialOrd.html
 //
 // fn largest<T: PartialOrd>(list: &[T]) -> T {
-fn largest<T>(list: &[T]) -> T {
+// But more is needed:
+//  |     let mut largest = list[0];
+//  |         -----------   ^^^^^^^ cannot move out of here
+// The key to this error is cannot move out of type [T], a non-copy array. With
+// our non-generic versions of the largest function, we were only trying to find
+// the largest i32 or char. As we discussed in Chapter 4, types like i32 and
+// char that have a known size can be stored on the stack, so they implement the
+// Copy trait. When we changed the largest function to be generic, it’s now
+// possible that the list parameter could have types in it that don’t implement
+// the Copy trait, which means we wouldn’t be able to move the value out of
+// list[0] and into the largest variable.
+//
+fn largest<T: PartialOrd + Copy>(list: &[T]) -> T {
     let mut largest = list[0];
 
     for &item in list.iter() {
@@ -45,6 +57,7 @@ fn largest<T>(list: &[T]) -> T {
     largest
 }
 
+#[allow(dead_code)]
 struct Point<T> {
     x: T,
     y: T,
@@ -68,7 +81,7 @@ impl<T> Point<T> {
 // is from the point of coordinates (0.0, 0.0) and uses mathematical operations
 // which are only available for floating-point types.
 impl Point<f32> {
-    fn distance_from_origin(&self) -> f32 {
+    fn _distance_from_origin(&self) -> f32 {
         (self.x.powi(2) + self.y.powi(2)).sqrt()
     }
 }

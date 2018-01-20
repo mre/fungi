@@ -66,15 +66,22 @@ fn largest<T: PartialOrd + Copy>(list: &[T]) -> T {
 //
 // https://doc.rust-lang.org/std/clone/index.html
 fn largest_with_clone<T: PartialOrd + Clone>(list: &[T]) -> T {
-    let mut largest = list[0].clone();
+    // here `list` is a ref to [T]
+    // but `T` implements the `Clone` trait, so we can have our own copy of each
+    // item (not only references).
+    let mut largst: T = list[0].clone();
 
     for item in list.iter() {
-        if item > &largest {
-            largest = item.clone();
+        // iterating `list` gives us references to each item.
+        let itm: &T = item;
+        // we can compare the reference to `itm` to a reference of largst or
+        // clone each item for the comparison.
+        if itm > &largst {
+            largst = item.clone();
         }
     }
 
-    largest
+    largst
 }
 
 #[allow(dead_code)]

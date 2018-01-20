@@ -84,6 +84,24 @@ fn largest_with_clone<T: PartialOrd + Clone>(list: &[T]) -> T {
     largst
 }
 
+// Another way we could implement largest is for the function to return a
+// reference to a T value in the slice. If we change the return type to be &T
+// instead of T and change the body of the function to return a reference, we
+// wouldn’t need either the Clone or Copy trait bounds and we wouldn’t be doing
+// any heap allocations.
+fn largest_with_ref<T: PartialOrd>(list: &[T]) -> &T {
+    // largst :&T
+    let mut largst = &list[0];
+
+    for item in list.iter() {
+        if item > largst {
+            largst = item;
+        }
+    }
+
+    largst
+}
+
 #[allow(dead_code)]
 struct Point<T> {
     x: T,
@@ -153,6 +171,8 @@ pub fn sample() {
     let result = largest(&char_list);
     println!("The largest char is {}", result);
     let result = largest_with_clone(&number_list);
+    println!("The largest number is {}", result);
+    let result = largest_with_ref(&number_list);
     println!("The largest number is {}", result);
 
     let integer = Point { x: 5, y: 10 };

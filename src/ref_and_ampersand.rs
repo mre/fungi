@@ -48,7 +48,11 @@ fn two() {
         // to one used by the expression which created it.
         &Foo(n) => println!("Match: number {}", n),
     }
+    // The `&` and `ref` differs in the pattern that they match. `&` is part of
+    // the patter and discriminate the result: &String is matched; `ref`
+    // instead match `Name(ref foo)` as `Name(foo)`
 }
+
 pub fn sample() {
     one();
     two();

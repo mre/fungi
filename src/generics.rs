@@ -90,7 +90,14 @@ fn largest_with_clone<T: PartialOrd + Clone>(list: &[T]) -> T {
 // wouldn’t need either the Clone or Copy trait bounds and we wouldn’t be doing
 // any heap allocations.
 fn largest_with_ref<T: PartialOrd>(list: &[T]) -> &T {
-    // largst :&T
+    // let mut x = &y creates a pointer to y which you can change to point to
+    //                something else. That is, the pointer itself is mutable.
+    //
+    // let ref mut x = y creates a pointer to a mutable y. You can use it to
+    //                   modify y, but it cannot be changed to point to a
+    //                   different value. It's identical to let x = &mut y.
+    //
+    // let _: () = largst; => largst :&T
     let mut largst = &list[0];
 
     for item in list.iter() {

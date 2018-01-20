@@ -13,6 +13,7 @@ mod strings;
 mod palindrome;
 mod boxes_and_trees;
 mod generics;
+mod pointers_and_refs;
 
 fn main() {
     types::sample();
@@ -32,6 +33,7 @@ fn main() {
     boxes_and_trees::samples::boxes();
     boxes_and_trees::samples::left_right();
     generics::sample();
+    pointers_and_refs::sample();
 }
 
 #[cfg(test)]

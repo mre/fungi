@@ -57,6 +57,26 @@ fn largest<T: PartialOrd + Copy>(list: &[T]) -> T {
     largest
 }
 
+// If we don’t want to restrict our largest function to only types that
+// implement the Copy trait, we could specify that T has the trait bound Clone
+// instead of Copy and clone each value in the slice when we want the largest
+// function to have ownership. Using the clone function means we’re potentially
+// making more heap allocations, though, and heap allocations can be slow if
+// we’re working with large amounts of data.
+//
+// https://doc.rust-lang.org/std/clone/index.html
+fn largest_with_clone<T: PartialOrd + Clone>(list: &[T]) -> T {
+    let mut largest = list[0].clone();
+
+    for item in list.iter() {
+        if item > &largest {
+            largest = item.clone();
+        }
+    }
+
+    largest
+}
+
 #[allow(dead_code)]
 struct Point<T> {
     x: T,
@@ -125,6 +145,8 @@ pub fn sample() {
     println!("The largest number is {}", result);
     let result = largest(&char_list);
     println!("The largest char is {}", result);
+    let result = largest_with_clone(&number_list);
+    println!("The largest number is {}", result);
 
     let integer = Point { x: 5, y: 10 };
     let float = Point { x: 1.0, y: 4.0 };

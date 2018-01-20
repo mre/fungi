@@ -116,6 +116,20 @@ impl SummarizableWithAuthorSummary for TweetWithAuthorSummary {
     }
 }
 
+pub fn notify<T: Summarizable>(item: T) {
+    println!("Breaking news! {}", item.summary());
+}
+
+fn some_function<T: Display + Clone, U: Clone + Debug>(t: T, u: U) -> i32 {
+    0
+}
+
+fn some_other_function<T, U>(t: T, u: U) -> i32
+where T: Display + Clone,
+      U: Clone + Debug
+    0
+{
+
 pub fn sample() {
     let tweet = Tweet {
         username: String::from("horse_ebooks"),
@@ -134,4 +148,5 @@ pub fn sample() {
     };
 
     println!("1 new tweet: {}", tweet.summary());
+    // 1 new tweet: (Read more from @horse_ebooks...)
 }

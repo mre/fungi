@@ -30,6 +30,9 @@ fn largest_char(list: &[char]) -> char {
 //
 // The standard library has defined the trait std::cmp::PartialOrd that types
 // can implement to enable comparisons.
+// https://doc.rust-lang.org/std/cmp/trait.PartialOrd.html
+//
+// fn largest<T: PartialOrd>(list: &[T]) -> T {
 fn largest<T>(list: &[T]) -> T {
     let mut largest = list[0];
 

@@ -54,17 +54,6 @@ impl Summarizable for WeatherForecast {
     }
 }
 
-pub fn sample() {
-    let tweet = Tweet {
-        username: String::from("horse_ebooks"),
-        content: String::from("of course, as you probably already know, people"),
-        reply: false,
-        retweet: false,
-    };
-
-    println!("1 new tweet: {}", tweet.summary());
-}
-
 // One restriction to note with trait implementations: we may implement a trait
 // on a type as long as either the trait or the type are local to our crate. In
 // other words, we aren't allowed to implement external traits on external
@@ -125,4 +114,24 @@ impl SummarizableWithAuthorSummary for TweetWithAuthorSummary {
     fn author_summary(&self) -> String {
         format!("@{}", self.username)
     }
+}
+
+pub fn sample() {
+    let tweet = Tweet {
+        username: String::from("horse_ebooks"),
+        content: String::from("of course, as you probably already know, people"),
+        reply: false,
+        retweet: false,
+    };
+
+    println!("1 new tweet: {}", tweet.summary());
+
+    let tweet = TweetWithAuthorSummary {
+        username: String::from("horse_ebooks"),
+        content: String::from("of course, as you probably already know, people"),
+        reply: false,
+        retweet: false,
+    };
+
+    println!("1 new tweet: {}", tweet.summary());
 }

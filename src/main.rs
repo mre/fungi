@@ -16,6 +16,7 @@ mod generics;
 mod pointers_and_refs;
 mod ref_and_ampersand;
 mod traits;
+mod lifetimes;
 
 fn main() {
     types::sample();
@@ -38,6 +39,7 @@ fn main() {
     pointers_and_refs::sample();
     ref_and_ampersand::sample();
     traits::sample();
+    lifetimes::sample();
 }
 
 #[cfg(test)]

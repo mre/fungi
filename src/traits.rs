@@ -180,6 +180,7 @@ fn three() {
         }
     }
 
+    // Using trait bounds to conditionally implement methods.
     impl<T: Display + PartialOrd> Pair<T> {
         #[allow(dead_code)]
         fn cmp_display(&self) {
@@ -190,6 +191,24 @@ fn three() {
             }
         }
     }
+
+    // We can also conditionally implement a trait for any type that implements
+    // a trait. Implementations of a trait on any type that satisfies the trait
+    // bounds are called blanket implementations, and are extensively used in
+    // the Rust standard library. For example, the standard library implements
+    // the ToString trait on any type that implements the Display trait. This
+    // impl block looks similar to this code:
+    //
+    // impl<T: Display> ToString for T {
+    //   ...snip...
+    // }
+    // Because the standard library has this blanket implementation, we can call
+    // the to_string method defined by the ToString type on any type that
+    // implements the Display trait.
+    // For example, we can turn integers into their corresponding String values
+    // like this since integers implement Display:
+    //
+    // let s = 3.to_string();
 }
 
 pub fn sample() {

@@ -220,6 +220,37 @@ fn first_word(s: &str) -> &str {
 // fn longest<'a, 'b>(x: &'a str, y: &'b str) -> &str {     [first rule appled]
 // [error: no more rules can be applied]
 
+// Lifetime annotation in method definitions
+// Lifetime names for struct fields always need to be declared after the impl
+// keyword and then used after the struct’s name, since those lifetimes are part
+// of the struct’s type.
+//
+// First, here’s a method named level. The only parameter is a reference to
+// self, and the return value is just an i32, not a reference to anything:
+//
+// impl<'a> ImportantExcerpt<'a> {
+//     fn level(&self) -> i32 {
+//         3
+//     }
+// }
+//
+// The lifetime parameter declaration after impl and use after the type name is
+// required, but we’re not required to annotate the lifetime of the reference to
+// self because of the first elision rule.
+// Here’s an example where the third lifetime elision rule applies:
+//
+// impl<'a> ImportantExcerpt<'a> {
+//     fn announce_and_return_part(&self, announcement: &str) -> &str {
+//         println!("Attention please: {}", announcement);
+//         self.part
+//     }
+// }
+//
+// There are two input lifetimes, so Rust applies the first lifetime elision
+// rule and gives both &self and announcement their own lifetimes. Then, because
+// one of the parameters is &self, the return type gets the lifetime of &self,
+// and all lifetimes have been accounted for.
+
 pub fn sample() {
     one();
     two();

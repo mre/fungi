@@ -32,4 +32,37 @@
 //  wouldn’t work correctly.
 // The part of the compiler called the borrow checker compares scopes to
 // determine that all borrows are valid.
+//
+// {
+//     let r;         // -------+-- 'a
+//                    //        |
+//     {              //        |
+//         let x = 5; // -+-----+-- 'b
+//         r = &x;    //  |     |
+//     }              // -+     |
+//                    //        |
+//     println!("r: {}", r); // |
+//                    //        |
+//                    // -------+
+// }
+// Annotations of the lifetimes of r and x, named 'a and 'b respectively.
+//
+// We’ve annotated the lifetime of r with 'a and the lifetime of x with 'b. As
+// you can see, the inner 'b block is much smaller than the outer 'a lifetime
+// block. At compile time, Rust compares the size of the two lifetimes and sees
+// that r has a lifetime of 'a, but that it refers to an object with a lifetime
+// of 'b. The program is rejected because the lifetime 'b is shorter than the
+// lifetime of 'a: the subject of the reference does not live as long as the
+// reference.
+//
+// When there are no dangling references:
+// {
+//     let x = 5;            // -----+-- 'b
+//     //      |
+//     let r = &x;           // --+--+-- 'a
+//     //   |  |
+//     println!("r: {}", r); //   |  |
+//     // --+  |
+// }                         // -----+
+
 pub fn sample() {}

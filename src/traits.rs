@@ -38,6 +38,7 @@ impl Summarizable for Tweet {
 // extern crate aggregator;
 // use aggregator::Summarizable;
 
+#[allow(dead_code)]
 struct WeatherForecast {
     high_temp: f64,
     low_temp: f64,
@@ -76,6 +77,7 @@ pub trait SummarizableWithDefault {
     }
 }
 
+#[allow(dead_code)]
 pub struct NewsArticleSummary {
     pub headline: String,
     pub location: String,
@@ -106,17 +108,20 @@ impl SummarizableWithAuthorSummary for TweetWithAuthorSummary {
     }
 }
 
+#[allow(dead_code)]
 pub fn notify<T: Summarizable>(item: T) {
     println!("Breaking news! {}", item.summary());
 }
 
 use std::fmt::{Debug, Display};
 
-fn some_function<T: Display + Clone, U: Clone + Debug>(t: T, u: U) -> i32 {
+#[allow(dead_code)]
+fn some_function<T: Display + Clone, U: Clone + Debug>(_t: T, _u: U) -> i32 {
     0
 }
 
-fn some_other_function<T, U>(t: T, u: U) -> i32
+#[allow(dead_code)]
+fn some_other_function<T, U>(_t: T, _u: U) -> i32
 where
     T: Display + Clone,
     U: Clone + Debug,
@@ -162,18 +167,21 @@ fn two() {
 fn three() {
     use std::fmt::Display;
 
+    #[allow(dead_code)]
     struct Pair<T> {
         x: T,
         y: T,
     }
 
     impl<T> Pair<T> {
+        #[allow(dead_code)]
         fn new(x: T, y: T) -> Self {
             Self { x, y }
         }
     }
 
     impl<T: Display + PartialOrd> Pair<T> {
+        #[allow(dead_code)]
         fn cmp_display(&self) {
             if self.x >= self.y {
                 println!("The largest member is x = {}", self.x);

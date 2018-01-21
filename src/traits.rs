@@ -85,16 +85,6 @@ pub struct NewsArticleSummary {
 
 impl SummarizableWithDefault for NewsArticleSummary {}
 
-let article = NewsArticle {
-    headline: String::from("Penguins win the Stanley Cup Championship!"),
-    location: String::from("Pittsburgh, PA, USA"),
-    author: String::from("Iceburgh"),
-    content: String::from("The Pittsburgh Penguins once again are the best
-    hockey team in the NHL."),
-};
-
-println!("New article available! {}", article.summary());
-
 pub trait SummarizableWithAuthorSummary {
     fn author_summary(&self) -> String;
 
@@ -120,17 +110,21 @@ pub fn notify<T: Summarizable>(item: T) {
     println!("Breaking news! {}", item.summary());
 }
 
+use std::fmt::{Debug, Display};
+
 fn some_function<T: Display + Clone, U: Clone + Debug>(t: T, u: U) -> i32 {
     0
 }
 
 fn some_other_function<T, U>(t: T, u: U) -> i32
-where T: Display + Clone,
-      U: Clone + Debug
-    0
+where
+    T: Display + Clone,
+    U: Clone + Debug,
 {
+    0
+}
 
-pub fn sample() {
+fn one() {
     let tweet = Tweet {
         username: String::from("horse_ebooks"),
         content: String::from("of course, as you probably already know, people"),
@@ -149,4 +143,49 @@ pub fn sample() {
 
     println!("1 new tweet: {}", tweet.summary());
     // 1 new tweet: (Read more from @horse_ebooks...)
+}
+
+fn two() {
+    let article = NewsArticle {
+        headline: String::from("Penguins win the Stanley Cup Championship!"),
+        location: String::from("Pittsburgh, PA, USA"),
+        author: String::from("Iceburgh"),
+        content: String::from(
+            "The Pittsburgh Penguins once again are the best
+    hockey team in the NHL.",
+        ),
+    };
+
+    println!("New article available! {}", article.summary());
+}
+
+fn three() {
+    use std::fmt::Display;
+
+    struct Pair<T> {
+        x: T,
+        y: T,
+    }
+
+    impl<T> Pair<T> {
+        fn new(x: T, y: T) -> Self {
+            Self { x, y }
+        }
+    }
+
+    impl<T: Display + PartialOrd> Pair<T> {
+        fn cmp_display(&self) {
+            if self.x >= self.y {
+                println!("The largest member is x = {}", self.x);
+            } else {
+                println!("The largest member is y = {}", self.y);
+            }
+        }
+    }
+}
+
+pub fn sample() {
+    one();
+    two();
+    three();
 }

@@ -157,13 +157,14 @@ fn two() {
 fn three() {
     // A struct that holds a reference, so its definition needs a lifetime
     // annotation.
+    #[allow(dead_code)]
     struct ImportantExcerpt<'a> {
         part: &'a str,
     }
 
     let novel = String::from("Call me Ishmael. Some years ago...");
     let first_sentence = novel.split('.').next().expect("Could not find a '.'");
-    let i = ImportantExcerpt {
+    let _i = ImportantExcerpt {
         part: first_sentence,
     };
 }
@@ -177,6 +178,8 @@ fn three() {
 // lifetime elision rules. These aren’t rules for programmers to follow; the
 // rules are a set of particular cases that the compiler will consider, and if
 // your code fits these cases, you don’t need to write the lifetimes explicitly.
+//
+#[allow(dead_code)]
 fn first_word(s: &str) -> &str {
     let bytes = s.as_bytes();
 
@@ -188,6 +191,34 @@ fn first_word(s: &str) -> &str {
 
     &s[..]
 }
+
+// Lifetimes on function or method parameters are called input lifetimes, and
+// lifetimes on return values are called output lifetimes.
+//
+// Lifetime inference rules:
+//
+// - (input lifetime) Each parameter that is a reference gets its own
+//   lifetime parameter. In other words, a function with one parameter gets one
+//   lifetime parameter: fn foo<'a>(x: &'a i32), a function with two arguments
+//   gets two separate lifetime parameters:
+//   fn foo<'a, 'b>(x: &'a i32, y: &'b i32), and so on.
+// - (output lifetime) If there is exactly one input lifetime parameter, that
+//   lifetime is assigned to all output lifetime parameters:
+//   fn foo<'a>(x: &'a i32) -> &'a i32.
+// - (output lifetime) If there are multiple input lifetime parameters, but one
+//   of them is &self or &mut self because this is a method, then the lifetime
+//   of self is assigned to all output lifetime parameters. This makes writing
+//   methods much nicer.
+//
+// Example of application:
+// fn first_word(s: &str) -> &str {             [original signature]
+// fn first_word<'a>(s: &'a str) -> &str {      [first rule applied]
+// fn first_word<'a>(s: &'a str) -> &'a str {   [second rule applied]
+//
+// Another example
+// fn longest(x: &str, y: &str) -> &str {                   [original signature]
+// fn longest<'a, 'b>(x: &'a str, y: &'b str) -> &str {     [first rule appled]
+// [error: no more rules can be applied]
 
 pub fn sample() {
     one();

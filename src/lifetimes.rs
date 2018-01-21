@@ -251,8 +251,44 @@ fn first_word(s: &str) -> &str {
 // one of the parameters is &self, the return type gets the lifetime of &self,
 // and all lifetimes have been accounted for.
 
+// The static lifetime.
+// The 'static lifetime is the entire duration of the program. All string
+// literals have the 'static lifetime, which we can choose to annotate as
+// follows:
+//
+// let s: &'static str = "I have a static lifetime.";
+// The text of this string is stored directly in the binary of your program and
+// the binary of your program is always available. Therefore, the lifetime of
+// all string literals is 'static.
+
+// Generic type parameters, trait bounds and lifetime together.
+fn four() {
+    use std::fmt::Display;
+
+    // The type of ann is the generic type T, which may be filled in by any type
+    // that implements the Display trait as specified by the where clause. This
+    // extra argument will be printed out before the function compares the
+    // lengths of the string slices, which is why the Display trait bound is
+    // necessary. Because lifetimes are a type of generic, the declarations of
+    // both the lifetime parameter 'a and the generic type parameter T go in the
+    // same list within the angle brackets after the function name.
+    #[allow(dead_code)]
+    fn longest_with_an_announcement<'a, T>(x: &'a str, y: &'a str, ann: T) -> &'a str
+    where
+        T: Display,
+    {
+        println!("Announcement! {}", ann);
+        if x.len() > y.len() {
+            x
+        } else {
+            y
+        }
+    }
+}
+
 pub fn sample() {
     one();
     two();
     three();
+    four();
 }

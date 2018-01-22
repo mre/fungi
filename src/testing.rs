@@ -66,6 +66,10 @@ fn prints_and_returns_10(a: i32) -> i32 {
 // compiled result.
 //
 // Rust’s privacy rules do allow you to test private functions.
+//
+// Integration tests
+// To write integration tests for our code, we need to make a tests directory at
+// the top level of our project directory.
 
 #[cfg(test)]
 mod tests {
@@ -181,6 +185,21 @@ mod tests {
     fn expensive_test() {
         // code that takes an hour to run
     }
+
+    // integration tests
+    // We’ve added extern crate adder at the top, which we didn’t need in the
+    // unit tests. This is because each test in the tests directory is an
+    // entirely separate crate, so we need to import our library into each of
+    // them. We don’t need to annotate any code in tests/integration_test.rs
+    // with #[cfg(test)].
+    // {
+    //   tests/integration_test.rs
+    //   extern crate adder;
+    //   #[test]
+    //   fn it_adds_two() {
+    //       assert_eq!(4, adder::add_two(2));
+    //   }
+    // }
 }
 
 pub fn sample() {}

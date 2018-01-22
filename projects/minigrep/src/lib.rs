@@ -47,10 +47,28 @@ pub fn run(config: Config) -> Result<(), Box<Error>> {
     // value from the current function for the caller to handle.
     f.read_to_string(&mut contents)?;
 
-    println!("With text:\n{}", contents);
-
     // This Ok(()) syntax may look a bit strange at first, but using () like
     // this is the idiomatic way to indicate that we’re calling run for its side
     // effects only; it doesn’t return a value we need.
     Ok(())
+}
+
+pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+    vec![]
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn one_result() {
+        let query = "duct";
+        let contents = "\
+        Rust:
+safe, fast, productive.
+Pick three.";
+
+        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+    }
 }

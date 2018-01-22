@@ -1,5 +1,6 @@
 use std::env;
 use std::process;
+use std::error::Error;
 use std::fs::File;
 // https://doc.rust-lang.org/std/io/prelude/index.html
 // the std::io module has its own prelude of common things you’ll need when
@@ -36,10 +37,14 @@ impl Config {
     }
 }
 
-// fn print_err(err: &str) {
-//     eprint!("Problem parsing arguments: {}\n\n", err);
-//     process::exit(1);
-// }
+// fn unwrap_or_else<F>(self, op: F) -> T
+// where F: FnOnce(E) -> T,
+// Unwraps a result, yielding the content of an Ok. If the value is an Err then
+// it calls op with its value.
+//
+// fn count(x: &str) -> usize { x.len() }
+// assert_eq!(Ok(2).unwrap_or_else(count), 2);
+// assert_eq!(Err("foo").unwrap_or_else(count), 3);
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -57,11 +62,25 @@ fn main() {
     println!("Searching for {}", config.query);
     println!("In file {}", config.filename);
 
+    run(config);
+}
+
+// just know that Box<Error> means the function will return a type that
+// implements the Error trait, but we don’t have to specify what particular type
+// the return value will be. This gives us flexibility to return error values
+// that may be of different types in different error cases.
+fn run(config: Config) -> Result<(), Box<Error>> {
     let mut f = File::open(config.filename).expect("file not found");
 
     let mut contents = String::new();
-    f.read_to_string(&mut contents)
-        .expect("something went wrong reading the file");
+    // With `?`, rather than panic! on an error, this will return the error
+    // value from the current function for the caller to handle.
+    f.read_to_string(&mut contents)?;
 
     println!("With text:\n{}", contents);
+
+    // This Ok(()) syntax may look a bit strange at first, but using () like
+    // this is the idiomatic way to indicate that we’re calling run for its side
+    // effects only; it doesn’t return a value we need.
+    Ok(())
 }

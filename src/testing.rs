@@ -54,6 +54,18 @@ fn prints_and_returns_10(a: i32) -> i32 {
 // cargo test one_hundred
 // cargo test add
 // cargo test -- --ignored
+//
+// Unit tests
+// We put unit tests in the src directory, in each file with the code that
+// they’re testing. The convention is that we create a module named tests in
+// each file to contain the test functions, and we annotate the module with
+// cfg(test).
+// The #[cfg(test)] annotation on the tests module tells Rust to compile and run
+// the test code only when we run cargo test, and not when we run cargo build.
+// We use #[cfg(test)]to specify that they should not be included in the
+// compiled result.
+//
+// Rust’s privacy rules do allow you to test private functions.
 
 #[cfg(test)]
 mod tests {

@@ -1,5 +1,6 @@
 // https://doc.rust-lang.org/stable/book/second-edition/ch11-00-testing.html
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Rectangle {
     length: u32,
@@ -7,15 +8,18 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
+    #[allow(dead_code)]
     pub fn can_hold(&self, other: &Rectangle) -> bool {
         self.length > other.length && self.width > other.width
     }
 }
 
+#[allow(dead_code)]
 pub fn add_two(a: i32) -> i32 {
     a + 2
 }
 
+#[allow(dead_code)]
 pub fn greeting(name: &str) -> String {
     format!("Hello {}!", name)
 }
@@ -26,6 +30,7 @@ pub struct Guess {
 }
 
 impl Guess {
+    #[allow(dead_code)]
     pub fn new(value: u32) -> Guess {
         if value < 1 {
             panic!(
@@ -43,6 +48,7 @@ impl Guess {
     }
 }
 
+#[allow(dead_code)]
 fn prints_and_returns_10(a: i32) -> i32 {
     println!("I got the value {}", a);
     10

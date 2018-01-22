@@ -200,6 +200,26 @@ mod tests {
     //       assert_eq!(4, adder::add_two(2));
     //   }
     // }
+
+    // As you add more integration tests, you may want to make more than one
+    // file in the tests directory to help organize them; for example, to group
+    // the test functions by the functionality they’re testing. As we mentioned,
+    // each file in the tests directory is compiled as its own separate crate.
+
+    // declaration of a common module to run as setup for the tests
+    //
+    // FindMe in tests/common/mod.rs
+    // pub fn setup() {
+    //   // ... setup code specific to your library's tests would go here
+    // }
+    // extern crate adder;
+    // mod common;
+    // #[test]
+    // fn it_adds_two() {
+    //     common::setup();
+    //     assert_eq!(4, adder::add_two(2));
+    // }
+
 }
 
 pub fn sample() {}

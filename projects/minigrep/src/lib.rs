@@ -53,6 +53,15 @@ pub fn run(config: Config) -> Result<(), Box<Error>> {
     Ok(())
 }
 
+// In this case, we’re indicating that the returned vector should contain string
+// slices that reference slices of the argument contents (rather than the
+// argument query).
+// In other words, we’re telling Rust that the data returned by the search
+// function will live as long as the data passed into the search function in the
+// contents argument. This is important! The data referenced by a slice needs to
+// be valid in order for the reference to be valid; if the compiler assumed we
+// were making string slices of query rather than contents, it would do its
+// safety checking incorrectly.
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     vec![]
 }

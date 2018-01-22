@@ -47,6 +47,10 @@ pub fn run(config: Config) -> Result<(), Box<Error>> {
     // value from the current function for the caller to handle.
     f.read_to_string(&mut contents)?;
 
+    for line in search(&config.query, &contents) {
+        println!("{}", line);
+    }
+
     // This Ok(()) syntax may look a bit strange at first, but using () like
     // this is the idiomatic way to indicate that we’re calling run for its side
     // effects only; it doesn’t return a value we need.
@@ -63,7 +67,13 @@ pub fn run(config: Config) -> Result<(), Box<Error>> {
 // were making string slices of query rather than contents, it would do its
 // safety checking incorrectly.
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    vec![]
+    let mut results = Vec::new();
+    for line in contents.lines() {
+        if line.contains(query) {
+            results.push(line);
+        }
+    }
+    results
 }
 
 #[cfg(test)]

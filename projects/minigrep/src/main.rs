@@ -36,10 +36,21 @@ impl Config {
     }
 }
 
+// fn print_err(err: &str) {
+//     eprint!("Problem parsing arguments: {}\n\n", err);
+//     process::exit(1);
+// }
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
+    // https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap_or_else
+    // fn unwrap_or_else<F>(self, op: F) -> T
+    // where F: FnOnce(E) -> T,
+    //   Unwraps a result, yielding the content of an Ok. If the value is an Err
+    //   then it calls op with its value.
     let config = Config::new(&args).unwrap_or_else(|err| {
+        // err: &str
         eprint!("Problem parsing arguments: {}\n\n", err);
         process::exit(1);
     });

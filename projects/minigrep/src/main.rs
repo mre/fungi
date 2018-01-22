@@ -6,28 +6,38 @@ use std::fs::File;
 // working with I/O.
 use std::io::prelude::*;
 
-fn parse_config(args: &[String]) -> (&str, &str) {
-    // https://doc.rust-lang.org/std/macro.eprint.html
-    // https://doc.rust-lang.org/std/process/fn.exit.html
-    if args.len() < 3 {
-        eprint!("Not enough parameters!\n\n");
-        process::exit(1);
-    }
-    // let program_name = &args[0]
-    let query = &args[1];
-    let filename = &args[2];
+struct Config {
+    query: String,
+    filename: String,
+}
 
-    (query, filename)
+impl Config {
+    fn new(args: &[String]) -> Config {
+        // https://doc.rust-lang.org/std/macro.eprint.html
+        // https://doc.rust-lang.org/std/process/fn.exit.html
+        if args.len() < 3 {
+            eprint!("Not enough parameters!\n\n");
+            process::exit(1);
+        }
+
+        // let program_name = args[0].clone();
+        // There’s a tendency among many Rustaceans to avoid using clone to fix
+        // ownership problems because of its runtime cost.
+        let query = args[1].clone();
+        let filename = args[2].clone();
+
+        Config { query, filename }
+    }
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let (query, filename) = parse_config(&args);
-    println!("Searching for {}", query);
-    println!("In file {}", filename);
+    let config = Config::new(&args);
+    println!("Searching for {}", config.query);
+    println!("In file {}", config.filename);
 
-    let mut f = File::open(filename).expect("file not found");
+    let mut f = File::open(config.filename).expect("file not found");
 
     let mut contents = String::new();
     f.read_to_string(&mut contents)

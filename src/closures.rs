@@ -2,6 +2,7 @@
 
 use std::thread;
 use std::time::Duration;
+use std::collections::HashMap;
 
 #[allow(dead_code)]
 fn simulated_expensive_calculation(intensity: u32) -> u32 {
@@ -51,7 +52,7 @@ where
     T: Fn(u32) -> u32,
 {
     calculation: T,
-    value: Option<u32>,
+    values: HashMap<u32, u32>,
 }
 
 impl<T> Cacher<T>
@@ -63,19 +64,27 @@ where
     fn new(calculation: T) -> Cacher<T> {
         Cacher {
             calculation,
-            value: None,
+            values: HashMap::new(),
         }
     }
 
+    // Find the key or insert the calculation for that key.
     fn value(&mut self, arg: u32) -> u32 {
-        match self.value {
-            Some(v) => v,
-            None => {
-                let v = (self.calculation)(arg);
-                self.value = Some(v);
-                v
-            }
-        }
+        // // https://doc.rust-lang.org/std/collections/hash_map/enum.Entry.html#method.or_insert_with
+        // // pub fn or_insert_with<F: FnOnce() -> V>(self, default: F) -> &'a mut V
+        let f = &self.calculation;
+        self.values.entry(arg).or_insert_with(|| f(arg));
+        0
+
+        // let opt = self.values.get(&arg);
+        // match opt {
+        //     Some(v) => *v,
+        //     None => {
+        //         let v = (self.calculation)(arg);
+        //         self.values.insert(arg, v);
+        //         v
+        //     }
+        // }
     }
 }
 
@@ -83,9 +92,10 @@ where
 fn call_with_different_values() {
     let mut c = Cacher::new(|a| a);
 
-    let _v1 = c.value(1);
+    let v1 = c.value(1);
     let v2 = c.value(2);
 
+    assert_eq!(v1, 1);
     assert_eq!(v2, 2);
 }
 

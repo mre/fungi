@@ -3,6 +3,7 @@
 use std::thread;
 use std::time::Duration;
 
+#[allow(dead_code)]
 fn simulated_expensive_calculation(intensity: u32) -> u32 {
     println!("calculating slowly...");
     thread::sleep(Duration::from_secs(2));
@@ -76,6 +77,16 @@ where
             }
         }
     }
+}
+
+#[test]
+fn call_with_different_values() {
+    let mut c = Cacher::new(|a| a);
+
+    let _v1 = c.value(1);
+    let v2 = c.value(2);
+
+    assert_eq!(v2, 2);
 }
 
 fn generate_workout(intensity: u32, random_number: u32) {

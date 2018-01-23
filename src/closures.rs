@@ -73,18 +73,8 @@ where
         // // https://doc.rust-lang.org/std/collections/hash_map/enum.Entry.html#method.or_insert_with
         // // pub fn or_insert_with<F: FnOnce() -> V>(self, default: F) -> &'a mut V
         let f = &self.calculation;
-        self.values.entry(arg).or_insert_with(|| f(arg));
-        0
-
-        // let opt = self.values.get(&arg);
-        // match opt {
-        //     Some(v) => *v,
-        //     None => {
-        //         let v = (self.calculation)(arg);
-        //         self.values.insert(arg, v);
-        //         v
-        //     }
-        // }
+        let v = self.values.entry(arg).or_insert_with(|| f(arg));
+        *v
     }
 }
 

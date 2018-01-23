@@ -9,25 +9,6 @@ fn simulated_expensive_calculation(intensity: u32) -> u32 {
     intensity
 }
 
-fn generate_workout(intensity: u32, random_number: u32) {
-    let expensive_closure = |num: u32| -> u32 {
-        println!("calculating slowly...");
-        thread::sleep(Duration::from_secs(2));
-        num
-    };
-
-    if intensity < 25 {
-        println!("Today, do {} pushups!", expensive_closure(intensity));
-        println!("Next, do {} situps!", expensive_closure(intensity));
-    } else {
-        if random_number == 3 {
-            println!("Take a break today! Remember to stay hydrated!");
-        } else {
-            println!("Today, run for {} minutes!", expensive_closure(intensity));
-        }
-    }
-}
-
 // Closure type inference and annotation.
 // Closures don’t require you to annotate the types of the parameters or the
 // return value like fn functions do.
@@ -60,7 +41,10 @@ fn generate_workout(intensity: u32, random_number: u32) {
 // the trait bound we specify is Fn(u32) -> u32.
 
 // the definition of the Cacher struct that holds a closure and an optional
-// result value:
+// result value.
+// We want Cacher to manage the struct fields’ values, rather than letting the
+// calling code potentially change the values in these fields directly, so these
+// fields are private.
 struct Cacher<T>
 where
     T: Fn(u32) -> u32,
@@ -73,6 +57,8 @@ impl<T> Cacher<T>
 where
     T: Fn(u32) -> u32,
 {
+    // The Cacher::new function takes a generic parameter T, which we’ve defined
+    // as having the same trait bound as the Cacher struct.
     fn new(calculation: T) -> Cacher<T> {
         Cacher {
             calculation,
@@ -88,6 +74,28 @@ where
                 self.value = Some(v);
                 v
             }
+        }
+    }
+}
+
+fn generate_workout(intensity: u32, random_number: u32) {
+    let mut expensive_result = Cacher::new(|num| {
+        println!("calculating slowly...");
+        thread::sleep(Duration::from_secs(2));
+        num
+    });
+
+    if intensity < 25 {
+        println!("Today, do {} pushups!", expensive_result.value(intensity));
+        println!("Next, do {} situps!", expensive_result.value(intensity));
+    } else {
+        if random_number == 3 {
+            println!("Take a break today! Remember to stay hydrated!");
+        } else {
+            println!(
+                "Today, run for {} minutes!",
+                expensive_result.value(intensity)
+            );
         }
     }
 }

@@ -10,7 +10,7 @@ fn simulated_expensive_calculation(intensity: u32) -> u32 {
 }
 
 fn generate_workout(intensity: u32, random_number: u32) {
-    let expensive_closure = |num| {
+    let expensive_closure = |num: u32| -> u32 {
         println!("calculating slowly...");
         thread::sleep(Duration::from_secs(2));
         num
@@ -27,6 +27,15 @@ fn generate_workout(intensity: u32, random_number: u32) {
         }
     }
 }
+
+// Closure type inference and annotation.
+// Closures don’t require you to annotate the types of the parameters or the
+// return value like fn functions do.
+// Type annotations are required on functions because they are part of an
+// explicit interface exposed to your users.
+// Closures are usually short and only relevant within a narrow context where
+// the compiler is reliably able to infer the types of the parameters and return
+// type.
 
 pub fn sample() {
     let simulated_user_specified_value = 10;

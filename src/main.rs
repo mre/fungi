@@ -19,6 +19,7 @@ mod traits;
 mod lifetimes;
 mod testing;
 mod closures;
+mod iterators;
 
 fn main() {
     types::sample();
@@ -44,6 +45,7 @@ fn main() {
     lifetimes::sample();
     testing::sample();
     closures::sample();
+    iterators::sample();
 }
 
 #[cfg(test)]

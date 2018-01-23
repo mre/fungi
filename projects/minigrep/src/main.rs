@@ -24,12 +24,12 @@ fn main() {
     //   then it calls op with its value.
     let config = Config::new(&args).unwrap_or_else(|err| {
         // err: &str
-        eprint!("Problem parsing arguments: {}\n\n", err);
+        eprint!("Problem parsing arguments: {}\n", err);
         process::exit(1);
     });
 
     if let Err(e) = minigrep::run(config) {
-        println!("Application error: {}", e);
+        eprint!("Application error: {}\n", e);
 
         process::exit(1);
     }

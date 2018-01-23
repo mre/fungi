@@ -1,3 +1,5 @@
+// https://doc.rust-lang.org/stable/book/second-edition/ch13-02-iterators.html
+
 // Iterators
 // Definition of the Iterator Trait:
 // trait Iterator {
@@ -15,6 +17,12 @@
 // method, which returns one item of the iterator at a time wrapped in Some and,
 // when iteration is over, it returns None.
 
+// Note that we needed to make v1_iter mutable: calling the next method on an
+// iterator changes state that keeps track of where it is in the sequence. Put
+// another way, this code consumes, or uses up, the iterator. Each call to next
+// eats up an item from the iterator. We didn’t need to make v1_iter mutable
+// when we used a for loop because the loop took ownership of v1_iter and made
+// it mutable behind the scenes.
 #[test]
 fn iterator_demonstration() {
     let v1 = vec![1, 2, 3];
@@ -36,3 +44,8 @@ pub fn sample() {
         println!("Got: {}", val);
     }
 }
+
+// The iter method produces an iterator over immutable references. If we want to
+// create an iterator that takes ownership of v1 and returns owned values, we
+// can call into_iter instead of iter. Similarly, if we want to iterate over
+// mutable references, we can call iter_mut instead of iter.

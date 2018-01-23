@@ -43,9 +43,40 @@ pub fn sample() {
     for val in v1_iter {
         println!("Got: {}", val);
     }
+
+    one();
 }
 
 // The iter method produces an iterator over immutable references. If we want to
 // create an iterator that takes ownership of v1 and returns owned values, we
 // can call into_iter instead of iter. Similarly, if we want to iterate over
 // mutable references, we can call iter_mut instead of iter.
+
+// Methods that call next are called consuming adaptors, because calling them
+// uses up the iterator. One example is the sum method, which takes ownership of
+// the iterator and iterates through the items by repeatedly calling next, thus
+// consuming the iterator.
+
+#[test]
+fn iterator_sum() {
+    let v1 = vec![1, 2, 3];
+    let v1_iter = v1.iter();
+    let total: i32 = v1_iter.sum();
+    assert_eq!(total, 6);
+    // We aren’t allowed to use v1_iter after the call to sum since sum takes
+    // ownership of the iterator we call it on.
+}
+
+// Other methods defined on the Iterator trait, known as iterator adaptors,
+// allow us to change iterators into different kind of iterators.
+// We can chain multiple calls to iterator adaptors to perform complex actions
+// in a readable way. Because all iterators are lazy, however, we have to call
+// one of the consuming adaptor methods in order to get results from calls to
+// iterator adaptors.
+
+fn one() {
+    let v1: Vec<i32> = vec![1, 2, 3];
+    let v1_iter = v1.iter();
+    let v2: Vec<_> = v1_iter.map(|x| x + 1).collect();
+    assert_eq!(v2, vec![2, 3, 4]);
+}

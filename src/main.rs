@@ -18,6 +18,7 @@ mod ref_and_ampersand;
 mod traits;
 mod lifetimes;
 mod testing;
+mod closures;
 
 fn main() {
     types::sample();
@@ -42,6 +43,7 @@ fn main() {
     traits::sample();
     lifetimes::sample();
     testing::sample();
+    closures::sample();
 }
 
 #[cfg(test)]

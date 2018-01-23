@@ -41,6 +41,10 @@ fn simulated_expensive_calculation(intensity: u32) -> u32 {
 // one of the traits Fn, FnMut, or FnOnce.
 // Adding types: our closure has a parameter of type u32 and returns an u32, so
 // the trait bound we specify is Fn(u32) -> u32.
+//
+// Closures have an additional ability that functions don’t have, however: they
+// can capture their environment and access variables from the scope in which
+// they’re defined.
 
 // the definition of the Cacher struct that holds a closure and an optional
 // result value.
@@ -116,4 +120,41 @@ pub fn sample() {
     let simulated_random_number = 7;
 
     generate_workout(simulated_user_specified_value, simulated_random_number);
+
+    // Closures can capture their environment.
+    // even though x is not one of the parameters of equal_to_x, the equal_to_x
+    // closure is allowed to use the x variable that’s defined in the same scope
+    // that equal_to_x is defined in.
+    {
+        let x = 4;
+        let equal_to_x = |z| z == x;
+        let y = 4;
+        assert!(equal_to_x(y));
+    }
+    // Closures can capture values from their environment in three ways: taking
+    // ownership, borrowing immutably, and borrowing mutably. These are encoded
+    // in the three Fn traits as follows:
+
+    // - FnOnce consumes the variables it captures from its enclosing scope,
+    //   known as the closure’s environment. In order to consume the captured
+    //   variables, the closure must take ownership of these variables and move
+    //   them into the closure when it is defined. The Once part of the name is
+    //   because the closure can’t take ownership of the same variables more
+    //   than once, so it can only be called one time.
+    // - Fn borrows values from the environment immutably.
+    // - FnMut can change the environment since it mutably borrows values.
+
+    // If we want to force the closure to take ownership of the values it uses
+    // in the environment, we can use the move keyword before the parameter
+    // list.
+
+    // This example doesn't compile because of the move.
+    // let x = vec![1, 2, 3];
+    // let equal_to_x = move |z| z == x;
+    // println!("can't use x here: {:?}", x);
+    // let y = vec![1, 2, 3];
+    // assert!(equal_to_x(y));
+    //
+    // 4 |     let equal_to_x = move |z| z == x;
+    //   |                      -------- value moved (into closure) here
 }

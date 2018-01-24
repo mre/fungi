@@ -4,7 +4,7 @@ use std::error::Error;
 // https://doc.rust-lang.org/std/process/fn.exit.html
 use std::fs::File;
 // https://doc.rust-lang.org/std/io/prelude/index.html
-// the std::io module has its own prelude of common things you’ll need when
+// the std::io module has its own prelude of common things you'll need when
 // working with I/O.
 use std::io::prelude::*;
 
@@ -56,7 +56,7 @@ impl Config {
 }
 
 // just know that Box<Error> means the function will return a type that
-// implements the Error trait, but we don’t have to specify what particular type
+// implements the Error trait, but we don't have to specify what particular type
 // the return value will be. This gives us flexibility to return error values
 // that may be of different types in different error cases.
 pub fn run(config: Config) -> Result<(), Box<Error>> {
@@ -78,28 +78,33 @@ pub fn run(config: Config) -> Result<(), Box<Error>> {
     }
 
     // This Ok(()) syntax may look a bit strange at first, but using () like
-    // this is the idiomatic way to indicate that we’re calling run for its side
-    // effects only; it doesn’t return a value we need.
+    // this is the idiomatic way to indicate that we're calling run for its side
+    // effects only; it doesn't return a value we need.
     Ok(())
 }
 
-// In this case, we’re indicating that the returned vector should contain string
+// In this case, we're indicating that the returned vector should contain string
 // slices that reference slices of the argument contents (rather than the
 // argument query).
-// In other words, we’re telling Rust that the data returned by the search
+// In other words, we're telling Rust that the data returned by the search
 // function will live as long as the data passed into the search function in the
 // contents argument. This is important! The data referenced by a slice needs to
 // be valid in order for the reference to be valid; if the compiler assumed we
 // were making string slices of query rather than contents, it would do its
 // safety checking incorrectly.
+//
+// We can write this code in a much more concise way using iterator adaptor
+// methods. This also lets us avoid having a mutable intermediate results
+// vector. The functional programming style prefers to minimize the amount of
+// mutable state to make code clearer. Removing the mutable state might make it
+// easier for us to make a future enhancement to make searching happen in
+// parallel, since we wouldn't have to manage concurrent access to the results
+// vector.
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    let mut results = Vec::new();
-    for line in contents.lines() {
-        if line.contains(query) {
-            results.push(line);
-        }
-    }
-    results
+    contents
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect()
 }
 
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {

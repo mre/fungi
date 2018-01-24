@@ -149,3 +149,36 @@ Trust me.";
         );
     }
 }
+
+// iterators, while a high-level abstraction, get compiled down to roughly the
+// same code as if you'd written the lower-level code yourself. Iterators are
+// one of Rust's zero-cost abstractions, by which we mean using the abstraction
+// imposes no additional runtime overhead, in the same way that Bjarne
+// Stroustrup, the original designer and implementor of C++, defines
+// zero-overhead:
+//
+// In general, C++ implementations obey the zero-overhead principle: What you
+// don't use, you don't pay for. And further: What you do use, you couldn't hand
+// code any better.
+//
+//     Bjarne Stroustrup "Foundations of C++"
+
+// an example of iterators usage, that is translated in assembly code where
+// there's no loop at all corresponding to the iteration over the values in
+// coefficients: Rust knows that there are twelve iterations, so it “unrolls”
+// the loop. Unrolling is an optimization that removes the overhead of the loop
+// controlling code and instead generates repetitive code for each iteration of
+// the loop.
+
+// let buffer: &mut [i32];
+// let coefficients: [i64; 12];
+// let qlp_shift: i16;
+//
+// for i in 12..buffer.len() {
+//     let prediction = coefficients.iter()
+//         .zip(&buffer[i - 12..i])
+//         .map(|(&c, &s)| c * s as i64)
+//         .sum::<i64>() >> qlp_shift;
+//     let delta = buffer[i];
+//     buffer[i] = prediction as i32 + delta;
+// }

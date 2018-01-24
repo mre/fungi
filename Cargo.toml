@@ -6,3 +6,12 @@ authors = ["Edoardo Rossi <edd.rossi@gmail.com>"]
 [dependencies]
 # https://crates.io/crates/rand
 rand = "0.4.0"
+
+# https://doc.rust-lang.org/cargo/
+# The opt-level setting controls how many optimizations Rust will apply to your
+# code, with a range of zero to three.
+[profile.dev]
+opt-level = 1
+
+[profile.release]
+opt-level = 3

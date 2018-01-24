@@ -149,3 +149,33 @@ impl Iterator for Counter {
         }
     }
 }
+
+#[test]
+fn calling_next_directly() {
+    let mut counter = Counter::new();
+
+    assert_eq!(counter.next(), Some(1));
+    assert_eq!(counter.next(), Some(2));
+    assert_eq!(counter.next(), Some(3));
+    assert_eq!(counter.next(), Some(4));
+    assert_eq!(counter.next(), Some(5));
+    assert_eq!(counter.next(), None);
+}
+
+// take the values produced by an instance of Counter, pair them with values
+// produced by another Counter instance after skipping the first value, multiply
+// each pair together, keep only those results that are divisible by three, and
+// add all the resulting values together.
+#[test]
+fn using_other_iterator_trait_methods() {
+    let sum: u32 = Counter::new()
+        .zip(Counter::new().skip(1))
+        .map(|(a, b)| a * b)
+        .filter(|x| x % 3 == 0)
+        .sum();
+    assert_eq!(18, sum);
+}
+
+// Note that zip produces only four pairs; the theoretical fifth pair (5, None)
+// is never produced because zip returns None when either of its input iterators
+// return None.

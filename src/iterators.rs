@@ -87,6 +87,7 @@ struct Shoe {
     style: String,
 }
 
+#[allow(dead_code)]
 fn shoes_in_my_size(shoes: Vec<Shoe>, shoe_size: u32) -> Vec<Shoe> {
     shoes.into_iter().filter(|s| s.size == shoe_size).collect()
 }
@@ -126,11 +127,13 @@ fn filters_by_size() {
 }
 
 // let’s create an iterator that will only ever count from 1 to 5
+#[allow(dead_code)]
 struct Counter {
     count: u32,
 }
 
 impl Counter {
+    #[allow(dead_code)]
     fn new() -> Counter {
         Counter { count: 0 }
     }

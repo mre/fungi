@@ -1,5 +1,7 @@
 use std::env;
 use std::error::Error;
+// https://doc.rust-lang.org/std/macro.eprint.html
+// https://doc.rust-lang.org/std/process/fn.exit.html
 use std::fs::File;
 // https://doc.rust-lang.org/std/io/prelude/index.html
 // the std::io module has its own prelude of common things you’ll need when
@@ -20,18 +22,29 @@ impl Config {
     // The text of this string is stored directly in the binary of your program
     // and the binary of your program is always available. Therefore, the
     // lifetime of all string literals is 'static.
-    pub fn new(args: &[String]) -> Result<Config, &'static str> {
-        // https://doc.rust-lang.org/std/macro.eprint.html
-        // https://doc.rust-lang.org/std/process/fn.exit.html
-        if args.len() < 3 {
-            return Err("not enough arguments");
-        }
+    pub fn new(mut args: std::env::Args) -> Result<Config, &'static str> {
+        // we can change the new function to take ownership of an iterator as
+        // its argument instead of borrowing a slice. We'll use the iterator
+        // functionality instead of the code that checks the length of the slice
+        // and indexes into specific locations.
+        // Once Config::new takes ownership of the iterator and stops using
+        // indexing operations that borrow, we can move the String values from
+        // the iterator into Config rather than calling clone and making a new
+        // allocation.
 
-        // let program_name = args[0].clone();
-        // There’s a tendency among many Rustaceans to avoid using clone to fix
-        // ownership problems because of its runtime cost.
-        let query = args[1].clone();
-        let filename = args[2].clone();
+        // Skip the position 0: the program name
+        args.next();
+
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a query string"),
+        };
+
+        let filename = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a file name"),
+        };
+
         let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
 
         Ok(Config {

@@ -247,26 +247,26 @@ fn four() {
 }
 
 // The Drop Trait runs code on Cleanup
+// The second trait important to the smart pointer pattern is Drop, which
+// specify the code to run when a value goes out of scope.
+// The Drop trait requires us to implement one method named drop that
+// takes a mutable reference to self.
+
+// A CustomSmartPointer struct whose only custom functionality is that it
+// will print out Dropping CustomSmartPointer! when the instance goes out of
+// scope.
+
+struct CustomSmartPointer {
+    data: String,
+}
+
+impl Drop for CustomSmartPointer {
+    fn drop(&mut self) {
+        println!("Dropping CustomSmartPointer with data `{}`!", self.data);
+    }
+}
+
 fn five() {
-    // The second trait important to the smart pointer pattern is Drop, which
-    // specify the code to run when a value goes out of scope.
-    // The Drop trait requires us to implement one method named drop that
-    // takes a mutable reference to self.
-
-    // A CustomSmartPointer struct whose only custom functionality is that it
-    // will print out Dropping CustomSmartPointer! when the instance goes out of
-    // scope.
-
-    struct CustomSmartPointer {
-        data: String,
-    }
-
-    impl Drop for CustomSmartPointer {
-        fn drop(&mut self) {
-            println!("Dropping CustomSmartPointer with data `{}`!", self.data);
-        }
-    }
-
     // The Drop trait is included in the prelude, so we don’t need to import it.
     // The body of the drop function is where you’d put any logic that you
     // wanted to run when an instance of your type goes out of scope.
@@ -284,7 +284,29 @@ fn five() {
     // CustomSmartPointers created.
     // Dropping CustomSmartPointer with data `other stuff`!
     // Dropping CustomSmartPointer with data `my stuff`!
-    
+}
+
+// Drop a value early with std::mem::drop
+// One example is when using smart pointers that manage locks; you may want to
+// force the drop method that releases the lock to run so that other code in the
+// same scope can acquire the lock.
+fn six() {
+    // let c = CustomSmartPointer { data: String::from("some data") };
+    // println!("CustomSmartPointer created.");
+    // c.drop();
+    // error[E0040]: explicit use of destructor method
+    // println!("CustomSmartPointer dropped before the end of main.");
+    // this would be a double free error since Rust would be trying to clean up
+    // the same value twice.
+    //
+    // The std::mem::drop function is different than the drop method in the Drop
+    // trait. We call it by passing the value we want to force to be dropped
+    // early as an argument. std::mem::drop is in the prelude.
+    let c = CustomSmartPointer { data: String::from("some data") };
+    println!("CustomSmartPointer created.");
+    drop(c);
+    println!("CustomSmartPointer dropped before the end of main.");
+
 }
 
 pub fn sample() {

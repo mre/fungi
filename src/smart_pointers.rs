@@ -53,19 +53,19 @@ fn one() {
 }
 
 // Rust needs to know at compile time how much space a type takes up. One kind
-// of type whose size can’t be known at compile time is a recursive type where a
+// of type whose size can't be known at compile time is a recursive type where a
 // value can have as part of itself another value of the same type.
 
 // A cons list is a list where each item in the list contains two things: the
 // value of the current item and the next item. The last item in the list
 // contains only a value called Nil without a next item.
 fn two() {
-    enum List {
-        Cons(i32, List),
-        Nil,
-    }
+    // enum List {
+    //     Cons(i32, List),
+    //     Nil,
+    // }
     // use List::{Cons, Nil};
-    let list = Cons(1, Cons(2, Cons(3, Nil)));
+    // let list = Cons(1, Cons(2, Cons(3, Nil)));
     // error[E0072]: recursive type `List` has infinite size
 
     enum Message {
@@ -74,6 +74,31 @@ fn two() {
         Write(String),
         ChangeColor(i32, i32, i32),
     }
+    // To determine how much space to allocate for a Message value, Rust goes
+    // through each of the variants to see which variant needs the most space.
+    // Rust sees that Message::Quit doesn't need any space, Message::Move needs
+    // enough space to store two i32 values, and so forth. Since only one
+    // variant will end up being used, the most space a Message value will need
+    // is the space it would take to store the largest of its variants.
+
+    // Using Box<T> to Get a Recursive Type with a Known Size
+    // help: insert indirection (e.g., a `Box`, `Rc`, or `&`) at some point to
+    //     make `List` representable
+    enum List {
+        Cons(i32, Box<List>),
+        Nil,
+    }
+
+    use List::{Cons, Nil};
+
+    fn main() {
+        let list = Cons(1,
+                        Box::new(Cons(2,
+                                      Box::new(Cons(3,
+                                                    Box::new(Nil))))));
+    }
+    // The Cons variant will need the size of an i32 plus the space to store the
+    // box's pointer data. 
 }
 
 pub fn sample() {

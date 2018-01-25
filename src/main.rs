@@ -20,6 +20,7 @@ mod lifetimes;
 mod testing;
 mod closures;
 mod iterators;
+mod smart_pointers;
 
 fn main() {
     types::sample();
@@ -46,6 +47,7 @@ fn main() {
     testing::sample();
     closures::sample();
     iterators::sample();
+    smart_pointers::sample();
 }
 
 #[cfg(test)]

@@ -89,14 +89,12 @@ fn two() {
         Nil,
     }
 
-    use List::{Cons, Nil};
-
-    fn main() {
-        let list = Cons(1,
-                        Box::new(Cons(2,
-                                      Box::new(Cons(3,
-                                                    Box::new(Nil))))));
-    }
+    // extern crate List;
+    // use List::{Cons, Nil};
+    let _list = List::Cons(1,
+                           Box::new(List::Cons(2,
+                                               Box::new(List::Cons(3,
+                                                                   Box::new(List::Nil))))));
     // The Cons variant will need the size of an i32 plus the space to store the
     // box's pointer data. 
     // Boxes only provide the indirection and heap allocation; they don't have
@@ -109,6 +107,24 @@ fn two() {
     // implementation.
 }
 
+// Implementing Deref trait allows us to customize the behavior of the
+// dereference operator *(as opposed to the multiplication or glob operator).
+fn three() {
+    // regular dereference:
+    let x = 5;
+    let y = &x;
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+    
+    // Using Box<T> like a reference:
+    let x = 5;
+    let y = Box::new(x);
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+}
+
 pub fn sample() {
     one();
+    two();
+    three();
 }

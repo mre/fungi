@@ -68,6 +68,7 @@ fn two() {
     // let list = Cons(1, Cons(2, Cons(3, Nil)));
     // error[E0072]: recursive type `List` has infinite size
 
+    #[allow(dead_code)]
     enum Message {
         Quit,
         Move { x: i32, y: i32 },
@@ -123,8 +124,52 @@ fn three() {
     assert_eq!(5, *y);
 }
 
+// Defining our own smart pointer
+fn four() {
+    struct MyBox<T>(T);
+
+    impl<T> MyBox<T> {
+        fn new(x: T) -> MyBox<T> {
+            MyBox(x)
+        }
+    } 
+
+    // let x = 5;
+    // let y = MyBox::new(x);
+    // assert_eq!(5, x);
+    // assert_eq!(5, *y);
+    // error: type `MyBox<{integer}>` cannot be dereferenced
+
+    // Implementing Deref Trait defines how to treat a type like a reference.
+    // The Deref trait, provided by the standard library, requires implementing
+    // one method named deref that borrows self and returns a reference to the
+    // inner data.
+
+    use std::ops::Deref;
+
+    impl<T> Deref for MyBox<T> {
+        type Target = T;
+
+        fn deref(&self) -> &T {
+            // deref returns a reference to the value we want to access with the
+            // * operator.
+            &self.0
+        }
+    }
+
+    // The type Target = T; syntax defines an associated type for this trait to
+    // use. Associated types are a slightly different way of declaring a generic
+    // parameter.
+
+    let x = 5;
+    let y = MyBox::new(x);
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+}
+
 pub fn sample() {
     one();
     two();
     three();
+    four();
 }

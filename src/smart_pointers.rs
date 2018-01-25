@@ -1,4 +1,7 @@
 // https://doc.rust-lang.org/stable/book/second-edition/ch15-00-smart-pointers.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch15-01-box.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch15-02-deref.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch15-03-drop.html
 
 // Smart Pointers
 // Smart pointers are data structures that act like a pointer.
@@ -165,6 +168,123 @@ fn four() {
     let y = MyBox::new(x);
     assert_eq!(5, x);
     assert_eq!(5, *y);
+
+    // Without the Deref trait, the compiler can only dereference & references.
+    // These two are equivalent:
+    // *y == *(y.deref())
+    // The reason the deref method returns a reference to a value, and why the
+    // plain dereference outside the parentheses in *(y.deref()) is still
+    // necessary, is because of ownership. If the deref method returned the
+    // value directly instead of a reference to the value, the value would be
+    // moved out of self.
+
+    // Deref coercion is a convenience that Rust performs on arguments to
+    // functions and methods. Deref coercion converts a reference to a type that
+    // implements Deref into a reference to a type that Deref can convert the
+    // original type into. Deref coercion happens automatically when we pass a
+    // reference to a value of a particular type as an argument to a function or
+    // method that doesn't match the type of the parameter in the function or
+    // method definition, and there's a sequence of calls to the deref method
+    // that will convert the type we provided into the type that the parameter
+    // needs.
+
+    // Deref coercion was added to Rust so that programmers writing function and
+    // method calls don't need to add as many explicit references and
+    // dereferences with & and *. This feature also lets us write more code that
+    // can work for either references or smart pointers.
+
+    fn hello(name: &str) {
+        println!("Hello, {}!", name);
+    }
+
+    // Deref coercion makes it possible for us to call hello with a reference to
+    // a value of type MyBox<String>.
+
+    let m = MyBox::new(String::from("Rust"));
+    hello(&m);
+
+    // The &m dereferences to MyBox<String> m.
+    // Rust can turn &MyBox<String> into &String by calling deref.
+    // The standard library provides an implementation of Deref on String that
+    // returns a string slice, Rust calls deref again to turn the &String into
+    // &str, which matches the hello function's definition.
+
+    // Without deref coercion this would have been the code:
+    let m = MyBox::new(String::from("Rust"));
+    hello(&(*m)[..]);
+    // The (*m) is dereferencing the MyBox<String> into a String. Then the & and
+    // [..] are taking a string slice of the String that is equal to the whole
+    // string to match the signature of hello.
+
+    // How Deref Coercion Interacts with Mutability
+    //
+    // Similar to how we use the Deref trait to override * on immutable
+    // references, Rust provides a DerefMut trait for overriding * on mutable
+    // references.
+    // 
+    // Rust does deref coercion when it finds types and trait implementations in
+    // three cases:
+    // 
+    // - From &T to &U when T: Deref<Target=U>.
+    // - From &mut T to &mut U when T: DerefMut<Target=U>.
+    // - From &mut T to &U when T: Deref<Target=U>.
+    //
+    // The first two cases are the same except for mutability. The first case
+    // says that if you have a &T, and T implements Deref to some type U, you
+    // can get a &U transparently. The second case states that the same deref
+    // coercion happens for mutable references.
+    // 
+    // The last case is trickier: Rust will also coerce a mutable reference to
+    // an immutable one. The reverse is not possible. Because of the borrowing
+    // rules, if you have a mutable reference, that mutable reference must be
+    // the only reference to that data (otherwise, the program wouldn't
+    // compile). Converting one mutable reference to one immutable reference
+    // will never break the borrowing rules. Converting an immutable reference
+    // to a mutable reference would require that there was only one immutable
+    // reference to that data, and the borrowing rules don't guarantee that.
+    // Therefore, Rust can't make the assumption that converting an immutable
+    // reference to a mutable reference is possible.
+}
+
+// The Drop Trait runs code on Cleanup
+fn five() {
+    // The second trait important to the smart pointer pattern is Drop, which
+    // specify the code to run when a value goes out of scope.
+    // The Drop trait requires us to implement one method named drop that
+    // takes a mutable reference to self.
+
+    // A CustomSmartPointer struct whose only custom functionality is that it
+    // will print out Dropping CustomSmartPointer! when the instance goes out of
+    // scope.
+
+    struct CustomSmartPointer {
+        data: String,
+    }
+
+    impl Drop for CustomSmartPointer {
+        fn drop(&mut self) {
+            println!("Dropping CustomSmartPointer with data `{}`!", self.data);
+        }
+    }
+
+    // The Drop trait is included in the prelude, so we don’t need to import it.
+    // The body of the drop function is where you’d put any logic that you
+    // wanted to run when an instance of your type goes out of scope.
+
+    let _c = CustomSmartPointer { data: String::from("my stuff") };
+    let _d = CustomSmartPointer { data: String::from("other stuff") };
+    println!("CustomSmartPointers created.");
+
+    // we create a new instance of CustomSmartPointer and then print
+    // out CustomSmartPointer created.. At the end of main, our instance of
+    // CustomSmartPointer will go out of scope, and Rust will call the code we
+    // put in the drop method, printing our final message. Note that we didn’t
+    // need to call the drop method explicitly.
+
+    // CustomSmartPointers created.
+    // Dropping CustomSmartPointer with data `other stuff`!
+    // Dropping CustomSmartPointer with data `my stuff`!
+    
 }
 
 pub fn sample() {
@@ -172,4 +292,5 @@ pub fn sample() {
     two();
     three();
     four();
+    five();
 }

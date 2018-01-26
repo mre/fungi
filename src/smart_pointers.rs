@@ -570,7 +570,40 @@ mod tests {
     }
 }
 
+// A common way to use RefCell<T> is in combination with Rc<T>. Recall that
+// Rc<T> lets us have multiple owners of some data, but it only gives us
+// immutable access to that data. If we have an Rc<T> that holds a RefCell<T>,
+// then we can get a value that can have multiple owners and that we can mutate.
+//
+// using a RefCell<T> in the Cons definition, we're allowed to modify the value
+// stored in all the lists
+#[derive(Debug)]
+enum ListRefCell {
+    Cons(Rc<RefCell<i32>>, Rc<ListRefCell>),
+    Nil,
+}
+
+use self::ListRefCell::{Cons, Nil};
+use std::rc::Rc;
+use std::cell::RefCell;
+
 fn nine() {
+    let value = Rc::new(RefCell::new(5));
+    let a = Rc::new(Cons(Rc::clone(&value), Rc::new(Nil)));
+    let b = Cons(Rc::new(RefCell::new(6)), Rc::clone(&a));
+    let c = Cons(Rc::new(RefCell::new(10)), Rc::clone(&a));
+
+    // We create a value that's an instance of Rc<RefCell<i32> and store it in a
+    // variable named value so we can access it directly later.
+    *value.borrow_mut() += 10;
+    println!("a after = {:?}", a);
+    println!("b after = {:?}", b);
+    println!("c after = {:?}", c);
+    // a after = Cons(RefCell { value: 15 }, Nil)
+    // b after = Cons(RefCell { value: 6 }, Cons(RefCell { value: 15 }, Nil))
+    // c after = Cons(RefCell { value: 10 }, Cons(RefCell { value: 15 }, Nil))
+}
+
 }
 
 pub fn sample() {

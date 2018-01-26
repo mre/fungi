@@ -267,8 +267,8 @@ impl Drop for CustomSmartPointer {
 }
 
 fn five() {
-    // The Drop trait is included in the prelude, so we don’t need to import it.
-    // The body of the drop function is where you’d put any logic that you
+    // The Drop trait is included in the prelude, so we don't need to import it.
+    // The body of the drop function is where you'd put any logic that you
     // wanted to run when an instance of your type goes out of scope.
 
     let _c = CustomSmartPointer { data: String::from("my stuff") };
@@ -278,7 +278,7 @@ fn five() {
     // we create a new instance of CustomSmartPointer and then print
     // out CustomSmartPointer created.. At the end of main, our instance of
     // CustomSmartPointer will go out of scope, and Rust will call the code we
-    // put in the drop method, printing our final message. Note that we didn’t
+    // put in the drop method, printing our final message. Note that we didn't
     // need to call the drop method explicitly.
 
     // CustomSmartPointers created.

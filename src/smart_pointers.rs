@@ -2,6 +2,8 @@
 // https://doc.rust-lang.org/stable/book/second-edition/ch15-01-box.html
 // https://doc.rust-lang.org/stable/book/second-edition/ch15-02-deref.html
 // https://doc.rust-lang.org/stable/book/second-edition/ch15-03-drop.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch15-04-rc.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch15-05-interior-mutability.html
 
 // Smart Pointers
 // Smart pointers are data structures that act like a pointer.
@@ -100,7 +102,7 @@ fn two() {
                                                Box::new(List::Cons(3,
                                                                    Box::new(List::Nil))))));
     // The Cons variant will need the size of an i32 plus the space to store the
-    // box's pointer data. 
+    // box's pointer data.
     // Boxes only provide the indirection and heap allocation; they don't have
     // any other special abilities; they also don't have any performance
     // overhead.
@@ -119,7 +121,7 @@ fn three() {
     let y = &x;
     assert_eq!(5, x);
     assert_eq!(5, *y);
-    
+
     // Using Box<T> like a reference:
     let x = 5;
     let y = Box::new(x);
@@ -135,7 +137,7 @@ fn four() {
         fn new(x: T) -> MyBox<T> {
             MyBox(x)
         }
-    } 
+    }
 
     // let x = 5;
     // let y = MyBox::new(x);
@@ -221,10 +223,10 @@ fn four() {
     // Similar to how we use the Deref trait to override * on immutable
     // references, Rust provides a DerefMut trait for overriding * on mutable
     // references.
-    // 
+    //
     // Rust does deref coercion when it finds types and trait implementations in
     // three cases:
-    // 
+    //
     // - From &T to &U when T: Deref<Target=U>.
     // - From &mut T to &mut U when T: DerefMut<Target=U>.
     // - From &mut T to &U when T: Deref<Target=U>.
@@ -233,7 +235,7 @@ fn four() {
     // says that if you have a &T, and T implements Deref to some type U, you
     // can get a &U transparently. The second case states that the same deref
     // coercion happens for mutable references.
-    // 
+    //
     // The last case is trickier: Rust will also coerce a mutable reference to
     // an immutable one. The reverse is not possible. Because of the borrowing
     // rules, if you have a mutable reference, that mutable reference must be
@@ -371,7 +373,201 @@ fn eight() {
     // reading only, via immutable references. If Rc<T> allowed us to have
     // multiple mutable references too, we'd be able to violate one of the the
     // borrowing rules: multiple mutable borrows to the same place can cause
-    // data races and inconsistencies. 
+    // data races and inconsistencies.
+}
+
+// RefCell<T> and the Interior Mutability Pattern
+//
+// Interior mutability is a design pattern in Rust for allowing you to mutate
+// data even when there are immutable references to that data, normally
+// disallowed by the borrowing rules. To do so, the pattern uses unsafe code
+// inside a data structure to bend Rust's usual rules around mutation and
+// borrowing.
+//
+// Enforcing Borrowing Rules at Runtime with RefCell<T>
+// Unlike Rc<T>, the RefCell<T> type represents single ownership over the data
+// it holds. So, what makes RefCell<T> different than a type like Box<T>? Let's
+// recall the borrowing rules:
+//
+// At any given time, you can have either but not both of:
+// One mutable reference.
+// Any number of immutable references.
+// References must always be valid.
+//
+// With references and Box<T>, the borrowing rules' invariants are enforced at
+// compile time. With RefCell<T>, these invariants are enforced at runtime. With
+// references, if you break these rules, you'll get a compiler error. With
+// RefCell<T>, if you break these rules, you'll get a panic!.
+//
+// To recap the reasons to choose Box<T>, Rc<T>, or RefCell<T>:
+//
+// - Rc<T> enables multiple owners of the same data; Box<T> and RefCell<T> have
+//   single owners.
+// - Box<T> allows immutable or mutable borrows checked at compile time; Rc<T>
+//   only allows immutable borrows checked at compile time; RefCell<T> allows
+//   immutable or mutable borrows checked at runtime.
+// - Because RefCell<T> allows mutable borrows checked at runtime, we can mutate
+//   the value inside the RefCell<T> even when the RefCell<T> is itself
+//   immutable.
+// - The last reason is the interior mutability pattern.
+
+// A consequence of the borrowing rules is that when we have an immutable
+// value, we can't borrow it mutably. For example, this code won't compile:
+//   let x = 5;
+//   let y = &mut x;
+// If we try to compile this, we'll get this error:
+// error[E0596]: cannot borrow immutable local variable `x` as mutable
+//
+// However, there are situations where it would be useful for a value to be
+// able to mutate itself in its methods, but to other code, the value would
+// appear to be immutable. Code outside the value's methods would not be
+// able to mutate the value. RefCell<T> is one way to get the ability to
+// have interior mutability.
+
+pub trait Messenger {
+    fn send(&self, msg: &str);
+}
+
+pub struct LimitTracker<'a, T: 'a + Messenger> {
+    messenger: &'a T,
+    value: usize,
+    max: usize,
+}
+
+impl<'a, T> LimitTracker<'a, T>
+where T: Messenger {
+    pub fn new(messenger: &T, max: usize) -> LimitTracker<T> {
+        LimitTracker {
+            messenger,
+            value: 0,
+            max,
+        }
+    }
+
+    pub fn set_value(&mut self, value: usize) {
+        self.value = value;
+
+        let percentage_of_max = self.value as f64 / self.max as f64;
+
+        if percentage_of_max >= 0.75 && percentage_of_max < 0.9 {
+            self.messenger.send("Warning: You've used up over 75% of your quota!");
+        } else if percentage_of_max >= 0.9 && percentage_of_max < 1.0 {
+            self.messenger.send("Urgent warning: You've used up over 90% of your quota!");
+        } else if percentage_of_max >= 1.0 {
+            self.messenger.send("Error: You are over your quota!");
+        }
+    }
+}
+
+// the Messenger trait has one method, send, that takes an immutable
+// reference to self and text of the message. we want to test the behavior
+// of the set_value method on the LimitTracker.
+// What we need is a mock object that, instead of actually sending an email
+// or text message when we call send, will only keep track of the messages
+// it's told to send.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // struct MockMessenger {
+    //     sent_messages: Vec<String>,
+    // }
+    //
+    // impl MockMessenger {
+    //     fn new() -> MockMessenger {
+    //         MockMessenger { sent_messages: vec![] }
+    //     }
+    // }
+    //
+    // // This implementation is not accepted by the compiler:
+    // impl Messenger for MockMessenger {
+    //     fn send(&self, message: &str) {
+    //         self.sent_messages.push(String::from(message));
+    //     }
+    // }
+    // error[E0596]: cannot borrow immutable field `self.sent_messages` as mutable
+    //    --> src/lib.rs:46:13
+    //    |
+    // 45 |         fn send(&self, message: &str) {
+    //    |                 ----- use `&mut self` here to make mutable
+    // 46 |             self.sent_messages.push(String::from(message));
+    //    |             ^^^^^^^^^^^^^^^^^^ cannot mutably borrow immutable field
+
+    // This is where interior mutability can help! We're going to store the
+    // sent_messages within a RefCell, and then the send message will be
+    // able to modify sent_messages to store the messages we've seen.
+
+    use std::cell::RefCell;
+
+    struct MockMessenger {
+        sent_messages: RefCell<Vec<String>>,
+    }
+
+    impl MockMessenger {
+        fn new() -> MockMessenger {
+            MockMessenger { sent_messages: RefCell::new(vec![]) }
+        }
+    }
+
+    impl Messenger for MockMessenger {
+        fn send(&self, message: &str) {
+            self.sent_messages.borrow_mut().push(String::from(message));
+        }
+    }
+
+    // When creating immutable and mutable references we use the & and &mut
+    // syntax, respectively. With RefCell<T>, we use the borrow and borrow_mut
+    // methods, which are part of the safe API that belongs to RefCell<T>. The
+    // borrow method returns the smart pointer type Ref, and borrow_mut returns
+    // the smart pointer type RefMut. Both types implement Deref so we can treat
+    // them like regular references.
+
+    #[test]
+    fn it_sends_an_over_75_percent_warning_message() {
+        let mock_messenger = MockMessenger::new();
+        let mut limit_tracker = LimitTracker::new(&mock_messenger, 100);
+
+        limit_tracker.set_value(80);
+
+        assert_eq!(mock_messenger.sent_messages.borrow().len(), 1);
+    }
+
+    struct MockMessengerPanic {
+        sent_messages: RefCell<Vec<String>>,
+    }
+
+    impl MockMessengerPanic {
+        fn new() -> MockMessengerPanic {
+            MockMessengerPanic { sent_messages: RefCell::new(vec![]) }
+        }
+    }
+
+    // Creating two mutable references in the same scope to see that RefCell<T>
+    // will panic
+    impl Messenger for MockMessengerPanic {
+        fn send(&self, message: &str) {
+            let mut one_borrow = self.sent_messages.borrow_mut();
+            let mut two_borrow = self.sent_messages.borrow_mut();
+
+            one_borrow.push(String::from(message));
+            two_borrow.push(String::from(message));
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "already borrowed: BorrowMutError")]
+    fn it_panics_before_sending_an_over_75_percent_warning_message() {
+        let mock_messenger = MockMessengerPanic::new();
+        let mut limit_tracker = LimitTracker::new(&mock_messenger, 100);
+
+        limit_tracker.set_value(80);
+
+        assert_eq!(mock_messenger.sent_messages.borrow().len(), 1);
+    }
+}
+
+fn nine() {
 }
 
 pub fn sample() {
@@ -383,4 +579,5 @@ pub fn sample() {
     six();
     seven();
     eight();
+    nine();
 }

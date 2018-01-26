@@ -672,19 +672,99 @@ fn ten() {
     // println!("a next item = {:?}", a.tail());
 }
 
+// We can also create a weak reference to the value within an Rc instance by
+// calling Rc::downgrade and passing a reference to the Rc. When we call
+// Rc::downgrade, we get a smart pointer of type Weak<T>. The Rc type uses
+// weak_count to keep track of how many Weak<T> references exist.
+// The difference is the weak_count does not need to be 0 in order for the
+// Rc instance to be cleaned up.
+//
+// Because the value that Weak<T> references might have been dropped, in
+// order to do anything with the value that a Weak<T> is pointing to, we
+// have to check to make sure the value is still around. We do this by
+// calling the upgrade method on a Weak<T> instance, which will return an
+// Option<Rc<T>>.
+//
+// We'll get a result of Some if the Rc value has not been dropped yet, and
+// None if the Rc value has been dropped.
+//
+// Creating a Tree Data Structure: a Node with Child Nodes
 fn eleven() {
-    // We can also create a weak reference to the value within an Rc instance by
-    // calling Rc::downgrade and passing a reference to the Rc. When we call
-    // Rc::downgrade, we get a smart pointer of type Weak<T>. The Rc type uses
-    // weak_count to keep track of how many Weak<T> references exist.
-    // The difference is the weak_count does not need to be 0 in order for the
-    // Rc instance to be cleaned up.
+    use std::rc::{Rc, Weak};
+    use std::cell::RefCell;
+
+    // We want to be able to share that ownership with variables so we can
+    // access each Node in the tree directly. To do this, we define the Vec
+    // items to be values of type Rc<Node>. We also want to be able to modify
+    // which nodes are children of another node, so we have a RefCell in
+    // children around the Vec.
+
+    #[derive(Debug)]
+    struct Node {
+        value: i32,
+        children: RefCell<Vec<Rc<Node>>>,
+    }
+
+    let leaf = Rc::new(Node {
+        value: 3,
+        children: RefCell::new(vec![]),
+    });
+
+    let branch = Rc::new(Node {
+        value: 5,
+        children: RefCell::new(vec![Rc::clone(&leaf)]),
+    });
+
+    // the Node in leaf now has two owners: leaf and branch.
+    // We can get from branch to leaf through branch.children, but there's no
+    // way to get from leaf to branch. leaf has no reference to branch and
+    // doesn't know they are related. We'd like leaf to know that branch is its
+    // parent.
     //
-    // Because the value that Weak<T> references might have been dropped, in
-    // order to do anything with the value that a Weak<T> is pointing to, we
-    // have to check to make sure the value is still around. We do this by
-    // calling the upgrade method on a Weak<T> instance, which will return an
-    // Option<Rc<T>>.
+    // we need to add a parent field to our Node struct definition.
+    // it can’t contain an Rc<T> because that would create a reference cycle
+    // if a parent node is dropped, its child nodes should be dropped as well.
+    // However, a child should not own its parent: if we drop a child node, the
+    // parent should still exist. This is a case for weak references.
+    //
+    // So instead of Rc, we’ll make the type of parent use Weak<T>, specifically
+    // a RefCell<Weak<Node>>.
+
+    #[derive(Debug)]
+    struct NodeWithParent {
+        value: i32,
+        parent: RefCell<Weak<NodeWithParent>>,
+        children: RefCell<Vec<Rc<NodeWithParent>>>,
+    }
+
+    // a node will be able to refer to its parent node, but does not own its
+    // parent.
+
+    let leaf = Rc::new(NodeWithParent {
+        value: 3,
+        // leaf starts out without a parent, so we create a new, empty Weak
+        // reference instance.
+        parent: RefCell::new(Weak::new()),
+        children: RefCell::new(vec![]),
+    });
+
+    println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
+    // At this point, when we try to get a reference to the parent of leaf by
+    // using the upgrade method, we get a None value.
+
+    let branch = Rc::new(NodeWithParent {
+        value: 5,
+        parent: RefCell::new(Weak::new()),
+        children: RefCell::new(vec![Rc::clone(&leaf)]),
+    });
+
+    //  Once we have the Node instance in branch, we can modify leaf to give it
+    //  a Weak reference to its parent. We use the borrow_mut method on the
+    //  RefCell in the parent field of leaf, then we use the Rc::downgrade
+    //  function to create a Weak reference to branch from the Rc in branch.
+    *leaf.parent.borrow_mut() = Rc::downgrade(&branch);
+
+    println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
 }
 
 pub fn sample() {
@@ -698,4 +778,5 @@ pub fn sample() {
     eight();
     nine();
     ten();
+    eleven();
 }

@@ -604,6 +604,72 @@ fn nine() {
     // c after = Cons(RefCell { value: 10 }, Cons(RefCell { value: 15 }, Nil))
 }
 
+// The standard library has other types that provide interior mutability, too,
+// like Cell<T>, which is similar except that instead of giving references to
+// the inner value, the value is copied in and out of the Cell<T>. There's also
+// Mutex<T>, which offers interior mutability that's safe to use across threads.
+
+// Reference cycles can leak memory
+#[derive(Debug)]
+enum ListLeak {
+    Cons(i32, RefCell<Rc<ListLeak>>),
+    Nil,
+}
+
+fn ten() {
+    use std::rc::Rc;
+    use std::cell::RefCell;
+    use self::ListLeak::{Cons, Nil};
+
+    impl ListLeak {
+        // The second element in the Cons variant is now RefCell<Rc<List>>,
+        // meaning that instead of having the ability to modify the i32 value
+        // like we did in Listing 15-19, we want to be able to modify which List
+        // a Cons variant is pointing to. We've also added a tail method to make
+        // it convenient for us to access the second item, if we have a Cons
+        // variant.
+        fn tail(&self) -> Option<&RefCell<Rc<ListLeak>>> {
+            match *self {
+                Cons(_, ref item) => Some(item),
+                Nil => None,
+            }
+        }
+    } 
+
+    // This code creates a list in a, a list in b that points to the list in a,
+    // and then modifies the list in a to point to b, which creates a reference
+    // cycle. There are println! statements along the way to show what the
+    // reference counts are at various points in this process.
+
+    let a = Rc::new(Cons(5, RefCell::new(Rc::new(Nil))));
+
+    println!("a initial rc count = {}", Rc::strong_count(&a));
+    println!("a next item = {:?}", a.tail());
+
+    let b = Rc::new(Cons(10, RefCell::new(Rc::clone(&a))));
+
+    println!("a rc count after b creation = {}", Rc::strong_count(&a));
+    println!("b initial rc count = {}", Rc::strong_count(&b));
+    println!("b next item = {:?}", b.tail());
+
+    if let Some(ref link) = a.tail() {
+        *link.borrow_mut() = Rc::clone(&b);
+    }
+
+    println!("b rc count after changing a = {}", Rc::strong_count(&b));
+    println!("a rc count after changing a = {}", Rc::strong_count(&a));
+
+    // a initial rc count = 1
+    // a next item = Some(RefCell { value: Nil })
+    // a rc count after b creation = 2
+    // b initial rc count = 1
+    // b next item = Some(RefCell { value: Cons(5, RefCell { value: Nil }) })
+    // b rc count after changing a = 2
+    // a rc count after changing a = 2
+
+    // Uncomment the next line to see that we have a cycle; it will
+    // overflow the stack
+    // println!("a next item = {:?}", a.tail());
 }
 
 pub fn sample() {

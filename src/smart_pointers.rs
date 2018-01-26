@@ -428,6 +428,7 @@ pub trait Messenger {
     fn send(&self, msg: &str);
 }
 
+#[allow(dead_code)]
 pub struct LimitTracker<'a, T: 'a + Messenger> {
     messenger: &'a T,
     value: usize,
@@ -436,6 +437,7 @@ pub struct LimitTracker<'a, T: 'a + Messenger> {
 
 impl<'a, T> LimitTracker<'a, T>
 where T: Messenger {
+    #[allow(dead_code)]
     pub fn new(messenger: &T, max: usize) -> LimitTracker<T> {
         LimitTracker {
             messenger,
@@ -444,6 +446,7 @@ where T: Messenger {
         }
     }
 
+    #[allow(dead_code)]
     pub fn set_value(&mut self, value: usize) {
         self.value = value;
 

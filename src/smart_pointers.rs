@@ -672,6 +672,21 @@ fn ten() {
     // println!("a next item = {:?}", a.tail());
 }
 
+fn eleven() {
+    // We can also create a weak reference to the value within an Rc instance by
+    // calling Rc::downgrade and passing a reference to the Rc. When we call
+    // Rc::downgrade, we get a smart pointer of type Weak<T>. The Rc type uses
+    // weak_count to keep track of how many Weak<T> references exist.
+    // The difference is the weak_count does not need to be 0 in order for the
+    // Rc instance to be cleaned up.
+    //
+    // Because the value that Weak<T> references might have been dropped, in
+    // order to do anything with the value that a Weak<T> is pointing to, we
+    // have to check to make sure the value is still around. We do this by
+    // calling the upgrade method on a Weak<T> instance, which will return an
+    // Option<Rc<T>>.
+}
+
 pub fn sample() {
     one();
     two();
@@ -682,4 +697,5 @@ pub fn sample() {
     seven();
     eight();
     nine();
+    ten();
 }

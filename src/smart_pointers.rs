@@ -306,7 +306,72 @@ fn six() {
     println!("CustomSmartPointer created.");
     drop(c);
     println!("CustomSmartPointer dropped before the end of main.");
+}
 
+// In order to enable multiple ownership, Rust has a type called Rc<T>. Its
+// name is an abbreviation for reference counting. Reference counting means
+// keeping track of the number of references to a value in order to know if
+// a value is still in use or not. If there are zero references to a value,
+// the value can be cleaned up without any references becoming invalid.
+//
+// Rc<T> is used when we want to allocate some data on the heap for multiple
+// parts of our program to read, and we can't determine at compile time which
+// part will finish using the data last.
+//
+// two lists that both share ownership of a third list.
+fn seven() {
+    #[allow(dead_code)]
+    enum List {
+        Cons(i32, Box<List>),
+        Nil,
+    }
+
+    // use List::{Cons, Nil};
+    {
+        let _a = List::Cons(5, Box::new(List::Cons(10, Box::new(List::Nil))));
+        // let b = Cons(3, Box::new(a));
+        // let c = Cons(4, Box::new(a));
+        // error[E0382]: use of moved value: `a`
+    }
+}
+
+fn eight() {
+    // We could change the definition of Cons to hold references instead, but
+    // then we'd have to specify lifetime parameters. By specifying lifetime
+    // parameters, we'd be specifying that every element in the list will live
+    // at least as long as the list itself. The borrow checker wouldn't let us
+    // compile let a = Cons(10, &Nil); for example, since the temporary Nil
+    // Value would be dropped before a could take a reference to it.
+    // Instead, we'll change our definition of List to use Rc<T> in place of
+    // Box<T>. Every time we call Rc::clone, the reference count to the data
+    // within the Rc is increased, and the data won't be cleaned up unless there
+    // are zero references to it:
+    enum List {
+        Cons(i32, Rc<List>),
+        Nil,
+    }
+
+    // use List::{Cons, Nil};
+    use std::rc::Rc;
+
+    let a = Rc::new(List::Cons(5, Rc::new(List::Cons(10, Rc::new(List::Nil)))));
+    let _b = List::Cons(3, Rc::clone(&a));
+    let _c = List::Cons(4, Rc::clone(&a));
+
+    let a = Rc::new(List::Cons(5, Rc::new(List::Cons(10, Rc::new(List::Nil)))));
+    println!("count after creating a = {}", Rc::strong_count(&a));
+    let _b = List::Cons(3, Rc::clone(&a));
+    println!("count after creating b = {}", Rc::strong_count(&a));
+    {
+        let _c = List::Cons(4, Rc::clone(&a));
+        println!("count after creating c = {}", Rc::strong_count(&a));
+    }
+    println!("count after c goes out of scope = {}", Rc::strong_count(&a));
+    // Rc<T> allows us to share data between multiple parts of our program for
+    // reading only, via immutable references. If Rc<T> allowed us to have
+    // multiple mutable references too, we'd be able to violate one of the the
+    // borrowing rules: multiple mutable borrows to the same place can cause
+    // data races and inconsistencies. 
 }
 
 pub fn sample() {
@@ -315,4 +380,7 @@ pub fn sample() {
     three();
     four();
     five();
+    six();
+    seven();
+    eight();
 }

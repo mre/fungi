@@ -1,4 +1,7 @@
 // https://doc.rust-lang.org/stable/book/second-edition/ch16-00-concurrency.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch16-01-threads.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch16-02-message-passing.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch16-03-shared-state.html
 
 use std::thread;
 
@@ -168,10 +171,88 @@ fn five() {
     }
 }
 
+// A mutex is a concurrency primitive for sharing memory. It's short for "mutual
+// exclusion".
+// https://doc.rust-lang.org/std/sync/struct.Mutex.html
+fn six() {
+    use std::sync::Mutex;
+
+    let m = Mutex::new(5);
+
+    {
+        // To access the data inside the mutex, we use the lock method to
+        // acquire the lock. This call will block the current thread so that it
+        // can't do any work until it's our turn to have the lock.
+        let mut num = m.lock().unwrap();
+        *num = 6;
+    }
+
+    // Mutex<T> is a smart pointer. More accurately, the call to lock returns a
+    // smart pointer called MutexGuard. This smart pointer implements Deref to
+    // point at our inner data, and also has a Drop implementation that releases
+    // the lock automatically when MutexGuard goes out of scope
+
+    println!("m = {:?}", m);
+}
+
+// Sharing a Mutex<T> Between Multiple Threads
+fn seven() {
+    use std::sync::{Arc, Mutex};
+    use std::thread;
+
+    // We were able to give a value multiple owners by using the smart
+    // pointer Rc<T> to create a reference-counted value.
+    // we'll wrap the Mutex<T> in Rc<T>
+    let counter = Arc::new(Mutex::new(0));
+    let mut handles = vec![];
+
+    for _ in 0..10 {
+        // We use thread::spawn and give all the threads the same closure, one
+        // that moves the counter into the thread, acquires a lock on the
+        // Mutex<T> by calling the lock method, and then adds 1 to the value in
+        // the mutex. When a thread finishes running its closure, num will go
+        // out of scope and release the lock so another thread can acquire it.
+        let counter = Arc::clone(&counter);
+        // error[E0277]: the trait bound `std::rc::Rc<std::sync::Mutex<i32>>:
+        // std::marker::Send` is not satisfied.
+        // Unfortunately, Rc<T> is not safe to share across threads.
+        // When Rc<T> manages the reference count, it adds to the count for each
+        // call to clone and subtracts from the count when each clone is
+        // dropped, but it doesn't use any concurrency primitives to make sure
+        // that changes to the count can't be interrupted by another thread.
+        // This could lead to wrong counts: subtle bugs that could in turn lead
+        // to memory leaks or a value being dropped before we're done with it.
+        // there is a type like Rc<T> that's safe to use in concurrent
+        // situations: Arc<T>. The 'a' stands for atomic, meaning it's an
+        // atomically reference counted type.
+        // (thread safety comes with a performance penalty that you only want to
+        // pay when you really need to)
+        let handle = thread::spawn(move || {
+            // error[E0382]: capture of moved value: `counter`
+            // (from the previous iteration of the for loop)
+            // Rust is telling us that we can't move ownership of counter into
+            // multiple threads.
+            let mut num = counter.lock().unwrap();
+
+            *num += 1;
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    // error[E0382]: use of moved value: `counter`
+    println!("Result: {}", *counter.lock().unwrap());
+}
+
 pub fn sample() {
     one();
     two();
     three();
     four();
     five();
+    six();
+    seven();
 }

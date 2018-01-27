@@ -14,8 +14,13 @@ rustup show
 rustup toolchain list
 rustup component add rust-src
 rustup run nightly cargo install rustfmt-nightly --force
-rustup run nightly cargo install rustfmt-nightly --force
 export DYLD_LIBRARY_PATH=$(rustc --print sysroot)/lib:$DYLD_LIBRARY_PATH
+```
+
+```
+rustup update
+rustup toolchain install nightly
+rustup component add rustfmt-preview --toolchain=nightly
 ```
 
 ## Versions

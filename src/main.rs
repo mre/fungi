@@ -21,6 +21,7 @@ mod testing;
 mod closures;
 mod iterators;
 mod smart_pointers;
+mod concurrency;
 
 fn main() {
     types::sample();
@@ -48,6 +49,7 @@ fn main() {
     closures::sample();
     iterators::sample();
     smart_pointers::sample();
+    concurrency::sample();
 }
 
 #[cfg(test)]

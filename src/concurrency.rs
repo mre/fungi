@@ -70,6 +70,11 @@ fn three() {
             Ok(_) => (),
             Err(error) => panic!("There was a problem sending a message: {:?}", error),
         };
+
+        // println!("val is {}", val);
+        // error[E0382]: use of moved value: `val`
+        // The send function takes ownership of its parameter, and when the
+        // value is moved the receiver takes ownership of it.
     });
     // We're again using thread::spawn to create a new thread, and then use move
     // to move tx into the closure so the spawned thread owns tx. The spawned

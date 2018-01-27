@@ -121,6 +121,127 @@ where
 // instance can hold a Vec that contains a Box<Button> as well as a
 // Box<TextField>.
 
-fn one() {}
+// Implementing the Trait
+// Add some types that implement the Draw trait.
+pub struct Button {
+    pub width: u32,
+    pub height: u32,
+    pub label: String,
+}
+
+impl Draw for Button {
+    fn draw(&self) {
+        // Code to actually draw a button
+    }
+}
+
+// extern crate rust_gui;
+// use rust_gui::Draw;
+
+struct SelectBox {
+    width: u32,
+    height: u32,
+    options: Vec<String>,
+}
+
+impl Draw for SelectBox {
+    fn draw(&self) {
+        // Code to actually draw a select box
+    }
+}
+
+// The user of our library can now write their functions to create a Screen
+// instance. To this they can add a SelectBox and a Button by putting each in a
+// Box<T> to become a trait object. They can then call the run method on the
+// Screen instance, which will call draw on each of the components.
+
+// use rust_gui::{Screen, Button};
+
+fn one() {
+    let screen = Screen {
+        components: vec![
+            Box::new(SelectBox {
+                width: 75,
+                height: 10,
+                options: vec![
+                    String::from("Yes"),
+                    String::from("Maybe"),
+                    String::from("No"),
+                ],
+            }),
+            Box::new(Button {
+                width: 50,
+                height: 10,
+                label: String::from("OK"),
+            }),
+        ],
+        // Attempting to use a type that doesn't implement the trait object's
+        // trait:
+        // Box::new(String::from("Hi")),
+        // error[E0277]: the trait bound `std::string::String: Draw` is not
+        // satisfied.
+    };
+
+    screen.run();
+}
+
+// This concept---of being concerned only with the messages a value responds to,
+// rather than the value's concrete type---is similar to a concept in
+// dynamically typed languages called duck typing:
+
+// By specifying Box<Draw> as the type of the values in the components vector,
+// we've defined Screen to need values that we can call the draw method on.
+
+// monomorphization process performed by the compiler when we use trait bounds
+// on generics: the compiler generates non-generic implementations of functions
+// and methods for each concrete type that we use in place of a generic type
+// parameter.
+// The code that results from monomorphization is doing static dispatch. Static
+// dispatch is when the compiler knows what method you're calling at compile
+// time.
+// This is opposed to dynamic dispatch, when the compiler can't tell at compile
+// time which method you're calling. In these cases, the compiler emits code
+// that will figure out at runtime which method to call.
+// When we use trait objects, Rust has to use dynamic dispatch. ... it doesn't
+// know which method implemented on which type to call. Instead, Rust uses the
+// pointers inside of the trait object at runtime to know which specific method
+// to call. There's a runtime cost when this lookup happens, compared to static
+// dispatch.
+// Dynamic dispatch also prevents the compiler from choosing to inline a
+// method's code which in turn prevents some optimizations.
+
+// Object Safety is Required for Trait Objects
+//
+// Only object safe traits can be made into trait objects. There are some
+// complex rules around all the properties that make a trait object safe, but in
+// practice, there are only two rules that are relevant. A trait is object safe
+// if all of the methods defined in the trait have the following properties:
+//
+// - The return type isn't Self
+// - There aren't any generic type parameters
+// - The Self keyword is an alias for the type we're implementing traits or
+//   methods on.
+//
+// Object safety is required for trait objects because once you have a trait
+// object, you no longer know what the concrete type implementing that trait is.
+// If a trait method returns the concrete Self type, but a trait object forgets
+// the exact type that it is, there's no way that the method can use the
+// original concrete type that it's forgotten.
+// An example of a trait whose methods are not object safe is the standard
+// library's Clone trait. The signature for the clone method in the Clone trait
+// looks like this:
+//
+// pub trait Clone {
+//     fn clone(&self) -> Self;
+// }
+// if we had tried to implement the Screen struct to hold types that implement
+// the Clone trait instead of the Draw trait, like this:
+//
+// pub struct Screen {
+//     pub components: Vec<Box<Clone>>,
+// }
+// We'll get this error:
+//
+// error[E0038]: the trait `std::clone::Clone` cannot be made into an object
 
 pub fn sample() {}

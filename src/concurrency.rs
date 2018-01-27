@@ -2,6 +2,7 @@
 // https://doc.rust-lang.org/stable/book/second-edition/ch16-01-threads.html
 // https://doc.rust-lang.org/stable/book/second-edition/ch16-02-message-passing.html
 // https://doc.rust-lang.org/stable/book/second-edition/ch16-03-shared-state.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch16-04-extensible-concurrency-sync-and-send.html
 
 use std::thread;
 
@@ -245,6 +246,40 @@ fn seven() {
 
     // error[E0382]: use of moved value: `counter`
     println!("Result: {}", *counter.lock().unwrap());
+
+    // You may have noticed that counter is immutable but we could get a mutable
+    // reference to the value inside it; this means Mutex<T> provides interior
+    // mutability, like the Cell family does.
+    // Mutex<T> comes the risk of deadlocks.
+}
+
+// There are two concurrency concepts embedded in the language (and not in the
+// standard library), however: the std::marker traits Sync and Send.
+fn eight() {
+    // Allowing transference of ownership between threads with Send.
+    // Almost every Rust type is Send, but there are some exceptions, including
+    // Rc<T>: this cannot be Send because if we cloned an Rc<T> value and tried
+    // to transfer ownership of the clone to another thread, both threads might
+    // update the reference count at the same time. For this reason, Rc<T> is
+    // implemented for use in single-threaded situations where you don't want to
+    // pay the threadsafe performance penalty.
+    // The error is 'the trait Send is not implemented for Rc<Mutex<i32>>'.
+
+    // Allowing access from multiple threads with sync.
+    // The Sync marker trait indicates that it is safe for the type implementing
+    // Sync to be referenced from multiple threads. Another way to say this is
+    // that any type T is Sync if &T (a reference to T) is Send, meaning the
+    // reference can be sent safely to another thread. In a similar manner as
+    // Send, primitive types are Sync and types composed entirely of types that
+    // are Sync are also Sync.
+    // Rc<T> is also not Sync, for the same reasons that it's not Send.
+    // Mutex<T> is Sync, and can be used to share access with multiple threads.
+
+    // Implementing Send and Sync
+    // Because types that are made up of Send and Sync traits are automatically
+    // also Send and Sync, we don't have to implement those traits ourselves. As
+    // marker traits, they don't even have any methods to implement. They're
+    // just useful for enforcing concurrency-related invariants.
 }
 
 pub fn sample() {
@@ -255,4 +290,5 @@ pub fn sample() {
     five();
     six();
     seven();
+    eight();
 }

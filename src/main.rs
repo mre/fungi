@@ -22,6 +22,7 @@ mod closures;
 mod iterators;
 mod smart_pointers;
 mod concurrency;
+mod oop;
 
 fn main() {
     types::sample();
@@ -50,6 +51,7 @@ fn main() {
     iterators::sample();
     smart_pointers::sample();
     concurrency::sample();
+    oop::sample();
 }
 
 #[cfg(test)]

@@ -282,7 +282,7 @@ impl Post {
     // will ultimately be called on the type that implements the State trait.
     //
     // That means we need to add content to the State trait definition, and
-    // that’s where We’ll put the logic for what content to return depending on
+    // that's where We'll put the logic for what content to return depending on
     // which state we have.
     pub fn content(&self) -> &str {
         self.state.as_ref().unwrap().content(&self)
@@ -360,13 +360,75 @@ impl State for Published {
         self
     }
 
-    // We’re taking a reference to a post as an argument, and returning a
+    // We're taking a reference to a post as an argument, and returning a
     // reference to part of that post, so the lifetime of the returned reference
     // is related to the lifetime of the post argument.
     fn content<'a>(&self, post: &'a Post) -> &'a str {
         &post.content
     }
 }
+
+// A Post with a content method and a DraftPost without a content method
+// We still have a Post::new function, but instead of returning an instance of
+// Post, it returns an instance of DraftPost. Because content is private, and
+// there aren't any functions that return Post, it's not possible to create an
+// instance of Post right now.
+//
+// invalid states are now impossible because of the type system and the type
+// checking that happens at compile time.
+//
+// pub struct Post {
+//     content: String,
+// }
+//
+// pub struct DraftPost {
+//     content: String,
+// }
+//
+// impl Post {
+//     pub fn new() -> DraftPost {
+//         DraftPost {
+//             content: String::new(),
+//         }
+//     }
+//     pub fn content(&self) -> &str {
+//         &self.content
+//     }
+// }
+//
+// impl DraftPost {
+//     pub fn add_text(&mut self, text: &str) {
+//         self.content.push_str(text);
+//     }
+//     pub fn request_review(self) -> PendingReviewPost {
+//         PendingReviewPost {
+//             content: self.content,
+//         }
+//     }
+// }
+//
+// pub struct PendingReviewPost {
+//     content: String,
+// }
+//
+// impl PendingReviewPost {
+//     pub fn approve(self) -> Post {
+//         Post {
+//             content: self.content,
+//         }
+//     }
+// }
+//
+// extern crate blog;
+// use blog::Post;
+//
+// fn main() {
+//     let mut post = Post::new();
+//     post.add_text("I ate a salad for lunch today");
+//     let post = post.request_review();
+//     let post = post.approve();
+//     assert_eq!("I ate a salad for lunch today", post.content());
+// }
 
 fn two() {
     let mut post = Post::new();

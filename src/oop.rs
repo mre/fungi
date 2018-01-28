@@ -1,5 +1,6 @@
 // https://doc.rust-lang.org/stable/book/second-edition/ch17-01-what-is-oo.html
 // https://doc.rust-lang.org/stable/book/second-edition/ch17-02-trait-objects.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch17-03-oo-design-patterns.html
 
 // Is Rust and Object Oriented Programming Language?
 // Object-oriented programs are made up of objects. An object packages both data
@@ -243,5 +244,141 @@ fn one() {
 // We'll get this error:
 //
 // error[E0038]: the trait `std::clone::Clone` cannot be made into an object
+
+// Implementing an Object Oriented Programming Pattern: State.
+// extern crate blog;
+// use blog::Post;
+
+pub struct Post {
+    state: Option<Box<State>>,
+    content: String,
+}
+
+impl Post {
+    pub fn new() -> Post {
+        Post {
+            state: Some(Box::new(Draft {})),
+            content: String::new(),
+        }
+    }
+
+    pub fn add_text(&mut self, text: &str) {
+        self.content.push_str(text);
+    }
+
+    // Because the goal is to keep all these rules inside the structs that
+    // implement State, we call a content method on the value in state and pass
+    // the post instance (that is, self) as an argument. Then we return the
+    // value that's returned from using the content method on the state value.
+    //
+    // We call the as_ref method on the Option because we want a reference to
+    // the value inside the Option rather than ownership of it. Because state is
+    // an Option<Box<State>>, calling as_ref returns an Option<&Box<State>>. If
+    // we didn't call as_ref, we'd get an error because we can't move state out
+    // of the borrowed &self of the function parameter.
+    //
+    // So then we have a &Box<State>, and when we call the content on it, deref
+    // coercion will take effect on the & and the Box so that the content method
+    // will ultimately be called on the type that implements the State trait.
+    //
+    // That means we need to add content to the State trait definition, and
+    // that’s where We’ll put the logic for what content to return depending on
+    // which state we have.
+    pub fn content(&self) -> &str {
+        self.state.as_ref().unwrap().content(&self)
+    }
+
+    pub fn request_review(&mut self) {
+        if let Some(s) = self.state.take() {
+            self.state = Some(s.request_review())
+        }
+    }
+
+    pub fn approve(&mut self) {
+        if let Some(s) = self.state.take() {
+            self.state = Some(s.approve())
+        }
+    }
+}
+
+// The logic around the rules lives in the state objects rather than scattered
+// throughout Post.
+trait State {
+    // We've added the request_review method to the State trait; all types that
+    // implement the trait will now need to implement the request_review method.
+    // Note that rather than having self, &self, or &mut self as the first
+    // parameter of the method, we have self: Box<Self>. This syntax means the
+    // method is only valid when called on a Box holding the type. This syntax
+    // takes ownership of Box<Self>, invalidating the old state so that the
+    // state value of the Post can transform itself into a new state.
+    fn request_review(self: Box<Self>) -> Box<State>;
+    fn approve(self: Box<Self>) -> Box<State>;
+    // Default implementation for content.
+    fn content<'a>(&self, post: &'a Post) -> &'a str {
+        ""
+    }
+}
+
+struct Draft {}
+
+impl State for Draft {
+    fn request_review(self: Box<Self>) -> Box<State> {
+        Box::new(PendingReview {})
+    }
+
+    fn approve(self: Box<Self>) -> Box<State> {
+        self
+    }
+}
+
+struct PendingReview {}
+
+impl State for PendingReview {
+    fn request_review(self: Box<Self>) -> Box<State> {
+        self
+    }
+
+    // Similar to request_review, if we call the approve method on a Draft, it
+    // will have no effect since it will return self. When we call approve on
+    // PendingReview, it returns a new, boxed instance of the Published struct.
+    // The Published struct implements the State trait, and for both the
+    // request_review method and the approve method, it returns itself, since
+    // the post should stay in the Published state in those cases.
+    fn approve(self: Box<Self>) -> Box<State> {
+        Box::new(Published {})
+    }
+}
+
+struct Published {}
+
+impl State for Published {
+    fn request_review(self: Box<Self>) -> Box<State> {
+        self
+    }
+
+    fn approve(self: Box<Self>) -> Box<State> {
+        self
+    }
+
+    // We’re taking a reference to a post as an argument, and returning a
+    // reference to part of that post, so the lifetime of the returned reference
+    // is related to the lifetime of the post argument.
+    fn content<'a>(&self, post: &'a Post) -> &'a str {
+        &post.content
+    }
+}
+
+fn two() {
+    let mut post = Post::new();
+
+    post.add_text("I ate a salad for lunch today");
+    assert_eq!("", post.content());
+
+    post.request_review();
+    assert_eq!("", post.content());
+
+    post.approve();
+    assert_eq!("I ate a salad for lunch today", post.content());
+}
 
 pub fn sample() {}

@@ -183,4 +183,39 @@ pub fn sample() {
         Point { x: 0, y } => println!("On the y axis at {}", y),
         Point { x, y } => println!("On neither axis: ({}, {})", x, y),
     }
+
+    // Destructuring Enum variants
+    #[allow(dead_code)]
+    enum Message {
+        Quit,
+        Move { x: i32, y: i32 },
+        Write(String),
+        ChangeColor(i32, i32, i32),
+    }
+
+    let msg = Message::ChangeColor(0, 160, 255);
+
+    match msg {
+        Message::Quit => println!("The Quit variant has no data to destructure."),
+        // #[allow(non_shorthand_field_patterns)]
+        Message::Move { x: x, y: y } => {
+            println!("Move in the x direction {} and in the y direction {}", x, y);
+        }
+        Message::Write(text) => println!("Text message: {}", text),
+        Message::ChangeColor(r, g, b) => {
+            println!("Change the color to red {}, green {}, and blue {}", r, g, b)
+        }
+    }
+
+    // Destructuring references
+    // When the value we're matching to our pattern contains a reference, we
+    // need to destructure the reference from the value, which we can do can by
+    // specifying a & in the pattern.
+    let points = vec![
+        Point { x: 0, y: 0 },
+        Point { x: 1, y: 5 },
+        Point { x: 10, y: -3 },
+    ];
+
+    let _sum_of_squares: i32 = points.iter().map(|&Point { x, y }| x * x + y * y).sum();
 }

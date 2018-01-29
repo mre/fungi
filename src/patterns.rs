@@ -288,6 +288,7 @@ pub fn sample() {
     // The .. pattern will ignore any parts of a value that we haven't
     // explicitly matched in the rest of the pattern.
 
+    #[allow(dead_code)]
     struct PointXYZ {
         x: i32,
         y: i32,
@@ -381,5 +382,62 @@ pub fn sample() {
         Some(x) if x < 5 => println!("less than five: {}", x),
         Some(x) => println!("{}", x),
         None => (),
+    }
+
+    let x = Some(5);
+    let y = 10;
+
+    match x {
+        Some(50) => println!("Got 50"),
+        Some(n) if n == y => println!("Matched, n = {:?}", n),
+        _ => println!("Default case, x = {:?}", x),
+    }
+
+    println!("at the end: x = {:?}, y = {:?}", x, y);
+
+    // Instead of specifying the pattern as Some(y), which would have shadowed
+    // the outer y, we specify Some(n). This creates a new variable n that does
+    // not shadow anything because there is no n variable outside the match.
+
+    // In the match guard, if n == y, this is not a pattern and therefore does
+    // not introduce new variables. This y is the outer y rather than a new
+    // shadowed y, and we can express the idea that we're looking for a value
+    // that has the same value as the outer y by comparing n to y.
+
+    // You can also use the or operator | in a match guard to specify multiple
+    // patterns, and the match guard condition will apply to all of the
+    // patterns.
+
+    // The important part of this example is that the if y match guard applies
+    // to 4, 5, and 6, even though it might look like if y only applies to 6.
+    // Combining multiple patterns with a match guard
+    let x = 4;
+    let y = false;
+
+    match x {
+        4 | 5 | 6 if y => println!("yes"),
+        _ => println!("no"),
+    }
+    // The match condition states that the arm only matches if the value of x is
+    // equal to 4, 5, or 6 and if y is true.
+
+    // @ Bindings
+    // The at operator, @, lets us create a variable that holds a value at the
+    // same time we're testing that value to see if it matches a pattern.
+    // we want to test that a Message::Hello id field is within the range 3...7
+    // but also be able to bind the value to the variable id_variable so that we
+    // can use it in the code associated with the arm.
+    enum MessageHello {
+        Hello { id: i32 },
+    }
+
+    let msg = MessageHello::Hello { id: 5 };
+
+    match msg {
+        MessageHello::Hello {
+            id: id_variable @ 3...7,
+        } => println!("Found an id in range: {}", id_variable),
+        MessageHello::Hello { id: 10...12 } => println!("Found an id in another range"),
+        MessageHello::Hello { id } => println!("Found some other id: {}", id),
     }
 }

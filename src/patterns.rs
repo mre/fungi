@@ -195,9 +195,9 @@ pub fn sample() {
 
     let msg = Message::ChangeColor(0, 160, 255);
 
+    #[allow(non_shorthand_field_patterns)]
     match msg {
         Message::Quit => println!("The Quit variant has no data to destructure."),
-        // #[allow(non_shorthand_field_patterns)]
         Message::Move { x: x, y: y } => {
             println!("Move in the x direction {} and in the y direction {}", x, y);
         }
@@ -218,4 +218,168 @@ pub fn sample() {
     ];
 
     let _sum_of_squares: i32 = points.iter().map(|&Point { x, y }| x * x + y * y).sum();
+    // If we had not included the & in &Point { x, y } we'd get a type mismatch
+    // error, because iter would then iterate over references to the items in
+    // the vector rather than the values themselves. The error would look like
+    // this:
+    // error[E0308]: mismatched types
+    //     -->
+    //     |
+    // 14 |         .map(|Point { x, y }| x * x + y * y)
+    //     |               ^^^^^^^^^^^^ expected &Point, found struct `Point`
+    //     |
+    // = note: expected type `&Point`
+    //     found type `Point`
+    //     This tells us that Rust was expecting our closure to match &Point,
+    //     but we tried to match directly to a Point value, and not a reference
+    //     to a Point.
+
+    // Destructuring Structs and Tuples
+    #[allow(unused_variables)]
+    let ((feet, inches), Point { x, y }) = ((3, 10), Point { x: 3, y: -10 });
+
+    // Ignore patterns
+    fn foo(_: i32, y: i32) {
+        println!("This code only uses the y parameter: {}", y);
+    }
+
+    foo(3, 4);
+
+    // Using an underscore within patterns that match Some variants when we
+    // don't need to use the value inside the Some.
+    let mut setting_value = Some(5);
+    let new_setting_value = Some(10);
+
+    match (setting_value, new_setting_value) {
+        (Some(_), Some(_)) => {
+            println!("Can't overwrite an existing customized value");
+        }
+        _ => {
+            setting_value = new_setting_value;
+        }
+    }
+
+    println!("setting is {:?}", setting_value);
+
+    let numbers = (2, 4, 8, 16, 32);
+    match numbers {
+        (first, _, third, _, fifth) => println!("Some numbers: {}, {}, {}", first, third, fifth),
+    }
+
+    // Difference between _ and _x
+    let s = Some(String::from("Hello!"));
+    if let Some(_s) = s {
+        println!("found a string");
+    }
+
+    // move occurs because the value has type `std::string::String`, which does not implement the `Copy` trait
+    // println!("{:?}", s);
+    // We receive an error because the s value will still be moved into _s,
+    // which prevents us from using s again. Using the underscore by itself,
+    // however, doesn't ever bind to the value.
+
+    let s = Some(String::from("Hello!"));
+    if let Some(_) = s {
+        println!("found a string");
+    }
+    println!("{:?}", s);
+
+    // Ignoring Remaining Parts of a Value with ..
+    // The .. pattern will ignore any parts of a value that we haven't
+    // explicitly matched in the rest of the pattern.
+
+    struct PointXYZ {
+        x: i32,
+        y: i32,
+        z: i32,
+    }
+
+    let origin = PointXYZ { x: 0, y: 0, z: 0 };
+    match origin {
+        PointXYZ { x, .. } => println!("x is {}", x),
+    }
+
+    let numbers = (2, 4, 8, 16, 32);
+    match numbers {
+        (first, .., last) => {
+            println!("Some numbers: {}, {}", first, last);
+        }
+    }
+
+    // But the usage of .. must be unambiguous:
+    // match numbers {
+    //     (.., second, ..) => {
+    //         println!("Some numbers: {}", second)
+    //     },
+    // }
+    // error: `..` can only be used once per tuple or tuple struct pattern
+    //   --> src/main.rs:5:22
+    //   |
+    // 5 |         (.., second, ..) => {
+    //   |
+
+    // ref and ref mut to create references in patterns
+    // Here we'll look at using ref to make references so ownership of the
+    // values isn't moved to variables in the pattern.
+
+    // let robot_name = Some(String::from("Bors"));
+    // match robot_name {
+    //     Some(name) => println!("Found a name: {}", name),
+    //     None => (),
+    // }
+    // println!("robot_name is: {:?}", robot_name);
+    // This example will fail because the value inside Some in robot_name is
+    // moved to within the match when name binds to that value.
+    // In order to fix this code, we want to have the Some(name) pattern borrow
+    // that part of robot_name rather than taking ownership.
+    // Outside of patterns, we've seen that the way to borrow a value is to
+    // create a reference using &, so you may think the solution is changing
+    // Some(name) to Some(&name).
+    // However, we saw "Destructuring to Break Apart Values" section that
+    // & in patterns does not create a reference, it matches an existing
+    // reference in the value. Because & already has that meaning in patterns,
+    // we can't use & to create a reference in a pattern.
+    // Instead, to create a reference in a pattern, we do this by using the ref
+    // keyword before the new variable.
+
+    let robot_name = Some(String::from("Bors"));
+
+    match robot_name {
+        // Creating a reference so that a pattern variable does not take
+        // ownership of a value
+        Some(ref name) => println!("Found a name: {}", name),
+        None => (),
+    }
+
+    println!("robot_name is: {:?}", robot_name);
+
+    // This example will compile because the value in the Some variant in
+    // robot_name is not moved into the match; the match only took a reference
+    // to the data in robot_name rather than moving it.
+    // To create a mutable reference in order to be able to mutate a value
+    // matched in a pattern, use ref mut instead of &mut for the same reason
+    // that we use ref instead of &: &mut in patterns is for matching existing
+    // mutable references, not creating new ones.
+
+    let mut robot_name = Some(String::from("Bors"));
+    match robot_name {
+        Some(ref mut name) => *name = String::from("Another name"),
+        None => (),
+    }
+    println!("robot_name is: {:?}", robot_name);
+    // Because name is a mutable reference, we need to dereference within the
+    // match arm code using the * operator in order to be able to mutate the
+    // value.
+
+    // A match guard is an additional if condition specified after the pattern
+    // in a match arm that also must match if the pattern matches in order for
+    // that arm to be chosen.
+
+    let num = Some(4);
+
+    match num {
+        Some(x) if x < 5 => println!("less than five: {}", x),
+        Some(x) => println!("{}", x),
+        None => (),
+    }
 }

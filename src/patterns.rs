@@ -1,6 +1,7 @@
 // https://doc.rust-lang.org/stable/book/second-edition/ch18-00-patterns.html
 // https://doc.rust-lang.org/stable/book/second-edition/ch18-01-all-the-places-for-patterns.html
 // https://doc.rust-lang.org/stable/book/second-edition/ch18-02-refutability.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch18-03-pattern-syntax.html
 
 // All the places Patterns may be used
 // - Match Arms
@@ -109,4 +110,39 @@ pub fn sample() {
     // For this reason, match arms must use refutable patterns, except for the
     // last arm that should match any remaining values with an irrefutable
     // pattern.
+
+    // Matching literals
+    let x = 1;
+
+    match x {
+        1 => println!("one"),
+        2 => println!("two"),
+        3 => println!("three"),
+        _ => println!("anything"),
+    }
+
+    // Matching Named Variables
+    // Because match starts a new scope, variables declared as part of a pattern
+    // inside the match expression will shadow those with the same name outside
+    // the match construct---as is the case with all variables.
+    // A match statement with an arm that introduces a shadowed variable y.
+    {
+        let x = Some(5);
+        let y = 10;
+        match x {
+            Some(50) => println!("Got 50"),
+            Some(y) => println!("Matched, y = {:?}", y),
+            _ => println!("Default case, x = {:?}", x),
+        }
+        println!("at the end: x = {:?}, y = {:?}", x, y);
+    }
+
+    // Multiple Patterns
+    let x = 1;
+
+    match x {
+        1 | 2 => println!("one or two"),
+        3 => println!("three"),
+        _ => println!("anything"),
+    }
 }

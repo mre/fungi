@@ -501,6 +501,29 @@ fn seven() {
     // doesn't use the Edge type at all, it doesn't need to be specified
     // anywhere. To use the Node type associated with AGraph, we can specify
     // G::Node.
+
+    // Trait Objects with Associated Types
+
+    // You may have been wondering why we didn’t use a trait object in the
+    // distance functions.
+    // The signature for the distance function using the generic GGraph trait
+    // does get a bit more concise using a trait object:
+    fn distance<N, E>(graph: &GGraph<N, E>, start: &N, end: &N) -> u32 {
+        // ...snip...
+    }
+    // Specifying the Edge type is still required, though.
+    // It is possible in general to use trait objects of traits that have
+    // associated types, though; unction named traverse that doesn’t need to use
+    // the trait’s associated types in other arguments. We do, however, have to
+    // specify the concrete types for the associated types in this case. Here,
+    // we’ve chosen to accept types that implement the AGraph trait with the
+    // concrete type of usize as their Node type and a tuple of two usize values
+    // for their Edge type:
+    fn traverse(graph: &AGraph<Node = usize, Edge = (usize, usize)>) {
+        // ...snip...
+    }
+}
+
 }
 
 #[allow(dead_code)]

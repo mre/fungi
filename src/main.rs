@@ -24,6 +24,7 @@ mod smart_pointers;
 mod concurrency;
 mod oop;
 mod patterns;
+mod advanced;
 
 fn main() {
     types::sample();
@@ -54,6 +55,7 @@ fn main() {
     concurrency::sample();
     oop::sample();
     patterns::sample();
+    advanced::sample();
 }
 
 #[cfg(test)]

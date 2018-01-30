@@ -14,7 +14,9 @@
 // - Are allowed to be null
 // - Don't implement any automatic clean-up
 
-fn sample() {
+#[allow(dead_code)]
+#[allow(unused_variables)]
+pub fn sample() {
     // Creating raw pointers from references
     let mut num = 5;
 
@@ -115,9 +117,9 @@ fn sample() {
     // unsafe block around our calls to slice::from_raw_parts_mut and offset to
     // be allowed to call them.
     //
-    // Note that the resulting split_at_mut function is safe: we didn’t have to
+    // Note that the resulting split_at_mut function is safe: we didn't have to
     // add the unsafe keyword in front of it, and we can call this function from
-    // safe Rust. We’ve created a safe abstraction to the unsafe code by writing
+    // safe Rust. We've created a safe abstraction to the unsafe code by writing
     // an implementation of the function that uses unsafe code in a safe way by
     // only creating valid pointers from the data this function has access to.
 
@@ -135,17 +137,17 @@ fn sample() {
     // "C" defines which application binary interface (ABI) the external
     // function uses. The ABI defines how to call the function at the assembly
     // level. The "C" ABI is the most common, and follows the C programming
-    // language’s ABI.
+    // language's ABI.
 
     // The extern keyword is also used for creating an interface that allows
     // other languages to call Rust functions. Instead of an extern block, we
     // can add the extern keyword and specifying the ABI to use just before the
     // fn keyword. We also add the #[no_mangle] annotation to tell the Rust
     // compiler not to mangle the name of this function. The call_from_c
-    // function in this example would be accessible from C code, once we’ve
+    // function in this example would be accessible from C code, once we've
     // compiled to a shared library and linked from C:
 
-    #[no_mangle]
+    // #[no_mangle]
     pub extern "C" fn call_from_c() {
         println!("Just called a Rust function from C!");
     }
@@ -157,7 +159,7 @@ fn sample() {
 
     println!("name is: {}", HELLO_WORLD);
     // static variables are similar to constants: their names are also in
-    // SCREAMING_SNAKE_CASE by convention, and we must annotate the variable’s
+    // SCREAMING_SNAKE_CASE by convention, and we must annotate the variable's
     // type, which is &'static str in this case. Only references with the
     // 'static lifetime may be stored in a static variable.
 
@@ -184,7 +186,7 @@ fn sample() {
     }
     // Any time that we read or write from COUNTER has to be within an unsafe
     // block. This code compiles and prints COUNTER: 3 as we would expect since
-    // it’s single threaded, but having multiple threads accessing COUNTER would
+    // it's single threaded, but having multiple threads accessing COUNTER would
     // likely result in data races.
 
     // Implementing an Unsafe Trait
@@ -197,6 +199,134 @@ fn sample() {
     }
 
     // Like unsafe functions, methods in an unsafe trait have some invariant
-    // that the compiler cannot verify. By using unsafe impl, we’re promising
-    // that we’ll uphold these invariants.
+    // that the compiler cannot verify. By using unsafe impl, we're promising
+    // that we'll uphold these invariants.
+
+    // Advanced Lifetimes
+    //
+    // Lifetime subtyping
+
+    // a Context struct that holds a string slice
+    // struct Context<'a>(&'a str);
+
+    // a Parser struct that holds a reference to a Context instance
+    // struct Parser<'a> {
+    //     context: &'a Context<'a>,
+    // }
+
+    // impl<'a> Parser<'a> {
+    //     // a parse method that always returns an error referencing the string
+    //     // slice. our parse function returns a Result<(), &str>. That is, we
+    //     // don't do anything on success, and on failure we return the part of
+    //     // the string slice that didn't parse correctly.
+    //     //
+    //     // without the elision rule:
+    //     // fn parse<'a>(&'a self) -> Result<(), &'a str> {
+    //     fn parse(&self) -> Result<(), &str> {
+    //         Err(&self.context.0[1..])
+    //     }
+    // }
+    // fn parse_context(context: Context) -> Result<(), &str> {
+    //     Parser { context: &context }.parse()
+    // }
+
+    // Parser and context need to outlive the entire function and be valid
+    // before the function starts as well as after it ends in order for all the
+    // references in this code to always be valid. Both the Parser we're
+    // creating and the context parameter go out of scope at the end of the
+    // function, though (since parse_context takes ownership of context)
+    //   fn parse(&self) -> Result<(), &str> {
+    // the elision rules: if we annotate the lifetimes of the references, the
+    // signature would be:
+    //   fn parse<'a>(&'a self) -> Result<(), &'a str> {
+    // That is, the "error part" of the return value of parse has a lifetime
+    // that is tied to the Parser instance's lifetime (that of &self in the
+    // parse method signature).
+    // The problem is that the parse_context function returns the value returned
+    // from parse, so the lifetime of the return value of parse_context is tied
+    // to the lifetime of the Parser as well. But the Parser instance created in
+    // the parse_context function won't live past the end of the function (it's
+    // temporary), and the context will go out of scope at the end of the
+    // function (parse_context takes ownership of it).
+    // The parse_context function can’t see that within the parse function, the
+    // string slice returned will outlive both Context and Parser, and that the
+    // reference parse_context returns refers to the string slice, not to
+    // Context or Parser.
+
+    // We need a way to tell Rust that the string slice in Context and the
+    // reference to the Context in Parser have different lifetimes and that the
+    // return value of parse_context is tied to the lifetime of the string slice
+    // in Context.
+
+    // We could try only giving Parser and Context different lifetime parameters
+
+    struct Context<'s>(&'s str);
+
+    // struct Parser<'c, 's> {
+    //     context: &'c Context<'s>,
+    // }
+
+    impl<'c, 's> Parser<'c, 's> {
+        fn parse(&self) -> Result<(), &'s str> {
+            Err(&self.context.0[1..])
+        }
+    }
+
+    fn parse_context(context: Context) -> Result<(), &str> {
+        Parser { context: &context }.parse()
+    }
+
+    // We’ve annotated the lifetimes of the references, but used different
+    // parameters depending on whether the reference goes with the string slice
+    // or with Context. We’ve also added an annotation to the string slice part
+    // of the return value of parse to indicate that it goes with the lifetime
+    // of the string slice in Context.
+
+    // error[E0491]: in type `&'c Context<'s>`, reference has a longer lifetime than the data it references
+    //  --> src/main.rs:4:5
+    //   |
+    // 4 |     context: &'c Context<'s>,
+    //   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+    //   |
+    // note: the pointer is valid for the lifetime 'c as defined on the struct at 3:0
+    //  --> src/main.rs:3:1
+    //   |
+    // 3 | / struct Parser<'c, 's> {
+    // 4 | |     context: &'c Context<'s>,
+    // 5 | | }
+    //   | |_^
+    // note: but the referenced data is only valid for the lifetime 's as defined on the struct at 3:0
+    //  --> src/main.rs:3:1
+    //   |
+    // 3 | / struct Parser<'c, 's> {
+    // 4 | |     context: &'c Context<'s>,
+    // 5 | | }
+    //   | |_^
+
+    // Rust doesn’t know of any relationship between 'c and 's. In order to be
+    // valid, the referenced data in Context with lifetime 's needs to be
+    // constrained to guarantee that it lives longer than the reference to
+    // Context that has lifetime 'c. If 's is not longer than 'c, then the
+    // reference to Context might not be valid.
+
+    // Which gets us to the point of this section: Rust has a feature called
+    // lifetime subtyping, which is a way to specify that one lifetime parameter
+    // lives at least as long as another one. In the angle brackets where we
+    // declare lifetime parameters, we can declare a lifetime 'a as usual, and
+    // declare a lifetime 'b that lives at least as long as 'a by declaring 'b
+    // with the syntax 'b: 'a.
+
+    // In our definition of Parser, in order to say that 's (the lifetime of the
+    // string slice) is guaranteed to live at least as long as 'c (the lifetime
+    // of the reference to Context), we change the lifetime declarations to look
+    // like this:
+
+    struct Parser<'c, 's: 'c> {
+        context: &'c Context<'s>,
+    }
+
+    // Now, the reference to Context in the Parser and the reference to the
+    // string slice in the Context have different lifetimes, and we’ve ensured
+    // that the lifetime of the string slice is longer than the reference to the
+    // Context.
 }

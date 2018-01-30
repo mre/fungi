@@ -14,86 +14,90 @@
 // - Are allowed to be null
 // - Don't implement any automatic clean-up
 
-// Creating raw pointers from references
-let mut num = 5;
+fn sample() {
+    // Creating raw pointers from references
+    let mut num = 5;
 
-let r1 = &num as *const i32;
-let r2 = &mut num as *mut i32;
+    let r1 = &num as *const i32;
+    let r2 = &mut num as *mut i32;
 
-// We've created raw pointers by using as to cast an immutable and a mutable
-// reference into their corresponding raw pointer types.
+    // We've created raw pointers by using as to cast an immutable and a mutable
+    // reference into their corresponding raw pointer types.
 
-let address = 0x012345usize;
-let r = address as *const i32;
+    let address = 0x012345usize;
+    let r = address as *const i32;
 
-// Creating a raw pointer to an arbitrary memory address
+    // Creating a raw pointer to an arbitrary memory address
 
-// there's no unsafe block. You can create raw pointers in safe code, but you
-// can't dereference raw pointers and read the data being pointed to.
+    // there's no unsafe block. You can create raw pointers in safe code, but you
+    // can't dereference raw pointers and read the data being pointed to.
 
-let mut num = 5;
+    let mut num = 5;
 
-let r1 = &num as *const i32;
-let r2 = &mut num as *mut i32;
-
-unsafe {
-    println!("r1 is: {}", *r1);
-    println!("r2 is: {}", *r2);
-}
-
-// Unsafe Functions
-
-unsafe fn dangerous() {}
-
-unsafe {
-    dangerous();
-}
-
-let mut v = vec![1, 2, 3, 4, 5, 6];
-
-let r = &mut v[..];
-
-let (a, b) = r.split_at_mut(3);
-
-assert_eq!(a, &mut [1, 2, 3]);
-assert_eq!(b, &mut [4, 5, 6]);
-
-// This function can't be implemented using only safe Rust
-
-// For simplicity, we're implementing split_at_mut as a function rather than a
-// method, and only for slices of i32 values rather than for a generic type T:
-// 
-// fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
-//     let len = slice.len();
-//     assert!(mid <= len);
-//     (&mut slice[..mid], &mut slice[mid..])
-// }
-// 
-// error[E0499]: cannot borrow `*slice` as mutable more than once at a time
-//   --> <anon>:6:11
-//   |
-// 5 |     (&mut slice[..mid],
-//   |           ----- first mutable borrow occurs here
-// 6 |      &mut slice[mid..])
-//   |           ^^^^^ second mutable borrow occurs here
-// 7 | }
-//   | - first borrow ends here
-// Rust's borrow checker can't understand that we're borrowing different parts
-// of the slice; it only knows that we're borrowing from the same slice twice.
-// Borrowing different parts of a slice is fundamentally okay; our two &mut
-// [i32] slices aren't overlapping.
-
-use std::slice;
-
-fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
-    let len = slice.len();
-    let ptr = slice.as_mut_ptr();
-
-    assert!(mid <= len);
+    let r1 = &num as *const i32;
+    let r2 = &mut num as *mut i32;
 
     unsafe {
-        (slice::from_raw_parts_mut(ptr, mid),
-         slice::from_raw_parts_mut(ptr.offset(mid as isize), len - mid))
+        println!("r1 is: {}", *r1);
+        println!("r2 is: {}", *r2);
+    }
+
+    // Unsafe Functions
+
+    unsafe fn dangerous() {}
+
+    unsafe {
+        dangerous();
+    }
+
+    let mut v = vec![1, 2, 3, 4, 5, 6];
+
+    let r = &mut v[..];
+
+    let (a, b) = r.split_at_mut(3);
+
+    assert_eq!(a, &mut [1, 2, 3]);
+    assert_eq!(b, &mut [4, 5, 6]);
+
+    // This function can't be implemented using only safe Rust
+
+    // For simplicity, we're implementing split_at_mut as a function rather than a
+    // method, and only for slices of i32 values rather than for a generic type T:
+    //
+    // fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
+    //     let len = slice.len();
+    //     assert!(mid <= len);
+    //     (&mut slice[..mid], &mut slice[mid..])
+    // }
+    //
+    // error[E0499]: cannot borrow `*slice` as mutable more than once at a time
+    //   --> <anon>:6:11
+    //   |
+    // 5 |     (&mut slice[..mid],
+    //   |           ----- first mutable borrow occurs here
+    // 6 |      &mut slice[mid..])
+    //   |           ^^^^^ second mutable borrow occurs here
+    // 7 | }
+    //   | - first borrow ends here
+    // Rust's borrow checker can't understand that we're borrowing different parts
+    // of the slice; it only knows that we're borrowing from the same slice twice.
+    // Borrowing different parts of a slice is fundamentally okay; our two &mut
+    // [i32] slices aren't overlapping.
+
+    use std::slice;
+
+    fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
+        let len = slice.len();
+        let ptr = slice.as_mut_ptr();
+
+        assert!(mid <= len);
+
+        unsafe {
+            (
+                slice::from_raw_parts_mut(ptr, mid),
+                slice::from_raw_parts_mut(ptr.offset(mid as isize), len - mid),
+            )
+        }
     }
 
     // we can use the as_mut_ptr method to get access to the raw pointer of a
@@ -110,7 +114,7 @@ fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
     // some offset after a raw pointer is also a valid pointer. We've put an
     // unsafe block around our calls to slice::from_raw_parts_mut and offset to
     // be allowed to call them.
-    // 
+    //
     // Note that the resulting split_at_mut function is safe: we didn’t have to
     // add the unsafe keyword in front of it, and we can call this function from
     // safe Rust. We’ve created a safe abstraction to the unsafe code by writing
@@ -125,9 +129,9 @@ fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
         fn abs(input: i32) -> i32;
     }
 
-        unsafe {
-            println!("Absolute value of -3 according to C: {}", abs(-3));
-        }
+    unsafe {
+        println!("Absolute value of -3 according to C: {}", abs(-3));
+    }
     // "C" defines which application binary interface (ABI) the external
     // function uses. The ABI defines how to call the function at the assembly
     // level. The "C" ABI is the most common, and follows the C programming
@@ -146,4 +150,23 @@ fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
         println!("Just called a Rust function from C!");
     }
     // This usage of extern does not require unsafe.
+
+    // Mutable Static Variables
+    // Global variables are called static in Rust.
+    static HELLO_WORLD: &str = "Hello, world!";
+
+    println!("name is: {}", HELLO_WORLD);
+    // static variables are similar to constants: their names are also in
+    // SCREAMING_SNAKE_CASE by convention, and we must annotate the variable’s
+    // type, which is &'static str in this case. Only references with the
+    // 'static lifetime may be stored in a static variable.
+
+    // Accessing immutable static variables is safe. Values in a static variable
+    // have a fixed address in memory, and using the value will always access
+    // the same data. Constants, on the other hand, are allowed to duplicate
+    // their data whenever they are used.
+
+    // Another way in which static variables are different from constants is
+    // that static variables can be mutable. Both accessing and modifying
+    // mutable static variables is unsafe.
 }

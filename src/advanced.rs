@@ -1,4 +1,7 @@
 // https://doc.rust-lang.org/stable/book/second-edition/ch19-01-unsafe-rust.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch19-02-advanced-lifetimes.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch19-03-advanced-traits.html
+
 // Unsafe Rust
 // Dereferencing a Raw Pointer
 // we can have an immutable raw pointer and a mutable raw pointer, written as
@@ -288,9 +291,9 @@ fn four() {
         Parser { context: &context }.parse()
     }
 
-    // We’ve annotated the lifetimes of the references, but used different
+    // We've annotated the lifetimes of the references, but used different
     // parameters depending on whether the reference goes with the string slice
-    // or with Context. We’ve also added an annotation to the string slice part
+    // or with Context. We've also added an annotation to the string slice part
     // of the return value of parse to indicate that it goes with the lifetime
     // of the string slice in Context.
 
@@ -315,7 +318,7 @@ fn four() {
     // 5 | | }
     //   | |_^
 
-    // Rust doesn’t know of any relationship between 'c and 's. In order to be
+    // Rust doesn't know of any relationship between 'c and 's. In order to be
     // valid, the referenced data in Context with lifetime 's needs to be
     // constrained to guarantee that it lives longer than the reference to
     // Context that has lifetime 'c. If 's is not longer than 'c, then the
@@ -338,7 +341,7 @@ fn four() {
     }
 
     // Now, the reference to Context in the Parser and the reference to the
-    // string slice in the Context have different lifetimes, and we’ve ensured
+    // string slice in the Context have different lifetimes, and we've ensured
     // that the lifetime of the string slice is longer than the reference to the
     // Context.
 }
@@ -377,7 +380,7 @@ fn five() {
     // contains no references meets the criteria of all references living as
     // long as the entire program (since there are no references). Think of it
     // this way: if the borrow checker is concerned about references living long
-    // enough, then there’s no real distinction between a type that has no
+    // enough, then there's no real distinction between a type that has no
     // references and a type that has references that live forever;
 }
 
@@ -386,7 +389,7 @@ fn five() {
 fn six() {
     // Trait object lifetimes
     // we learned about trait objects that consist of putting a trait behind a
-    // reference in order to use dynamic dispatch. However, we didn’t discuss
+    // reference in order to use dynamic dispatch. However, we didn't discuss
     // what happens if the type implementing the trait used in the trait object
     // has a lifetime.
     // Consider where we have a trait Foo and a struct Bar that holds a
@@ -404,7 +407,7 @@ fn six() {
     let num = 5;
     let obj = Box::new(Bar { x: &num }) as Box<Foo>;
 
-    // This code compiles without any errors, even though we haven’t said
+    // This code compiles without any errors, even though we haven't said
     // anything about the lifetimes involved in obj. This works because there
     // are rules having to do with lifetimes and trait objects:
 
@@ -414,10 +417,90 @@ fn six() {
     // - If we have multiple T: 'a-like clauses, then there is no default; we must be explicit.
     // When we must be explicit, we can add a lifetime bound on a trait object
     // like Box<Foo> with the syntax Box<Foo + 'a> or Box<Foo + 'static>,
-    // depending on what’s needed. Just as with the other bounds, this means
+    // depending on what's needed. Just as with the other bounds, this means
     // that any implementor of the Foo trait that has any references inside must
     // have the lifetime specified in the trait object bounds as those
     // references.
+}
+
+fn seven() {
+    // Associated Types
+    // Associated types are a way of associating a type placeholder with a
+    // trait such that the trait method definitions can use these
+    // placeholder types in their signatures. The implementor of a trait
+    // will specify the concrete type to be used in this type's place for
+    // the particular implementation.
+
+    // An example of a trait with an associated type is the Iterator trait
+    // provided by the standard library. It has an associated type named Item
+    // that stands in for the type of the values that we're iterating over.
+    pub trait Iterator {
+        type Item;
+        fn next(&mut self) -> Option<Self::Item>;
+    }
+    // Item is a placeholder type, and the return value of the next method will
+    // return values of type Option<Self::Item>.
+    // Implementors of this trait will specify the concrete type for Item, and
+    // the next method will return an Option containing a value of whatever type
+    // the implementor has specified.
+
+    // impl Iterator for Counter {
+    //     type Item = u32;
+    //     fn next(&mut self) -> Option<Self::Item> {
+
+    // pub trait Iterator<T> {
+    //     fn next(&mut self) -> Option<T>;
+    // }
+    // we could also implement Iterator<String> for Counter, or any other type
+    // as well, so that we'd have multiple implementations of Iterator for
+    // Counter. In other words, when a trait has a generic parameter, we can
+    // implement that trait for a type multiple times, changing the generic type
+    // parameters' concrete types each time.
+
+    // With associated types, we can't implement a trait on a type multiple
+    // times. we can only choose once what the type of Item will be, since there
+    // can only be one impl Iterator for Counter. We don't have to specify that
+    // we want an iterator of u32 values everywhere that we call next on
+    // Counter.
+
+    trait GGraph<Node, Edge> {
+        // methods would go here
+    }
+
+    trait AGraph {
+        type Node;
+        type Edge;
+
+        // methods would go here
+    }
+
+    // Two graph trait definitions, GGraph using generics and AGraph using
+    // associated types for Node and Edge.
+    // With the GGraph trait defined using generics, our distance function
+    // signature would have to look like:
+    fn distance<N, E, G: GGraph<N, E>>(graph: &G, start: &N, end: &N) -> u32 {
+        // ...snip...
+    }
+    // The signature of a distance function that uses the trait GGraph and has
+    // to specify all the generic parameters.
+    // Our function would need to specify the generic type parameters N, E, and
+    // G, where G is bound by the trait GGraph that has type N as its Node type
+    // and type E as its Edge type. Even though distance doesn't need to know
+    // the types of the edges, we're forced to declare an E parameter, because
+    // we need to to use the GGraph trait and that requires specifying the type
+    // for Edge.
+
+    // the definition of distance that uses the AGraph trait with associated
+    // types:
+    fn distance<G: AGraph>(graph: &G, start: &G::Node, end: &G::Node) -> u32 {
+        // ...snip...
+    }
+    // The signature of a distance function that uses the trait AGraph and the
+    // associated type Node This is much cleaner. We only need to have one
+    // generic type parameter, G, with the trait bound AGraph. Since distance
+    // doesn't use the Edge type at all, it doesn't need to be specified
+    // anywhere. To use the Node type associated with AGraph, we can specify
+    // G::Node.
 }
 
 #[allow(dead_code)]

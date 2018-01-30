@@ -16,7 +16,7 @@
 
 #[allow(dead_code)]
 #[allow(unused_variables)]
-pub fn sample() {
+fn one() {
     // Creating raw pointers from references
     let mut num = 5;
 
@@ -122,7 +122,11 @@ pub fn sample() {
     // safe Rust. We've created a safe abstraction to the unsafe code by writing
     // an implementation of the function that uses unsafe code in a safe way by
     // only creating valid pointers from the data this function has access to.
+}
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
+fn two() {
     // Extern
     // The keyword extern facilitates creating and using a Foreign Function
     // Interface (FFI).
@@ -152,7 +156,11 @@ pub fn sample() {
         println!("Just called a Rust function from C!");
     }
     // This usage of extern does not require unsafe.
+}
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
+fn three() {
     // Mutable Static Variables
     // Global variables are called static in Rust.
     static HELLO_WORLD: &str = "Hello, world!";
@@ -201,7 +209,11 @@ pub fn sample() {
     // Like unsafe functions, methods in an unsafe trait have some invariant
     // that the compiler cannot verify. By using unsafe impl, we're promising
     // that we'll uphold these invariants.
+}
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
+fn four() {
     // Advanced Lifetimes
     //
     // Lifetime subtyping
@@ -248,7 +260,7 @@ pub fn sample() {
     // the parse_context function won't live past the end of the function (it's
     // temporary), and the context will go out of scope at the end of the
     // function (parse_context takes ownership of it).
-    // The parse_context function can’t see that within the parse function, the
+    // The parse_context function can't see that within the parse function, the
     // string slice returned will outlive both Context and Parser, and that the
     // reference parse_context returns refers to the string slice, not to
     // Context or Parser.
@@ -329,4 +341,52 @@ pub fn sample() {
     // string slice in the Context have different lifetimes, and we’ve ensured
     // that the lifetime of the string slice is longer than the reference to the
     // Context.
+}
+
+#[allow(dead_code)]
+#[allow(unused_variables)]
+fn five() {
+    // Lifetime Bounds
+    // we discussed how to use trait bounds on generic types. We can also add
+    // lifetime parameters as constraints on generic types, which are called
+    // lifetime bounds
+
+    // struct Ref<'a, T>(&'a T);
+    // error[E0309]: the parameter type `T` may not live long enough
+    //    --> <anon>:1:19
+    //    |
+    //  1 | struct Ref<'a, T>(&'a T);
+    //    |                   ^^^^^^
+    //    |
+    //    = help: consider adding an explicit lifetime bound `T: 'a`...
+    //    note: ...so that the reference type `&'a T` does not outlive the data it points at
+    //    --> <anon>:1:19
+    //    |
+    //  1 | struct Ref<'a, T>(&'a T);
+    //    |                   ^^^^^^
+    // the T: 'a syntax specifies that T can be any type, but if it contains any
+    // references, the references must live at least as long as 'a:
+    struct Ref<'a, T: 'a>(&'a T);
+
+    // struct StaticRef<T: 'static>(&'static T);
+    // Adding a 'static lifetime bound to T to constrain T to types that have
+    // only 'static references or no references
+
+    // Types without any references count as T: 'static. Because 'static means
+    // the reference must live as long as the entire program, a type that
+    // contains no references meets the criteria of all references living as
+    // long as the entire program (since there are no references). Think of it
+    // this way: if the borrow checker is concerned about references living long
+    // enough, then there’s no real distinction between a type that has no
+    // references and a type that has references that live forever;
+}
+
+#[allow(dead_code)]
+#[allow(unused_variables)]
+pub fn sample() {
+    one();
+    two();
+    three();
+    four();
+    five();
 }

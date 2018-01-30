@@ -383,10 +383,50 @@ fn five() {
 
 #[allow(dead_code)]
 #[allow(unused_variables)]
+fn six() {
+    // Trait object lifetimes
+    // we learned about trait objects that consist of putting a trait behind a
+    // reference in order to use dynamic dispatch. However, we didn’t discuss
+    // what happens if the type implementing the trait used in the trait object
+    // has a lifetime.
+    // Consider where we have a trait Foo and a struct Bar that holds a
+    // reference (and thus has a lifetime parameter) that implements trait Foo,
+    // and we want to use an instance of Bar as the trait object Box<Foo>:
+
+    trait Foo {}
+
+    struct Bar<'a> {
+        x: &'a i32,
+    }
+
+    impl<'a> Foo for Bar<'a> {}
+
+    let num = 5;
+    let obj = Box::new(Bar { x: &num }) as Box<Foo>;
+
+    // This code compiles without any errors, even though we haven’t said
+    // anything about the lifetimes involved in obj. This works because there
+    // are rules having to do with lifetimes and trait objects:
+
+    // - The default lifetime of a trait object is 'static.
+    // - If we have &'a X or &'a mut X, then the default is 'a.
+    // - If we have a single T: 'a clause, then the default is 'a.
+    // - If we have multiple T: 'a-like clauses, then there is no default; we must be explicit.
+    // When we must be explicit, we can add a lifetime bound on a trait object
+    // like Box<Foo> with the syntax Box<Foo + 'a> or Box<Foo + 'static>,
+    // depending on what’s needed. Just as with the other bounds, this means
+    // that any implementor of the Foo trait that has any references inside must
+    // have the lifetime specified in the trait object bounds as those
+    // references.
+}
+
+#[allow(dead_code)]
+#[allow(unused_variables)]
 pub fn sample() {
     one();
     two();
     three();
     four();
     five();
+    six();
 }

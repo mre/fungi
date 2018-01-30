@@ -78,10 +78,10 @@ assert_eq!(b, &mut [4, 5, 6]);
 //   |           ^^^^^ second mutable borrow occurs here
 // 7 | }
 //   | - first borrow ends here
-// Rust’s borrow checker can’t understand that we’re borrowing different parts
-// of the slice; it only knows that we’re borrowing from the same slice twice.
+// Rust's borrow checker can't understand that we're borrowing different parts
+// of the slice; it only knows that we're borrowing from the same slice twice.
 // Borrowing different parts of a slice is fundamentally okay; our two &mut
-// [i32] slices aren’t overlapping.
+// [i32] slices aren't overlapping.
 
 use std::slice;
 
@@ -95,4 +95,25 @@ fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
         (slice::from_raw_parts_mut(ptr, mid),
          slice::from_raw_parts_mut(ptr.offset(mid as isize), len - mid))
     }
+
+    // we can use the as_mut_ptr method to get access to the raw pointer of a
+    // slice. In this case, since we have a mutable slice to i32 values,
+    // as_mut_ptr returns a raw pointer with the type *mut i32, which we've
+    // stored in the variable ptr.
+    // the slice::from_raw_parts_mut function does the reverse from the
+    // as_mut_ptr and len methods: it takes a raw pointer and a length and
+    // creates a slice.
+    // Because slices are checked, they're safe to use once we've created them.
+    // The function slice::from_raw_parts_mut is an unsafe function because it
+    // takes a raw pointer and trusts that this pointer is valid. The offset
+    // method on raw pointers is also unsafe, since it trusts that the location
+    // some offset after a raw pointer is also a valid pointer. We've put an
+    // unsafe block around our calls to slice::from_raw_parts_mut and offset to
+    // be allowed to call them.
+    // 
+    // Note that the resulting split_at_mut function is safe: we didn’t have to
+    // add the unsafe keyword in front of it, and we can call this function from
+    // safe Rust. We’ve created a safe abstraction to the unsafe code by writing
+    // an implementation of the function that uses unsafe code in a safe way by
+    // only creating valid pointers from the data this function has access to.
 }

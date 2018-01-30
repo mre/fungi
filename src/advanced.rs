@@ -116,4 +116,34 @@ fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
     // safe Rust. We’ve created a safe abstraction to the unsafe code by writing
     // an implementation of the function that uses unsafe code in a safe way by
     // only creating valid pointers from the data this function has access to.
+
+    // Extern
+    // The keyword extern facilitates creating and using a Foreign Function
+    // Interface (FFI).
+
+    extern "C" {
+        fn abs(input: i32) -> i32;
+    }
+
+        unsafe {
+            println!("Absolute value of -3 according to C: {}", abs(-3));
+        }
+    // "C" defines which application binary interface (ABI) the external
+    // function uses. The ABI defines how to call the function at the assembly
+    // level. The "C" ABI is the most common, and follows the C programming
+    // language’s ABI.
+
+    // The extern keyword is also used for creating an interface that allows
+    // other languages to call Rust functions. Instead of an extern block, we
+    // can add the extern keyword and specifying the ABI to use just before the
+    // fn keyword. We also add the #[no_mangle] annotation to tell the Rust
+    // compiler not to mangle the name of this function. The call_from_c
+    // function in this example would be accessible from C code, once we’ve
+    // compiled to a shared library and linked from C:
+
+    #[no_mangle]
+    pub extern "C" fn call_from_c() {
+        println!("Just called a Rust function from C!");
+    }
+    // This usage of extern does not require unsafe.
 }

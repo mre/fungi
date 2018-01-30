@@ -524,6 +524,45 @@ fn seven() {
     }
 }
 
+fn eight() {
+    // Operator Overloading and Default Type Parameters
+    // The <PlaceholderType=ConcreteType> syntax is used in another way as well:
+    // to specify the default type for a generic type. A great example of a
+    // situation where this is useful is operator overloading.
+    //
+
+    // how to overload the + operator by implementing the Add trait on a Point
+    // struct so that we can add two Point instances together:
+
+    use std::ops::Add;
+
+    #[derive(Debug, PartialEq)]
+    struct Point {
+        x: i32,
+        y: i32,
+    }
+
+    impl Add for Point {
+        type Output = Point;
+
+        fn add(self, other: Point) -> Point {
+            Point {
+                x: self.x + other.x,
+                y: self.y + other.y,
+            }
+        }
+    }
+
+    assert_eq!(
+        Point { x: 1, y: 0 } + Point { x: 2, y: 3 },
+        Point { x: 3, y: 3 }
+    );
+
+    // the Add trait in a bit more detail. Here’s its definition:
+    // trait Add<RHS=Self> {
+    //     type Output;
+    //     fn add(self, rhs: RHS) -> Self::Output;
+    // }
 }
 
 #[allow(dead_code)]
@@ -535,4 +574,6 @@ pub fn sample() {
     four();
     five();
     six();
+    seven();
+    eight();
 }

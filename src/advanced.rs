@@ -169,4 +169,34 @@ fn sample() {
     // Another way in which static variables are different from constants is
     // that static variables can be mutable. Both accessing and modifying
     // mutable static variables is unsafe.
+
+    static mut COUNTER: u32 = 0;
+
+    fn add_to_count(inc: u32) {
+        unsafe {
+            COUNTER += inc;
+        }
+    }
+    add_to_count(3);
+
+    unsafe {
+        println!("COUNTER: {}", COUNTER);
+    }
+    // Any time that we read or write from COUNTER has to be within an unsafe
+    // block. This code compiles and prints COUNTER: 3 as we would expect since
+    // it’s single threaded, but having multiple threads accessing COUNTER would
+    // likely result in data races.
+
+    // Implementing an Unsafe Trait
+    unsafe trait Foo {
+        // methods go here
+    }
+
+    unsafe impl Foo for i32 {
+        // method implementations go here
+    }
+
+    // Like unsafe functions, methods in an unsafe trait have some invariant
+    // that the compiler cannot verify. By using unsafe impl, we’re promising
+    // that we’ll uphold these invariants.
 }

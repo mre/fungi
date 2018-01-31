@@ -960,6 +960,50 @@ fn twelve() {
     // Here, the loop never ends, so the value of the expression is !. This
     // wouldn't be true if we included a break, however, as the loop would
     // terminate when it gets to the break.
+
+    // Dynamically Sized Types & Sized
+    // Sometimes referred to as 'DSTs' or 'unsized types', these types let
+    // us talk about types whose size we can only know at runtime.
+
+    // Let's dig into the details of a dynamically sized type that we've
+    // been using this whole book: str. That's right, not &str, but str on
+    // its own. str is a DST; we can't know how long the string is until
+    // runtime. Since we can't know that, we can't create a variable of type
+    // str, nor can we take an argument of type str. Consider this code,
+    // which does not work:
+    //
+    // let s1: str = "Hello there!";
+    // let s2: str = "How's it going?";
+    //
+    // These two str values would need to have the exact same memory layout,
+    // but they have different lengths: s1 needs 12 bytes of storage, and s2
+    // needs 15. This is why it's not possible to create a variable holding
+    // a dynamically sized type.
+    // So what to do? Well, you already know the answer in this case: the
+    // types of s1 and s2 are &str rather than str.
+
+    // we said this about &str: ... it's a reference to an internal position in
+    // the String and the number of elements that it refers to.
+
+    // So while a &T is a single value that stores the memory address of
+    // where the T is located, a &str is two values: the address of the str
+    // and how long it is. As such, a &str has a size we can know at compile
+    // time: it's two times the size of a usize in length. That is, we
+    // always know the size of a &str, no matter how long the string it
+    // refers to is. This is the general way in which dynamically sized
+    // types are used in Rust; they have an extra bit of metadata that
+    // stores the size of the dynamic information. This leads us to the
+    // golden rule of dynamically sized types: we must always put values of
+    // dynamically sized types behind a pointer of some kind.
+
+    // While we've talked a lot about &str, we can combine str with all
+    // kinds of pointers: Box<str>, for example, or Rc<str>. In fact, you've
+    // already seen this before, but with a different dynamically sized
+    // type: traits. Every trait is a dynamically sized type we can refer to
+    // by using the name of the trait. In Chapter 17, we mentioned that in
+    // order to use traits as trait objects, we have to put them behind a
+    // pointer like &Trait or Box<Trait> (Rc<Trait> would work too). Traits
+    // being dynamically sized is the reason we have to do that!
 }
 
 #[allow(dead_code)]

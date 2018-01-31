@@ -1004,6 +1004,41 @@ fn twelve() {
     // order to use traits as trait objects, we have to put them behind a
     // pointer like &Trait or Box<Trait> (Rc<Trait> would work too). Traits
     // being dynamically sized is the reason we have to do that!
+
+    // The Sized Trait
+
+    // To work with DSTs, Rust has a trait that determines if a type's size
+    // is known at compile time or not, which is Sized. This trait is
+    // automatically implemented for everything the compiler knows the size
+    // of at compile time. In addition, Rust implicitly adds a bound on
+    // Sized to every generic function. That is, a generic function
+    // definition like this:
+    //
+    // fn generic<T>(t: T) {
+    //     // ...snip...
+    // }
+    //
+    // is actually treated as if we had written this:
+    //
+    // fn generic<T: Sized>(t: T) {
+    //     // ...snip...
+    // }
+
+    // By default, generic functions will only work on types that have a known
+    // size at compile time. There is, however, special syntax you can use to
+    // relax this restriction:
+    //
+    // fn generic<T: ?Sized>(t: &T) {
+    //     // ...snip...
+    // }
+    //
+    // A trait bound on ?Sized is the opposite of a trait bound on Sized;
+    // that is, we would read this as "T may or may not be Sized". This
+    // syntax is only available for Sized, no other traits.
+
+    // Also note we switched the type of the t parameter from T to &T: since
+    // the type might not be Sized, we need to use it behind some kind of
+    // pointer. In this case, we've chosen a reference.
 }
 
 #[allow(dead_code)]

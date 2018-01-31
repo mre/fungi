@@ -802,6 +802,164 @@ fn eleven() {
 #[allow(unused_variables)]
 fn twelve() {
     // Advanced Types
+    // Using the Newtype Pattern for Type Safety and Abstraction
+
+    // The newtype pattern where we create a new type as a tuple struct
+    // with one field that wraps a type can also be useful for statically
+    // enforcing that values are never confused, and is often used to indicate
+    // the units of a value.
+
+    // Another reason to use the newtype pattern is to abstract away some
+    // implementation details of a type: the wrapper type can expose a different
+    // public API than the private inner type would if we used it directly in
+    // order to restrict the functionality that is available, for example. New
+    // types can also hide internal generic types. F
+
+    // Type Aliases Create Type Synonyms
+    // The newtype pattern involves creating a new struct to be a new, separate
+    // type. Rust also provides the ability to declare a type alias with the
+    // type keyword to give an existing type another name.
+
+    type Kilometers = i32;
+
+    // This means Kilometers is a synonym for i32; Kilometers is not a separate,
+    // new type. Values that have the type Kilometers will be treated exactly
+    // the same as values of type i32:
+
+    let x: i32 = 5;
+    let y: Kilometers = 5;
+
+    println!("x + y = {}", x + y);
+
+    // Since Kilometers is an alias for i32, they're the same type.
+    // The main use case for type synonyms is to reduce repetition.
+    //
+    // Box<Fn() + Send + 'static>
+    //
+    // Writing this out in function signatures and as type annotations all over
+    // the place can be tiresome and error-prone.
+
+    // let f: Box<Fn() + Send + 'static> = Box::new(|| println!("hi"));
+    // fn takes_long_type(f: Box<Fn() + Send + 'static>) {
+    //     // ...snip...
+    // }
+    // fn returns_long_type() -> Box<Fn() + Send + 'static> {
+    //     // ...snip...
+    // }
+
+    // A type alias makes this code more manageable by reducing the amount of
+    // repetition this project has. Here, we've introduced an alias named Thunk
+    // for the verbose type, and we can replace all uses of the type with the
+    // shorter Thunk
+
+    // type Thunk = Box<Fn() + Send + 'static>;
+    // let f: Thunk = Box::new(|| println!("hi"));
+    // fn takes_long_type(f: Thunk) {
+    //     // ...snip...
+    // }
+    // fn returns_long_type() -> Thunk {
+    //     // ...snip...
+    // }
+
+    // Another common use of type aliases is with the Result<T, E> type. Consider
+    // the std::io module in the standard library. I/O operations often return a
+    // Result<T, E>, since their operations may fail to work. There's a
+    // std::io::Error struct that represents all of the possible I/O errors. Many of
+    // the functions in std::io will be returning Result<T, E> where the E is
+    // std::io::Error, such as these functions in the Write trait:
+
+    // use std::io::Error;
+    // use std::fmt;
+    //
+    // pub trait Write {
+    //     fn write(&mut self, buf: &[u8]) -> Result<usize, Error>;
+    //     fn flush(&mut self) -> Result<(), Error>;
+    //
+    //     fn write_all(&mut self, buf: &[u8]) -> Result<(), Error>;
+    //     fn write_fmt(&mut self, fmt: fmt::Arguments) -> Result<(), Error>;
+    // }
+    // We're writing Result<..., Error> a lot. As such, std::io has this type alias declaration:
+    //
+    // type Result<T> = Result<T, std::io::Error>;
+    //
+    // Because this is in the std::io module, the fully qualified alias that we can
+    // use is std::io::Result<T>; that is, a Result<T, E> with the E filled in as
+    // std::io::Error. The Write trait function signatures end up looking like this:
+    //
+    // pub trait Write {
+    //     fn write(&mut self, buf: &[u8]) -> Result<usize>;
+    //     fn flush(&mut self) -> Result<()>;
+    //
+    //     fn write_all(&mut self, buf: &[u8]) -> Result<()>;
+    //     fn write_fmt(&mut self, fmt: Arguments) -> Result<()>;
+    // }
+
+    // The Never Type, !, that Never Returns
+    // Rust has a special type named !. In type theory lingo, it's called the
+    // empty type, because it has no values. We prefer to call it the never
+    // type. The name describes what it does: it stands in the place of the
+    // return type when a function will never return.
+
+    // fn bar() -> ! {
+    //     // ...snip...
+    // }
+
+    // This is read as "the function bar returns never," and functions that
+    // return never are called diverging functions. We can't create values of
+    // the type !, so bar can never possibly return. What use is a type you can
+    // never create values for?
+    //
+    // let guess: u32 = match guess.trim().parse() {
+    //     Ok(num) => num,
+    //     Err(_) => continue,
+    // };
+
+    // A match with an arm that ends in continue but that match arms must return
+    // the same type. This doesn't work:
+    // let guess = match guess.trim().parse()  {
+    //     Ok(_) => 5,
+    //     Err(_) => "hello",
+    // }
+
+    // What would the type of guess be here? It'd have to be both an integer and
+    // a string, and Rust requires that guess can only have one type. So what
+    // does continue return? Why are we allowed to return a u32 from one arm
+    // and have another arm that ends with continue?
+    // As you may have guessed, continue has a value of !. That is, when Rust
+    // goes to compute the type of guess, it looks at both of the match arms.
+    // The former has a value of u32, and the latter has a value of !. Since !
+    // can never have a value, Rust is okay with this, and decides that the type
+    // of guess is u32. The formal way of describing this behavior of ! is that
+    // the never type unifies with all other types. We're allowed to end this
+    // match arm with continue because continue doesn't actually return a value;
+    // it instead moves control back to the top of the loop, so in the Err case,
+    // we never actually assign a value to guess.
+
+    // Another use of the never type is panic!. Remember the unwrap function
+    // that we call on Option<T> values to produce a value or panic? Here's its
+    // definition:
+    // impl<T> Option<T> {
+    //     pub fn unwrap(self) -> T {
+    //         match self {
+    //             Some(val) => val,
+    //             None => panic!("called `Option::unwrap()` on a `None` value"),
+    //         }
+    //     }
+    // }
+
+    // Here, we know that val has the type T, and panic! has the type !, so the
+    // result of the overall match expression is T. This works because panic!
+    // doesn't produce a value; it ends the program. In the None case, we won't
+    // be returning a value from unwrap, so this code is valid.
+
+    // One final expression that has the type ! is a loop:
+    // print!("forever ");
+    // loop {
+    //     print!("and ever ");
+    // }
+    // Here, the loop never ends, so the value of the expression is !. This
+    // wouldn't be true if we included a break, however, as the loop would
+    // terminate when it gets to the break.
 }
 
 #[allow(dead_code)]

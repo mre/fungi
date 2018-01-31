@@ -1,6 +1,7 @@
 // https://doc.rust-lang.org/stable/book/second-edition/ch19-01-unsafe-rust.html
 // https://doc.rust-lang.org/stable/book/second-edition/ch19-02-advanced-lifetimes.html
 // https://doc.rust-lang.org/stable/book/second-edition/ch19-03-advanced-traits.html
+// https://doc.rust-lang.org/stable/book/second-edition/ch19-04-advanced-types.html
 
 // Unsafe Rust
 // Dereferencing a Raw Pointer
@@ -423,6 +424,8 @@ fn six() {
     // references.
 }
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
 fn seven() {
     // Associated Types
     // Associated types are a way of associating a type placeholder with a
@@ -478,8 +481,9 @@ fn seven() {
     // associated types for Node and Edge.
     // With the GGraph trait defined using generics, our distance function
     // signature would have to look like:
-    fn distance<N, E, G: GGraph<N, E>>(graph: &G, start: &N, end: &N) -> u32 {
+    fn distance_a<N, E, G: GGraph<N, E>>(graph: &G, start: &N, end: &N) -> u32 {
         // ...snip...
+        0
     }
     // The signature of a distance function that uses the trait GGraph and has
     // to specify all the generic parameters.
@@ -492,8 +496,9 @@ fn seven() {
 
     // the definition of distance that uses the AGraph trait with associated
     // types:
-    fn distance<G: AGraph>(graph: &G, start: &G::Node, end: &G::Node) -> u32 {
+    fn distance_b<G: AGraph>(graph: &G, start: &G::Node, end: &G::Node) -> u32 {
         // ...snip...
+        0
     }
     // The signature of a distance function that uses the trait AGraph and the
     // associated type Node This is much cleaner. We only need to have one
@@ -508,8 +513,9 @@ fn seven() {
     // distance functions.
     // The signature for the distance function using the generic GGraph trait
     // does get a bit more concise using a trait object:
-    fn distance<N, E>(graph: &GGraph<N, E>, start: &N, end: &N) -> u32 {
+    fn distance_c<N, E>(graph: &GGraph<N, E>, start: &N, end: &N) -> u32 {
         // ...snip...
+        0
     }
     // Specifying the Edge type is still required, though.
     // It is possible in general to use trait objects of traits that have

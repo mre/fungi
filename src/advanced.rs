@@ -610,6 +610,200 @@ fn eight() {
     // don't have to specify the extra parameter most of the time.
 }
 
+fn nine() {
+    // Fully Qualified Syntax for Disambiguation
+
+    trait Pilot {
+        fn fly(&self);
+    }
+
+    trait Wizard {
+        fn fly(&self);
+    }
+
+    struct Human;
+
+    impl Pilot for Human {
+        fn fly(&self) {
+            println!("This is your captain speaking.");
+        }
+    }
+
+    impl Wizard for Human {
+        fn fly(&self) {
+            println!("Up!");
+        }
+    }
+
+    impl Human {
+        fn fly(&self) {
+            println!("*waving arms furiously*");
+        }
+    }
+
+    // When we call fly on an instance of Human, the compiler defaults to
+    // calling the method that is directly implemented on the type,
+    // In order to call the fly methods from either the Pilot trait or the
+    // Wizard trait, we need to use more explicit syntax in order to specify
+    // which fly method we mean.
+
+    let person = Human;
+    Pilot::fly(&person);
+    Wizard::fly(&person);
+    person.fly();
+
+    // However, associated functions that are part of traits don't have a self
+    // parameter. When two types in the same scope implement that trait, Rust
+    // can't figure out which type we mean unless we use fully qualified syntax.
+
+    // Animal has the associated function baby_name, the implementation of
+    // Animal for the struct Dog, and the associated function baby_name defined
+    // on Dog directly.
+    trait Animal {
+        fn baby_name() -> String;
+    }
+
+    struct Dog;
+
+    impl Dog {
+        fn baby_name() -> String {
+            String::from("Spot")
+        }
+    }
+
+    impl Animal for Dog {
+        fn baby_name() -> String {
+            String::from("puppy")
+        }
+    }
+
+    println!("A baby dog is called a {}", Dog::baby_name());
+    // Attempting to call the baby_name function from the Animal trait:
+    // println!("A baby dog is called a {}", Animal::baby_name());
+    // error[E0283]: type annotations required: cannot resolve `_: Animal`
+    // Because Animal::baby_name is an associated function rather than a method,
+    // and thus doesn't have a self parameter, Rust has no way to figure out
+    // which implementation of Animal::baby_name we want.
+    // we want to use the implementation of Animal for Dog, we need to use fully
+    // qualified syntax, which is the most specific we can be when calling a
+    // function.
+    println!("A baby dog is called a {}", <Dog as Animal>::baby_name());
+    // We're providing Rust with a type annotation within the angle brackets,
+    // and we're specifying that we want to call the baby_name method from the
+    // Animal trait as implemented on Dog by saying that we want to treat the
+    // Dog type as an Animal for this function call.
+    // <Type as Trait>::function(receiver_if_method, next_arg, ...);
+    // We only need to use this more verbose syntax in cases where there are
+    // multiple implementations that use the same name and Rust needs help in
+    // order to know which implementation we want to call.
+}
+
+#[allow(dead_code)]
+#[allow(unused_variables)]
+fn ten() {
+    // Supertraits to use one trait's functionality within another trait
+    // Sometimes, we may want a trait to be able to rely on another trait also
+    // being implemented wherever our trait is implemented, so that our trait
+    // can use the other trait's functionality. The required trait is a
+    // supertrait of the trait we're implementing.
+    // In the implementation of outline_print, since we want to be able to use
+    // the Display trait's functionality, we need to be able to say that the
+    // OutlinePrint trait will only work for types that also implement Display
+    // and provide the functionality that OutlinePrint needs.
+    // in the trait definition by specifying OutlinePrint: Display. It's like
+    // adding a trait bound to the trait.
+
+    use std::fmt;
+
+    trait OutlinePrint: fmt::Display {
+        fn outline_print(&self) {
+            let output = self.to_string();
+            let len = output.len();
+            println!("{}", "*".repeat(len + 4));
+            println!("*{}*", " ".repeat(len + 2));
+            println!("* {} *", output);
+            println!("*{}*", " ".repeat(len + 2));
+            println!("{}", "*".repeat(len + 4));
+        }
+    }
+    // Because we've specified that OutlinePrint requires the Display trait, we
+    // can use to_string in outline_print (to_string is automatically
+    // implemented for any type that implements Display).
+    // If we try to implement OutlinePrint on a type that doesn't implement Display, such as the Point struct:
+    //
+    struct Point {
+        x: i32,
+        y: i32,
+    }
+
+    // impl OutlinePrint for Point {}
+    // error[E0277]: the trait bound `Point: std::fmt::Display` is not satisfied
+
+    // Once we implement Display on Point and satisfy the constraint that
+    // OutlinePrint requires, like so:
+
+    // use std::fmt;
+    impl fmt::Display for Point {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "({}, {})", self.x, self.y)
+        }
+    }
+
+    impl OutlinePrint for Point {}
+
+    // then implementing the OutlinePrint trait on Point will compile
+    // successfully and we can call outline_print on a Point instance.
+}
+
+#[allow(dead_code)]
+#[allow(unused_variables)]
+fn eleven() {
+    // The Newtype Pattern to Implement External Traits on External Types
+
+    // we mentioned the orphan rule: we're allowed to implement a trait on a
+    // type as long as either the trait or the type are local to our crate. One
+    // way to get around this restriction is to use the newtype pattern, which
+    // involves creating a new type using a tuple struct with one field as a
+    // thin wrapper around the type we want to implement a trait for. Then the
+    // wrapper type is local to our crate, and we can implement the trait on the
+    // wrapper. There's no runtime performance penalty for using this pattern.
+    // The wrapper type is elided at compile time.
+
+    // For example, if we wanted to implement Display on Vec, we can make a
+    // Wrapper struct that holds an instance of Vec. Then we can implement
+    // Display on Wrapper and use the Vec value:
+
+    use std::fmt;
+
+    struct Wrapper(Vec<String>);
+
+    impl fmt::Display for Wrapper {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            // Using ".0" because Wrapper is a Struct Tuple:
+            // https://doc.rust-lang.org/stable/book/second-edition/ch03-02-data-types.html#grouping-values-into-tuples
+            // Values can be extracted from the tuple using tuple indexing
+            write!(f, "[{}]", self.0.join(", "))
+        }
+    }
+
+    let w = Wrapper(vec![String::from("hello"), String::from("world")]);
+    println!("w = {}", w);
+
+    //  The implementation of Display uses self.0 to access the inner Vec, and
+    //  then we can use the functionality of the Display type on Wrapper.
+
+    // The downside is that since Wrapper is a new type, it doesn't have the
+    // methods of the value it's holding; we'd have to implement all the methods
+    // of Vec like push, pop, and all the rest directly on Wrapper to delegate
+    // to self.0 in order to be able to treat Wrapper exactly like a Vec.
+}
+
+#[allow(dead_code)]
+#[allow(unused_variables)]
+fn twelve() {
+    // Advanced Types
+}
+
 #[allow(dead_code)]
 #[allow(unused_variables)]
 pub fn sample() {
@@ -621,4 +815,8 @@ pub fn sample() {
     six();
     seven();
     eight();
+    nine();
+    ten();
+    eleven();
+    twelve();
 }

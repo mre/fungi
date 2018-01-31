@@ -504,7 +504,7 @@ fn seven() {
 
     // Trait Objects with Associated Types
 
-    // You may have been wondering why we didn’t use a trait object in the
+    // You may have been wondering why we didn't use a trait object in the
     // distance functions.
     // The signature for the distance function using the generic GGraph trait
     // does get a bit more concise using a trait object:
@@ -513,10 +513,10 @@ fn seven() {
     }
     // Specifying the Edge type is still required, though.
     // It is possible in general to use trait objects of traits that have
-    // associated types, though; unction named traverse that doesn’t need to use
-    // the trait’s associated types in other arguments. We do, however, have to
+    // associated types, though; unction named traverse that doesn't need to use
+    // the trait's associated types in other arguments. We do, however, have to
     // specify the concrete types for the associated types in this case. Here,
-    // we’ve chosen to accept types that implement the AGraph trait with the
+    // we've chosen to accept types that implement the AGraph trait with the
     // concrete type of usize as their Node type and a tuple of two usize values
     // for their Edge type:
     fn traverse(graph: &AGraph<Node = usize, Edge = (usize, usize)>) {
@@ -558,11 +558,50 @@ fn eight() {
         Point { x: 3, y: 3 }
     );
 
-    // the Add trait in a bit more detail. Here’s its definition:
+    // the Add trait in a bit more detail. Here's its definition:
     // trait Add<RHS=Self> {
     //     type Output;
     //     fn add(self, rhs: RHS) -> Self::Output;
     // }
+    // it's a trait with one method and an associated type. The new part is the
+    // RHS=Self in the angle brackets: this syntax is called default type
+    // parameters. RHS is a generic type parameter (short for “right hand side”)
+    // that's used for the type of the rhs parameter in the add method. If we
+    // don't specify a concrete type for RHS when we implement the Add trait,
+    // the type of RHS will default to the type of Self (the type that we're
+    // implementing Add on).
+
+    // use std::ops::Add;
+    struct Millimeters(u32);
+    struct Meters(u32);
+
+    impl Add for Millimeters {
+        type Output = Millimeters;
+
+        fn add(self, other: Millimeters) -> Millimeters {
+            Millimeters(self.0 + other.0)
+        }
+    }
+
+    impl Add<Meters> for Millimeters {
+        type Output = Millimeters;
+
+        fn add(self, other: Meters) -> Millimeters {
+            Millimeters(self.0 + (other.0 * 1000))
+        }
+    }
+
+    // If we're adding Millimeters to other Millimeters, we don't need to
+    // parameterize the RHS type for Add since the default Self type is what we
+    // want. If we want to implement adding Millimeters and Meters, then we need
+    // to say impl Add<Meters> to set the value of the RHS type parameter.
+    // Default type parameters are used in two main ways:
+    // - To extend a type without breaking existing code.
+    // - To allow customization in a way most users don't want.
+    // The Add trait is an example of the second purpose: most of the time,
+    // you're adding two like types together. Using a default type parameter in
+    // the Add trait definition makes it easier to implement the trait since you
+    // don't have to specify the extra parameter most of the time.
 }
 
 #[allow(dead_code)]

@@ -12,11 +12,15 @@
 // object's definition, thus gaining the parent object's data and behavior
 // without you having to define them again.
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
 pub struct AveragedCollection {
     list: Vec<i32>,
     average: f64,
 }
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
 impl AveragedCollection {
     pub fn add(&mut self, value: i32) {
         self.list.push(value);
@@ -81,10 +85,14 @@ pub trait Draw {
 //  of type Box<Draw>, which is a trait object: it's a stand-in for any type
 //  inside a Box that implements the Draw trait.
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
 pub struct Screen {
     pub components: Vec<Box<Draw>>,
 }
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
 impl Screen {
     pub fn run(&self) {
         for component in self.components.iter() {
@@ -99,10 +107,14 @@ impl Screen {
 // concrete types to fill in for the trait object at runtime. For example, we
 // could have defined the Screen struct using a generic type and a trait bound:
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
 pub struct ScreenGenerics<T: Draw> {
     pub components: Vec<T>,
 }
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
 impl<T> ScreenGenerics<T>
 where
     T: Draw,
@@ -124,6 +136,8 @@ where
 
 // Implementing the Trait
 // Add some types that implement the Draw trait.
+#[allow(dead_code)]
+#[allow(unused_variables)]
 pub struct Button {
     pub width: u32,
     pub height: u32,
@@ -139,6 +153,8 @@ impl Draw for Button {
 // extern crate rust_gui;
 // use rust_gui::Draw;
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
 struct SelectBox {
     width: u32,
     height: u32,
@@ -314,7 +330,7 @@ trait State {
     fn request_review(self: Box<Self>) -> Box<State>;
     fn approve(self: Box<Self>) -> Box<State>;
     // Default implementation for content.
-    fn content<'a>(&self, post: &'a Post) -> &'a str {
+    fn content<'a>(&self, _post: &'a Post) -> &'a str {
         ""
     }
 }
@@ -443,4 +459,7 @@ fn two() {
     assert_eq!("I ate a salad for lunch today", post.content());
 }
 
-pub fn sample() {}
+pub fn sample() {
+    one();
+    two();
+}

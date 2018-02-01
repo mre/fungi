@@ -1,3 +1,7 @@
+#[macro_use]
+extern crate lazy_static;
+extern crate regex;
+
 mod types;
 mod fibonacci;
 mod modules;
@@ -25,6 +29,7 @@ mod concurrency;
 mod oop;
 mod patterns;
 mod advanced;
+mod regexp;
 
 fn main() {
     types::sample();
@@ -56,6 +61,7 @@ fn main() {
     oop::sample();
     patterns::sample();
     advanced::sample();
+    regexp::sample();
 }
 
 #[cfg(test)]

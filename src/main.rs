@@ -30,6 +30,7 @@ mod oop;
 mod patterns;
 mod advanced;
 mod regexp;
+mod linked_lists;
 
 fn main() {
     types::sample();
@@ -62,6 +63,7 @@ fn main() {
     patterns::sample();
     advanced::sample();
     regexp::sample();
+    linked_lists::sample();
 }
 
 #[cfg(test)]

@@ -30,6 +30,35 @@ impl List {
         }
     }
 
+    fn back(&mut self) -> &mut List {
+        let mut node = self;
+
+        loop {
+            // https://stackoverflow.com/questions/37986640/obtaining-a-mutable-reference-by-iterating-a-recursive-structure
+            // The trick here is that using {anchor} moves the content of anchor
+            // into an unnamed temporary on which the match executes. Therefore,
+            // in the match block we are not borrowing from anchor but from the
+            // temporary, leaving us free to modify anchor.
+            // See the related blog post Stuff the Identity Function Does (in Rust).
+            // https://bluss.github.io/rust/fun/2015/10/11/stuff-the-identity-function-does/
+            match { node } {
+                &mut Cons(_, ref mut next) => {
+                    println!("looping...");
+                    node = next
+                }
+                other => return other,
+            }
+        }
+    }
+
+    // fn append_ref(&mut self, elem: u32) {
+    //     *self.back() = Cons(elem, Box::new(Nil));
+    // }
+    // fn append(mut self, elem: u32) -> Self {
+    //     self.append_ref(elem);
+    //     self
+    // }
+
     // Return the length of the list
     fn len(&self) -> u32 {
         // `self` has to be matched, because the behavior of this method

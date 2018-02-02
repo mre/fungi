@@ -1,12 +1,22 @@
 // https://rustbyexample.com/custom_types/enum/testcase_linked_list.html
 
 use self::List::*;
+use std::fmt;
 
 enum List {
     // Cons: Tuple struct that wraps an element and a pointer to the next node
     Cons(u32, Box<List>),
     // Nil: A node that signifies the end of the linked list
     Nil,
+}
+
+impl fmt::Debug for List {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Cons(x, _) => write!(f, "list (Cons) {}", x),
+            Nil => write!(f, "list (empty)"),
+        }
+    }
 }
 
 // Methods can be attached to an enum
@@ -32,6 +42,7 @@ impl List {
 
     fn back(&mut self) -> &mut List {
         let mut node = self;
+        println!("initial reference (node): {:?}", node);
 
         loop {
             // https://stackoverflow.com/questions/37986640/obtaining-a-mutable-reference-by-iterating-a-recursive-structure
@@ -41,6 +52,10 @@ impl List {
             // temporary, leaving us free to modify anchor.
             // See the related blog post Stuff the Identity Function Does (in Rust).
             // https://bluss.github.io/rust/fun/2015/10/11/stuff-the-identity-function-does/
+            //
+            // we need to transfer ownership of the mutable reference when
+            // performing iteration. This is needed to ensure you never have two
+            // mutable references to the same thing.
             match { node } {
                 &mut Cons(_, ref mut next) => {
                     println!("looping...");

@@ -31,6 +31,7 @@ mod patterns;
 mod advanced;
 mod regexp;
 mod linked_lists;
+mod state_machine;
 
 fn main() {
     types::sample();
@@ -64,6 +65,7 @@ fn main() {
     advanced::sample();
     regexp::sample();
     linked_lists::sample();
+    state_machine::sample();
 }
 
 #[cfg(test)]

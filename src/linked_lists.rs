@@ -120,6 +120,10 @@ pub fn sample() {
     println!("{}", list.stringify());
 }
 
+// Rust test programs hide the stdout of successful tests in order for the test
+// output to be tidy. You can disable this behavior by passing the --nocapture
+// option to the test binary or to cargo test
+// cargo test -- --nocapture
 #[test]
 fn linked_list_prepend() {
     let mut ll = List::new();
@@ -129,7 +133,9 @@ fn linked_list_prepend() {
     ll = ll.prepend(1);
     assert_eq!(ll.len(), 2);
     assert_eq!(ll.stringify(), String::from("1, 0, Nil"));
-    ll = ll.append(2);
+    println!("ll is {:?}", ll);
+    println!("back is {:?}", ll.back());
+    let ll = ll.append(2);
     assert_eq!(ll.len(), 3);
-    assert_eq!(ll.stringify(), String::from("1, 0, Nil"));
+    assert_eq!(ll.stringify(), String::from("1, 0, 2, Nil"));
 }

@@ -1,25 +1,33 @@
-// https://rustbyexample.com/custom_types/enum/testcase_linked_list.html
+//! # LinkedLists
+//!
+//! A library with a simple example of linked lists.
+//!
+//! Based on [Rust By Examples - testcase linked lists](https://rustbyexample.com/custom_types/enum/testcase_linked_list.html)
 
 use self::List::*;
 use std::fmt;
 
+/// List as a Tuple Struct
+///
+/// Cons: Tuple struct that wraps an element and a pointer to the next node
+/// Nil: A node that signifies the end of the linked list
 enum List {
-    // Cons: Tuple struct that wraps an element and a pointer to the next node
     Cons(u32, Box<List>),
-    // Nil: A node that signifies the end of the linked list
     Nil,
 }
 
 impl fmt::Debug for List {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Cons(x, _) => write!(f, "list (Cons) {}", x),
+            Cons(x, ref t) => write!(f, "list (Cons) {:?} with tail: {:?}", x, t),
             Nil => write!(f, "list (empty)"),
         }
     }
 }
 
 // Methods can be attached to an enum
+#[allow(dead_code)]
+#[allow(unused_variables)]
 impl List {
     // Create an empty list
     fn new() -> List {
@@ -33,16 +41,10 @@ impl List {
         Cons(elem, Box::new(self))
     }
 
-    fn append(self, elem: u32) -> List {
-        match self {
-            Cons(_, tail) => tail.append(elem),
-            Nil => Cons(elem, Box::new(List::new())),
-        }
-    }
-
+    // returns a mutable reference to the last item (back) which will always be
+    // the Nil variant.
     fn back(&mut self) -> &mut List {
         let mut node = self;
-        println!("initial reference (node): {:?}", node);
 
         loop {
             // https://stackoverflow.com/questions/37986640/obtaining-a-mutable-reference-by-iterating-a-recursive-structure
@@ -57,22 +59,24 @@ impl List {
             // performing iteration. This is needed to ensure you never have two
             // mutable references to the same thing.
             match { node } {
-                &mut Cons(_, ref mut next) => {
-                    println!("looping...");
-                    node = next
-                }
+                &mut Cons(_, ref mut next) => node = next,
                 other => return other,
             }
         }
     }
 
-    // fn append_ref(&mut self, elem: u32) {
-    //     *self.back() = Cons(elem, Box::new(Nil));
-    // }
-    // fn append(mut self, elem: u32) -> Self {
-    //     self.append_ref(elem);
-    //     self
-    // }
+    /// Takes a mutable reference to self and the element to append as the
+    /// "last" node of the list (actually the last element will always be the
+    /// Nil value of the tuple struct).
+    fn append_ref(&mut self, elem: u32) {
+        *self.back() = Cons(elem, Box::new(Nil));
+    }
+
+    /// Append the given element to the list.
+    fn append(&mut self, elem: u32) -> &Self {
+        self.append_ref(elem);
+        self
+    }
 
     // Return the length of the list
     fn len(&self) -> u32 {

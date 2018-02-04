@@ -33,9 +33,15 @@ pub fn sample() {
     let mut state = StateFn(StateMachine::start);
     println!("{:?}", state_machine);
 
-    state = state.0(&mut state_machine);
+    state = state.step(&mut state_machine);
     println!("{:?}", state_machine);
 
-    state.0(&mut state_machine);
+    state.step(&mut state_machine);
     println!("{:?}", state_machine);
+}
+
+impl StateFn {
+    fn step(&self, sm: &mut StateMachine) -> StateFn {
+        self.0(sm)
+    }
 }

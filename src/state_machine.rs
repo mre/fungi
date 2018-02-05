@@ -95,6 +95,10 @@ pub fn sample() {
     state = state(&mut state_machine);
     println!("{:?}", state_machine);
 
-    state(&mut state_machine);
+    state = state(&mut state_machine);
+    println!("{:?}", state_machine);
+
+    // state(&mut state_machine);
+    state.deref()(&mut state_machine);
     println!("{:?}", state_machine);
 }

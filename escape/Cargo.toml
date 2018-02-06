@@ -1,6 +1,0 @@
-[package]
-name = "escape"
-version = "0.1.0"
-authors = ["Edoardo Rossi <edd.rossi@gmail.com>"]
-
-[dependencies]

@@ -73,3 +73,47 @@ struct Game {
     last_command: String,
     door_locked: bool,
 }
+
+// https://doc.rust-lang.org/std/borrow/trait.ToOwned.html#tymethod.to_owned
+// Creates owned data from borrowed data, usually by cloning.
+//
+// let s: &str = "a";
+// let ss: String = s.to_owned();
+//
+// let v: &[i32] = &[1, 2];
+// let vv: Vec<i32> = v.to_owned();
+//
+// https://doc.rust-lang.org/std/default/trait.Default.html
+// A trait for giving a type a useful default value.
+impl ::std::default::Default for Game {
+    fn default() -> Self {
+        Game {
+            player: Player {
+                name: "".to_owned(),
+                has_key: false,
+            },
+            door_locked: true,
+            last_command: "".to_owned(),
+        }
+    }
+}
+
+impl Game {
+    fn reset(&mut self) {
+        self.player.has_key = false;
+        self.door_locked = true;
+    }
+
+    fn start(&mut self) -> GameState<Game> {
+        println!("You wake up in cell. You feel confused... How do you wanto to be remembered?");
+        GameState::with_input(Self::save_name, String::from("start"))
+    }
+
+    fn end(&mut self) -> GameState<Game> {
+        println!(
+            "You solved the game! {} will be remembered!",
+            self.player.name
+        );
+        GameState::completed(Self::end)
+    }
+}

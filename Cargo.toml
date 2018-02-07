@@ -12,6 +12,8 @@ regex = "0.2"
 # https://crates.io/crates/lazy_static
 # https://github.com/rust-lang-nursery/lazy-static.rs
 lazy_static = "1.0.0"
+# https://github.com/rust-lang-nursery/rust-clippy
+# clippy = "*"
 
 # https://doc.rust-lang.org/cargo/
 # The opt-level setting controls how many optimizations Rust will apply to your

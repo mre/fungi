@@ -75,13 +75,18 @@ fn main() {
     );
 
     // Another example
+
+    type StringFn = fn() -> String;
+
     struct Bar {
         fou: u32,
         fos: String,
+        // self.fou.to_string()
+        foufn: StringFn,
     }
 
     impl<'b> std::ops::Deref for Bar {
-        type Target = String;
+        type Target = StringFn;
         // https://doc.rust-lang.org/book/first-edition/borrow-and-asref.html
         // https://doc.rust-lang.org/stable/book/second-edition/ch10-03-lifetime-syntax.html#thinking-in-terms-of-lifetimes
         // https://doc.rust-lang.org/nightly/book/second-edition/ch15-02-deref.html#implementing-the-deref-trait-defines-how-to-treat-a-type-like-a-reference
@@ -108,10 +113,20 @@ fn main() {
         // to * happens once, each time we type a * in our code. The
         // substitution of * does not recurse infinitely.
         fn deref<'a>(&'a self) -> (&Self::Target) {
-            println!("Dereferencing Bar as &String");
-            // &(String::from("fos"))
-            // &self.fos
-            &self.fos
+            println!("Dereferencing Bar as &StringFn");
+            &(self.foufn)
         }
     }
+
+    let b: Bar = Bar {
+        fou: 10,
+        fos: String::from("bar"),
+        foufn: (|| String::from("foufn dereferenced and invoked")),
+    };
+
+    println!(
+        "Bar is an struct with a couple of fields {} {} and...",
+        b.fou, b.fos
+    );
+    println!("Dereferencing a function is possible: {}", (&b)());
 }

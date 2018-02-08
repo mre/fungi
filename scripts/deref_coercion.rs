@@ -76,12 +76,11 @@ fn main() {
 
     // Another example
 
-    type StringFn = fn() -> String;
+    type StringFn = fn(u: u32) -> String;
 
     struct Bar {
         fou: u32,
         fos: String,
-        // self.fou.to_string()
         foufn: StringFn,
     }
 
@@ -118,15 +117,24 @@ fn main() {
         }
     }
 
-    let b: Bar = Bar {
+    let mut b: Bar = Bar {
         fou: 10,
         fos: String::from("bar"),
-        foufn: (|| String::from("foufn dereferenced and invoked")),
+        foufn: (|_x| String::from("foufn dereferenced and invoked")),
     };
 
     println!(
         "Bar is an struct with a couple of fields {} {} and...",
         b.fou, b.fos
     );
-    println!("Dereferencing a function is possible: {}", (&b)());
+
+    println!("Dereferencing a function is possible: {}", (&b)(b.fou));
+
+    b = Bar {
+        fou: 10,
+        fos: String::from("bar"),
+        foufn: (|x| x.to_string()),
+    };
+
+    println!("Dereferencing a function is possible: {}", (&b)(b.fou));
 }

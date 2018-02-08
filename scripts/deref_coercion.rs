@@ -9,7 +9,7 @@ impl Foo {
     }
 
     fn method_ref_only(&self, r: &u32) -> u32 {
-        *r + &self.bar
+        self.bar + r
     }
 }
 
@@ -45,6 +45,37 @@ fn main() {
     let r = &n;
     println!("// A function that takes only references is easy to define");
     println!("Ref only please: {}", ref_only(r));
+    println!("// and won't work with a value: error[E0308]: mismatched types");
+    // println!("Ref only please: {}", ref_only(n));
+    println!("// A method that takes only references is easy to define");
     println!("Ref only please: {}", f.method_ref_only(r));
-    println!("Ref only please: {}", Foo::method_ref_only(&f, r));
+    println!("// works also with associated function");
+    println!("Ref only (sugarfree): {}", Foo::method_ref_only(&f, r));
+    println!("// Since we defined the Deref Trait for the Foo struct");
+    // we pass a reference to the struct Foo as parameter in the invocation of
+    // the function ref_only and when this ref is dereferenced we get the u32
+    // that is required by the function.
+    println!("u32 references only, from a Foo: {}", ref_only(&f));
+
+    struct StringContainer {
+        f: String,
+    };
+    impl std::ops::Deref for StringContainer {
+        type Target = String;
+        fn deref(&self) -> &String {
+            &self.f
+        }
+    }
+    let sc = StringContainer {
+        f: String::from("some string"),
+    };
+    println!(
+        "Deref a StringContainer, length of the content: {}",
+        String::len(&sc)
+    );
+
+    // Another example
+    struct Bar {
+        foo: u32,
+    }
 }

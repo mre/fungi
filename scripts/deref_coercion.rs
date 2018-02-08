@@ -76,11 +76,12 @@ fn main() {
 
     // Another example
     struct Bar {
-        foo: u32,
+        fou: u32,
+        fos: String,
     }
 
     impl<'b> std::ops::Deref for Bar {
-        type Target = str;
+        type Target = String;
         // https://doc.rust-lang.org/book/first-edition/borrow-and-asref.html
         // https://doc.rust-lang.org/stable/book/second-edition/ch10-03-lifetime-syntax.html#thinking-in-terms-of-lifetimes
         // https://doc.rust-lang.org/nightly/book/second-edition/ch15-02-deref.html#implementing-the-deref-trait-defines-how-to-treat-a-type-like-a-reference
@@ -107,8 +108,10 @@ fn main() {
         // to * happens once, each time we type a * in our code. The
         // substitution of * does not recurse infinitely.
         fn deref<'a>(&'a self) -> (&Self::Target) {
-            // &self.foo
-            &(String::from("foo"))
+            println!("Dereferencing Bar as &String");
+            // &(String::from("fos"))
+            // &self.fos
+            &self.fos
         }
     }
 }

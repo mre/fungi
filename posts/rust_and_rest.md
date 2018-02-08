@@ -95,7 +95,7 @@ actual response object.
 On the response object you can check the status of the response with these
 methods:
 
-```rest
+```rust
 pub fn status(&self) -> u32 { self.status }
 pub fn failed(&self) -> bool { self.status >= 400 && self.status <= 600 }
 pub fn ok(&self) -> bool { !self.failed() }
@@ -106,7 +106,7 @@ However what's nice is that most of the time you don't have to do any of this.
 The response method also provides a method to conver non successful responses
 into errors like this:
 
-```rest
+```rust
 pub fn to_result(self) -> ApiResult<ApiResponse> {
     if self.ok() {
         return Ok(self);

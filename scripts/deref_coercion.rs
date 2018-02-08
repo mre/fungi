@@ -78,4 +78,37 @@ fn main() {
     struct Bar {
         foo: u32,
     }
+
+    impl<'b> std::ops::Deref for Bar {
+        type Target = str;
+        // https://doc.rust-lang.org/book/first-edition/borrow-and-asref.html
+        // https://doc.rust-lang.org/stable/book/second-edition/ch10-03-lifetime-syntax.html#thinking-in-terms-of-lifetimes
+        // https://doc.rust-lang.org/nightly/book/second-edition/ch15-02-deref.html#implementing-the-deref-trait-defines-how-to-treat-a-type-like-a-reference
+        //
+        // Implementing the Deref Trait Defines How To Treat a Type Like a Reference
+        // When we type *y what Rust actually ran behind the scenes was this
+        // code:
+        //   *(y.deref())
+        // Rust substitutes the * operator with a call to the deref method and
+        // then a plain dereference so that we don’t have to think about when we
+        // have to call the deref method or not. This feature of Rust lets us
+        // write code that functions identically whether we have a regular
+        // reference or a type that implements Deref.
+        //
+        // The reason the deref method returns a reference to a value, and why
+        // the plain dereference outside the parentheses in *(y.deref()) is
+        // still necessary, is because of ownership. If the deref method
+        // returned the value directly instead of a reference to the value, the
+        // value would be moved out of self. We don’t want to take ownership of
+        // the inner value inside MyBox<T> in this case and in most cases where
+        // we use the dereference operator.
+        //
+        // Note that replacing * with a call to the deref method and then a call
+        // to * happens once, each time we type a * in our code. The
+        // substitution of * does not recurse infinitely.
+        fn deref<'a>(&'a self) -> (&Self::Target) {
+            // &self.foo
+            &(String::from("foo"))
+        }
+    }
 }

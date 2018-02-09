@@ -1,3 +1,7 @@
+// error[E0658]: type ascription is experimental (see issue #23416)
+// https://github.com/rust-lang/rust/issues/23416
+#![feature(type_ascription)]
+
 #[derive(Debug)]
 struct Foo {
     bar: u32,
@@ -78,6 +82,28 @@ fn main() {
 
     type StringFn = fn(u: u32) -> String;
 
+    // https://doc.rust-lang.org/std/marker/trait.Copy.html
+    // We can derive a `Copy` implementation. `Clone` is also required, as it's
+    // a supertrait of `Copy`.
+    //
+    // But:
+    // https://stackoverflow.com/questions/38215753/how-do-i-implement-clone-copy-for-an-enum-that-contains-a-string/38216027#38216027
+    // Copy designates types for which making a bitwise copy creates a valid
+    // instance without invalidating the original instance. This isn't true for
+    // String, because String contains a pointer to the string data on the heap
+    // and assumes it has unique ownership of that data, and thus when you drop
+    // a String, it deallocates the data on the heap, and if you made a bitwise
+    // copy of a String, then both instances would try to deallocate the same
+    // memory block, which is undefined behaviour. Since String doesn't
+    // implement Copy, your enum cannot implement Copy either, because the
+    // compiler enforces that Copy types are composed only of Copy data members.
+    // Clone merely provides a standard clone method, and it's up to each
+    // implementor to decide how to implement it. String does implement Clone,
+    // so you can put #[derive(Clone)] on your enum.
+    //
+    // So, instead of: #[derive(Debug, Copy, Clone)]
+    // we will have:
+    #[derive(Debug, Clone)]
     struct Bar {
         fou: u32,
         fos: String,
@@ -137,4 +163,63 @@ fn main() {
     };
 
     println!("Dereferencing a function is possible: {}", (&b)(b.fou));
+
+    // Borrow
+    // https://doc.rust-lang.org/std/borrow/trait.Borrow.html
+    // A trait for borrowing data.
+    // In general, there may be several ways to "borrow" a piece of data.
+    // The typical ways of borrowing a type T are &T (a shared borrow) and
+    // &mut T (a mutable borrow). But types like Vec<T> provide additional
+    // kinds of borrows: the borrowed slices &[T] and &mut [T].
+    //
+    // When writing generic code, it is often desirable to abstract over all
+    // ways of borrowing data from a given type. That is the role of the
+    // Borrow trait: if T: Borrow<U>, then &U can be borrowed from &T. A
+    // given type can be borrowed as multiple different types. In
+    // particular, Vec<T>: Borrow<Vec<T>> and Vec<T>: Borrow<[T]>.
+    //
+    // AsRef
+    // https://doc.rust-lang.org/std/convert/trait.AsRef.html
+    // AsRef is to be used when wishing to convert to a reference of another
+    // type. Borrow is more related to the notion of taking the reference. It is
+    // useful when wishing to abstract over the type of reference (&T, &mut T)
+    // or allow both the referenced and owned type to be treated in the same
+    // manner.
+    // The key difference between the two traits is the intention:
+    // Use AsRef when goal is to simply convert into a reference;
+    // Use Borrow when goal is related to writing code that is agnostic to the
+    // type of borrow and if is reference or value;
+    //
+    // Into
+    // https://doc.rust-lang.org/std/convert/trait.Into.html
+    // pub trait Into<T> {
+    //     fn into(self) -> T;
+    // }
+
+    impl Into<u32> for Bar {
+        fn into(self) -> u32 {
+            self.fou
+        }
+    }
+
+    impl Into<String> for Bar {
+        fn into(self) -> String {
+            self.fou.to_string()
+        }
+    }
+
+    println!("Convert a Type in another (owned) type is delegated to Trait std::convert::Into");
+    let mut bb: Bar = b.clone();
+    let converted: u32 = bb.into();
+    println!("Expecting a u32 here: {}", converted);
+    bb: Bar = b.clone();
+    let converted: String = bb.into();
+    println!("Expecting a string here: {}", converted);
+    println!("And this conversion mechanism works explicitly");
+    // but you need to be _very_ explicit:
+    // error[E0619]: the type of this value must be known in this context
+    //
+    // While here we can try something "experimental":
+    // error[E0658]: type ascription is experimental (see issue #23416)
+    println!("lenght of a Bar: {}", (b.into(): String).len());
 }

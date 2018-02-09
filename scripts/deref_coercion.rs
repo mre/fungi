@@ -222,4 +222,26 @@ fn main() {
     // While here we can try something "experimental":
     // error[E0658]: type ascription is experimental (see issue #23416)
     println!("lenght of a Bar: {}", (b.into(): String).len());
+
+    // From
+    // https://doc.rust-lang.org/std/convert/trait.From.html
+    // Simple and safe type conversions in to Self. It is the reciprocal of
+    // Into.
+    println!("There is also the Trait std::convert::From");
+    // https://doc.rust-lang.org/std/convert/trait.From.html
+    impl From<String> for Bar {
+        fn from(fos: String) -> Self {
+            Bar {
+                fou: 0,
+                fos: fos,
+                foufn: (|x| x.to_string()),
+            }
+        }
+    }
+
+    let bn: Bar = Bar::from(String::from("fromInto"));
+    println!(
+        "In this case we lose a lot in the conversion but still: {:?}",
+        bn
+    );
 }

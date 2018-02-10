@@ -289,3 +289,57 @@ So for the `u8` to `PacketType` conversion, we can't simply `match` on `u8`
 value and return the appropriate `PacketType` variant like we did for the
 opposite conversion. We need a way to signal that the conversion failed, but
 calling `panic!()` is not an acceptable option. We need a fallible `From`.
+
+## “Do or do not; there is no Try”
+
+We saw that the conversions made by `From` and `Into` must not fail. However,
+sometimes we deal with types that don't fully map onto one another, so we need
+fallible versions of those traits. Fortunately, there's both `TryFrom` and
+`TryInto`, which return a `Result<TargetType, ErrorType>`. Both live in
+`std::convert` along with their infallible siblings, but their exact details and
+implications are still under debate, which means they're still marked as
+unstable. To use them, we can restrict ourselves to the nightly version of the
+compiler, use the `try_from` crate, or paste their definitions somewhere in our
+crates (they're really short).
+
+Let's have a look at `TryFrom`'s definition (as of Rust 1.10.0):
+
+```rust
+#[unstable(feature = "try_from", issue = "33417")]
+pub trait TryFrom<T>: Sized {
+    /// The type returned in the event of a conversion error.
+    type Err;
+
+    /// Performs the conversion.
+    fn try_from(T) -> Result<Self, Self::Err>;
+}
+```
+
+First we have a stability attribute marking the trait as unstable, followed by
+the trait definition itself. We can see it has an associated type, `Err`, for
+the cases where the conversion fails. As expected, we have a `try_from` method
+instead of `from`, which returns `Result<Self, Self::Err>` instead of `Self`.
+
+Keeping with our example, we would have:
+
+```rust
+impl TryFrom<u8> for PacketType {
+    type Err = ParseError;
+    fn try_from(original: u8) -> Result<Self, Self::Err> {
+        match original {
+            0 => Ok(PacketType::Data),
+            1 => Ok(PacketType::Fin),
+            2 => Ok(PacketType::State),
+            3 => Ok(PacketType::Reset),
+            4 => Ok(PacketType::Syn),
+            n => Err(ParseError::InvalidPacketType(n))
+        }
+    }
+}
+```
+
+In this example, we return the corresponding `PacketType` variant for values
+which can be mapped and an error for the remaining ones. This error type
+preserves the original value, which is potentially useful for debugging
+purposes, but we could just discard it instead.
+

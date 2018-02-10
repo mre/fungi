@@ -1,6 +1,7 @@
 # Convenient and idiomatic conversions in Rust
 
 > source[00]
+>
 > 03 Aug 2016
 
 ## Key takeaways
@@ -148,3 +149,76 @@ fn do_something<U: Into<TargetType<T>>>(value: U) {
     // ...
 }
 ```
+
+Alright, that's enough theory. A couple of examples will make it easier to
+understand how all this works in practice.
+
+## Example: SortedVec<T>
+
+Suppose we have a sorted vector type, `SortedVec<T>`. Since it's a general data
+structure, building a `SortedVec<T>` from slice-like and list-like types makes
+sense, so we'll implement those conversions:
+
+```rust
+/// Our simple sorted vector structure is just a wrapper around a Vec
+/// struct SortedVec<T>(Vec<T>);
+
+/// Converting slices into SortedVec is pretty much expected.
+impl<'a, T: Ord + Clone> From<&'a [T]> for SortedVec<T> {
+    fn from(slice: &[T]) -> Self {
+        let mut vec = slice.to_owned();
+        vec.sort();
+        SortedVec(vec)
+    }
+}
+
+/// Converting a Vec is also expected.
+/// We can sort the vector in place and then put it inside SortedVec.
+impl<T: Ord + Clone> From<Vec<T>> for SortedVec<T> {
+    fn from(mut vec: Vec<T>) -> Self {
+        vec.sort();
+        SortedVec(vec)
+    }
+}
+
+/// Converting a LinkedList also makes sense, but it has no
+/// slice representation, so we'll have to rely on its iterator.
+impl<T: Ord + Clone> From<LinkedList<T>> for SortedVec<T> {
+    fn from(list: LinkedList<T>) -> Self {
+        let mut vec: Vec<T> = list.iter().cloned().collect();
+        vec.sort();
+        SortedVec(vec)
+    }
+}
+```
+
+Now, you might protest that the conversion from `Vec<T>` is redundant, because
+we can get a slice from the vector and then convert the slice. That's absolutely
+correct, dear reader. However, the implementation above avoids cloning the
+vector, and, in my opinion, hiding any intermediate steps leads to a more
+pleasant API.
+
+As a result of the trait implementations above, we can call `SortedVec::from()`
+without caring if the argument is a `slice`, `Vec` or `LinkedList`.
+
+```rust
+let vec = vec![1u8, 2, 3];
+
+// Convert a slice
+let sorted = SortedVec::from(&vec[1..]);
+
+// ... a vector
+let sorted = SortedVec::from(vec);
+
+// ... a linked list
+let mut linked_list: LinkedList<u8> = LinkedList::new();
+linked_list.extend(&[1, 2, 3]);
+let sorted = SortedVec::from(linked_list);
+```
+
+We can also go in the opposite direction and implement conversions from
+`SortedVec<T>` into other types (for instance, into `Vec<T>`). However, there
+are some restrictions about implementing traits for non-local, generic types —
+check `error 0210` and the related `Rust RFC 1023`. As a rule of thumb, if the
+non-local type isn't generic over some type parameter, you can implement `From`
+for it.

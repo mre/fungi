@@ -222,3 +222,70 @@ are some restrictions about implementing traits for non-local, generic types —
 check `error 0210` and the related `Rust RFC 1023`. As a rule of thumb, if the
 non-local type isn't generic over some type parameter, you can implement `From`
 for it.
+
+## Example: PacketType
+
+Let's take a different example. Suppose we are now implementing a library for a
+network protocol where the first byte in a packet header tells us the packet
+type. A reasonable solution is representing the packet types with an
+enumeration, where each variant maps to a packet type. For instance:
+
+```rust
+/// Represents a packet type.
+/// Associated with each variant is its raw numeric representation.
+enum PacketType {
+    Data  = 0, // packet carries a data payload
+    Fin   = 1, // signals the end of a connection
+    State = 2, // signals acknowledgment of a packet
+    Reset = 3, // forcibly terminates a connection
+    Syn   = 4, // initiates a new connection with a peer
+}
+```
+
+Given this representation, how shall we convert to and from the byte
+representation? The traditional way, very common in C and C++ programs, is to
+simply cast the values from one type to another. That can also be done in Rust;
+for instance, converting `PacketType::Data` into a byte is as simple as
+`PacketType::Data` as `u8`. That seems to take care of encoding a `PacketType`
+into a byte representation, but we aren't done yet.
+
+Did you notice that each `PacketType` variant has an associated value? They
+define the variants' representation in the generated code. If we followed the
+usual Rust style and didn't assign the variants any values, the numeric
+representation of each variant would depend on the order they are declared,
+which can lead to errors if we simply cast `enum` variants into numeric types. A
+better way to convert the `enum` variants to the correct values is an explicit
+match:
+
+```rust
+impl From<PacketType> for u8 {
+    fn from(original: PacketType) -> u8 {
+        match original {
+            PacketType::Data  => 0,
+            PacketType::Fin   => 1,
+            PacketType::State => 2,
+            PacketType::Reset => 3,
+            PacketType::Syn   => 4,
+        }
+    }
+}
+```
+
+Pretty straightforward, right? Since the mapping from `PacketType` to `u8` is
+contained in the implementation of `From`, we can remove the values assigned to
+`PacketType`'s variants, resulting in a cleaner enum definition.
+
+### Behavior considered undefined
+
+> Invalid values in primitive types, even in private fields/locals:
+>
+> A discriminant in an enum not included in the type definition
+
+Although we can map any `PacketType` variant into an `u8` value, we can't do the
+reverse and map any `u8` into a PacketType: there are too many `u8`s and not
+enough `PacketTypes`!
+
+So for the `u8` to `PacketType` conversion, we can't simply `match` on `u8`
+value and return the appropriate `PacketType` variant like we did for the
+opposite conversion. We need a way to signal that the conversion failed, but
+calling `panic!()` is not an acceptable option. We need a fallible `From`.

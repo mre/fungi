@@ -14,6 +14,14 @@ regex = "0.2"
 lazy_static = "1.0.0"
 # https://github.com/rust-lang-nursery/rust-clippy
 # clippy = "*"
+# https://github.com/rust-lang-nursery/futures-rs
+# https://docs.rs/futures/0.1.18/futures/
+futures = "0.1"
+# https://github.com/tokio-rs/tokio
+# https://docs.rs/tokio
+tokio = "0.1"
+tokio-io = "0.1"
+
 
 # https://doc.rust-lang.org/cargo/
 # The opt-level setting controls how many optimizations Rust will apply to your

@@ -343,3 +343,135 @@ which can be mapped and an error for the remaining ones. This error type
 preserves the original value, which is potentially useful for debugging
 purposes, but we could just discard it instead.
 
+## AsRef and AsMut
+
+Last but not least, we're going to examine the remaining traits in the
+`std::convert` module: `AsRef<T>` and `AsMut<T>`. Like the other traits in this
+module, they are used to implement conversions among types. However, whereas the
+other traits _consume values_ and may perform costly operations, `AsRef<T>` and
+`AsMut<T>` are used to implement cheap, _reference-to-reference_ conversions.
+
+As you have probably guessed from their names, `AsRef<T>` converts an immutable
+reference to a value into another immutable reference, while `AsMut<T>` does the
+same for mutable references.
+
+Since they're both very similar, we're going to explore them at the same time.
+Let's start with their definitions:
+
+```rust
+#[stable(feature = "rust1", since = "1.0.0")]
+pub trait AsRef<T: ?Sized> {
+    /// Performs the conversion.
+    #[stable(feature = "rust1", since = "1.0.0")]
+    fn as_ref(&self) -> &T;
+}
+
+#[stable(feature = "rust1", since = "1.0.0")]
+pub trait AsMut<T: ?Sized> {
+    /// Performs the conversion.
+    #[stable(feature = "rust1", since = "1.0.0")]
+    fn as_mut(&mut self) -> &mut T;
+}
+```
+
+Both take references to self and return references to the target type with the
+same mutability as `self`. Using these traits requires no more than calling
+`as_ref()` or `as_mut()` on a value, depending on which conversion we need, like
+so: `value.as_ref()`.
+
+Implementing `AsRef<T>` and `AsMut<T>` is sensible and easy when the source type
+is a wrapper around the target type, like the `SortedVec<T>` example we used
+before. Since `SortedVec<T>` relies on a `Vec<T>`, implementing both traits is
+painless:
+
+```rust
+/// SortedVec<T> is a tuple struct, containing a single Vec<T>.
+struct SortedVec<T>(Vec<T>);
+
+/// Implementing AsRef<Vec<T>> for SortedVec<T> only requires
+/// returning a reference to SortedVec<T>'s single field.
+impl<T> AsRef<Vec<T>> for SortedVec<T> {
+    fn as_ref(&self) -> &Vec<T> {
+        &self.0
+    }
+}
+
+/// Implementing AsMut<Vec<T>> is just as easy.
+/// Note that this allows the user to mutate the underlying Vec
+/// such that it's no longer sorted, so you might want to avoid
+/// implementing this trait!
+impl<T> AsMut<Vec<T>> for SortedVec<T> {
+    fn as_mut(&mut self) -> &mut Vec<T> {
+        &mut self.0
+    }
+}
+```
+
+`AsRef<T>` and `AsMut<T>` also allow us to broaden the argument type from a
+specific reference type to any type that can be cheaply converted to the target
+reference type, just like `Into<T>`:
+
+```rust
+fn manipulate_vector<T, V: AsRef<Vec<T>>>(vec: V) -> Result<usize, ()> {
+    // ...
+}
+
+// Now we can call `manipulate_vector` with a Vec<T> or anything that can
+// be cheaply converted to Vec<T>, such as SortedVec<T>.
+let sorted_vec = SortedVec::from(vec![1u8, 2, 3]);
+match manipulate_vector(sorted_vec) {
+    // ...
+}
+```
+
+`AsRef<T>` and `AsMut<T>` are very similar to `Borrow<T>` and `BorrowMut<T>`,
+but semantically different. The Rust Programming Language Book discusses those
+differences in detail, but as a rule of thumb, we choose `AsRef<T>` and
+`AsMut<T>` when we want to convert references or when writing generic code, and
+`Borrow<T>` and `BorrowMut<T>` when we wish to disregard whether a value is
+owned or borrowed (for instance, we might want a value to have the same hash
+independently of it being owned or not).
+
+There are a few interesting generic implementations for `AsRef<T>` and
+`AsMut<T>`:
+
+```rust
+// As lifts over &
+#[stable(feature = "rust1", since = "1.0.0")]
+impl<'a, T: ?Sized, U: ?Sized> AsRef<U> for &'a T where T: AsRef<U> {
+    fn as_ref(&self) -> &U {
+        <T as AsRef<U>>::as_ref(*self)
+    }
+}
+
+// As lifts over &mut
+#[stable(feature = "rust1", since = "1.0.0")]
+impl<'a, T: ?Sized, U: ?Sized> AsRef<U> for &'a mut T where T: AsRef<U> {
+    fn as_ref(&self) -> &U {
+        <T as AsRef<U>>::as_ref(*self)
+    }
+}
+
+// AsMut lifts over &mut
+#[stable(feature = "rust1", since = "1.0.0")]
+impl<'a, T: ?Sized, U: ?Sized> AsMut<U> for &'a mut T where T: AsMut<U> {
+    fn as_mut(&mut self) -> &mut U {
+        (*self).as_mut()
+    }
+}
+```
+
+Those generic implementations may look intimidating, but looks are deceiving.
+Reading them slowly, we can see the traits are implemented for references to
+types that implement `AsRef<U>` or `AsMut<U>` (`&'a T where T: AsRef<U>`,
+`&'a mut T where T: AsRef<U>` and `&'a mut T where T: AsMut<U>`). We can also
+see that every implementation dereferences the argument, which is a reference.
+
+The result is rather useful: these trait implementations make references to
+references (to references to references...) behave as if they were simple,
+direct references. That is to say, they make multiple-level deep references such
+as `&&&&vec` (in the case of the first implementation) and `&&&& mut vec` (in
+the case of the second) equivalent to `&vec`, while the third implementation
+makes `&mut &mut vec` equivalent to `&mut vec`. After those conversions, any
+compatible conversions we explicitly implemented can be applied.
+

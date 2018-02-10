@@ -475,3 +475,81 @@ the case of the second) equivalent to `&vec`, while the third implementation
 makes `&mut &mut vec` equivalent to `&mut vec`. After those conversions, any
 compatible conversions we explicitly implemented can be applied.
 
+## Closing thoughts
+
+In this article we dove into `std::convert` and explored how we can use its traits
+— `From<T>`, `Into<T>`, `TryFrom<T>`, `TryInto<T>`, `AsRef<T>` and `AsMut<T>` —
+to achieve a uniform type conversion API. The table below summarizes the
+characteristics of those traits.
+
+| receives     | returns     | can fail?         |   |
+|--------------|-------------|-------------------|---|
+| `From<T>`    | `T`         | `Self`            | x |
+| `TryFrom<T>` | `T`         | `Result<Self, E>` | v |
+| `Into<T>`    | `self`      | `T`               | x |
+| `TryInto<T>` | `self`      | `Result<T, E>`    | v |
+| `AsRef<T>`   | `&self`     | `&T`              | x |
+| `AsMut<T>`   | `&mut self` | `&mut T`          | x |
+
+In short:
+
+- `From<T>`, `Into<T>`, and their fallible counterparts, `TryFrom<T>` and
+  `TryInto<T>`, operate on values and perform conversions that may be costly;
+- `AsRef<T>` and `AsMut<T>`, on the other hand, take references to values and
+  perform cheap reference-to-reference conversions;
+- We can look at `From::from()` as if it were a woodchipper that we can feed
+  with any of the approved types of wood;
+- `From<T> for U` implies `Into<U> for T`, it's usually preferable to implement
+  only the former and get the other for free,
+- We can make our methods more general by using those traits as type constraints.
+
+Now that you know about these traits, go ahead and use them in your crates. Your
+API will be more ergonomic and idiomatic, and its users will appreciate the
+convenience.
+
+- [00]: [Convenient and idiomatic conversions in Rust](https://ricardomartins.cc/2016/08/03/convenient_and_idiomatic_conversions_in_rust)
+- [01]: [unexpected results](https://github.com/rust-lang/rust/issues/18154)
+- [02]: [std::convert](https://doc.rust-lang.org/std/convert/index.html)
+- [03]: [From<T>](https://doc.rust-lang.org/std/convert/trait.From.html)
+- [04]: [Into<U>](https://doc.rust-lang.org/std/convert/trait.Into.html)
+- [05]: [TryFrom<T>](https://doc.rust-lang.org/std/convert/trait.TryFrom.html)
+- [06]: [TryInto<U>](https://doc.rust-lang.org/std/convert/trait.TryInto.html)
+- [07]: [AsRef<U>](https://doc.rust-lang.org/std/convert/trait.AsRef.html)
+- [08]: [AsMut<U>](https://doc.rust-lang.org/std/convert/trait.AsMut.html)
+- [09]: [From<T>](https://doc.rust-lang.org/std/convert/trait.From.html)
+- [10]: [definition](https://github.com/rust-lang/rust/blob/1.10.0/src/libcore/convert.rs#L156-L161)
+- [11]: [implemented](https://github.com/rust-lang/rust/blob/1.10.0/src/libcore/convert.rs#L239-L243)
+- [12]: [Into<T>](https://doc.rust-lang.org/std/convert/trait.Into.html)
+- [13]: [definition](https://github.com/rust-lang/rust/blob/1.10.0/src/libcore/convert.rs#L129-L134)
+- [14]: [for free](https://github.com/rust-lang/rust/blob/1.10.0/src/libcore/convert.rs#L231-L237)
+- [15]: [error 0210](https://doc.rust-lang.org/error-index.html#E0210)
+- [16]: [Rust RFC 1023](https://github.com/rust-lang/rfcs/pull/1023)
+- [17]: [Frequently Asked Questions](https://www.rust-lang.org/en-US/faq.html#how-can-i-convert-a-c-style-enum-to-an-integer)
+- [18]: [Rust reference](https://doc.rust-lang.org/reference.html#behavior-considered-undefined)
+- [19]: [still under debate](https://github.com/rust-lang/rust/issues/33417)
+- [20]: [try_from crate](https://crates.io/crates/try_from)
+- [21]: [their definitions](https://github.com/rust-lang/rust/blob/1.10.0/src/libcore/convert.rs#L163-L185)
+- [22]: [TryFrom's definition](https://github.com/rust-lang/rust/blob/1.10.0/src/libcore/convert.rs#L177-L185)
+- [23]: [attribute](https://doc.rust-lang.org/reference.html#attributes)
+- [24]: [AsRef<T>](https://doc.rust-lang.org/std/convert/trait.AsRef.html)
+- [25]: [AsMut<T>](https://doc.rust-lang.org/std/convert/trait.AsMut.html)
+- [26]: [their definitions](https://github.com/rust-lang/rust/blob/1.10.0/src/libcore/convert.rs#L77-L99)
+- [27]: [Borrow<T>](https://doc.rust-lang.org/std/borrow/trait.Borrow.html)
+- [28]: [BorrowMut<T>](https://doc.rust-lang.org/std/borrow/trait.BorrowMut.html)
+- [29]: [differences in detail](https://doc.rust-lang.org/book/borrow-and-asref.html)
+- [30]: [hash](https://doc.rust-lang.org/std/hash/trait.Hash.html)
+- [31]: [generic implementations](https://github.com/rust-lang/rust/blob/1.10.0/src/libcore/convert.rs#L191-L229)
+
+### What about the opposite conversion?
+
+According to the Frequently Asked Questions, converting an enum into an integer
+can be achieved with a `cast`, as we saw. However, the opposite conversion can
+(and I argue that, in many cases, it should) be made with a `match` statement.
+For ease of use and better ergonomics, implementing `From<T>` for conversions in
+both directions is usually a good idea.
+
+Casting a `PacketType` to `u8` is generally safe and correct, with the caveats
+we saw before, because for every `PacketType` variant, there's a corresponding
+representation compatible with `u8`. However, the reverse is decidedly not true:
+converting an `u8` value without a corresponding `PacketType` variant is
+undefined behavior! Quoth the Rust reference:

@@ -20,6 +20,14 @@ struct GameState<T> {
     name: String,
 }
 
+use std::fmt;
+
+impl fmt::Debug for GameState<Game> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "GameState: {}", self.name)
+    }
+}
+
 impl<T> GameState<T> {
     fn new(
         next: ChangeStateFn<T>,

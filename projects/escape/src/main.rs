@@ -61,6 +61,24 @@ impl<T> GameState<T> {
     }
 }
 
+// The standard library provides a special trait, Deref. It’s normally used to
+// overload *, the dereference operator.
+// https://doc.rust-lang.org/std/ops/trait.Deref.html
+// If T implements Deref<Target = U>, and x is a value of type T, then:
+//  - In immutable contexts, *x on non-pointer types is equivalent
+//    to *Deref::deref(&x).
+//  - Values of type &T are coerced to values of type &U
+//  - T implicitly implements all the (immutable) methods of the type U.
+//
+// https://doc.rust-lang.org/book/second-edition/ch15-02-deref.html#implicit-deref-coercions-with-functions-and-methods
+// Implicit deref coercions with functions and methods.
+//
+// When a GameState is dereferenced, the "next" function included in that
+// GameState is returned.
+// This will simplify the change state execution from:
+//    game_state = (game_state.next)(&mut game);
+// to this:
+//    game_state = game_state(&mut game);
 impl<T> Deref for GameState<T> {
     type Target = ChangeStateFn<T>;
 

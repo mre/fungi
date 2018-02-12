@@ -37,6 +37,15 @@ impl List {
     // x.take();
     // assert_eq!(x, None);
 
+    pub fn push(&mut self, elem: i32) {
+        let new_node = Box::new(Node {
+            elem: elem,
+            next: self.head.take(),
+        });
+
+        self.head = Some(new_node);
+    }
+
     // Second, match option { None => None, Some(x) => Some(y) } is such an
     // incredibly common idiom that it was called map. map takes a function to
     // execute on x in the Some(x) to produce the y in Some(y).
@@ -52,27 +61,15 @@ impl List {
     // let maybe_some_string = Some(String::from("Hello, World!"));
     // // `Option::map` takes self *by value*, consuming `maybe_some_string`
     // let maybe_some_len = maybe_some_string.map(|s| s.len());
-
+    //
     // assert_eq!(maybe_some_len, Some(13));
 
-    pub fn push(&mut self, elem: i32) {
-        let new_node = Box::new(Node {
-            elem: elem,
-            next: self.head.take(),
-        });
-
-        self.head = Some(new_node);
-    }
-
     pub fn pop(&mut self) -> Option<i32> {
-        match self.head.take() {
-            None => None,
-            Some(node) => {
-                let node = *node;
-                self.head = node.next;
-                Some(node.elem)
-            }
-        }
+        self.head.take().map(|node| {
+            let node = *node;
+            self.head = node.next;
+            node.elem
+        })
     }
 }
 

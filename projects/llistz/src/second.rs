@@ -136,6 +136,95 @@ impl<T> Iterator for IntoIter<T> {
     }
 }
 
+// $ rustc --explain E0106
+//
+// ```
+// struct Foo1 { x: &bool }
+//               // ^ expected lifetime parameter
+// struct Foo2<'a> { x: &'a bool } // correct
+//
+// struct Bar1 { x: Foo2 }
+//               // ^^^^ expected lifetime parameter
+// struct Bar2<'a> { x: Foo2<'a> } // correct
+//
+// enum Baz1 { A(u8), B(&bool), }
+//                   // ^ expected lifetime parameter
+// enum Baz2<'a> { A(u8), B(&'a bool), } // correct
+//
+// type MyStr1 = &str;
+//            // ^ expected lifetime parameter
+// type MyStr2<'a> = &'a str; // correct
+// ```
+//
+// Lifetime elision is a special, limited kind of inference for lifetimes in
+// function signatures which allows you to leave out lifetimes in certain cases.
+// For more background on lifetime elision see [the book][book-le].
+//
+// The lifetime elision rules require that any function signature with an elided
+// output lifetime must either have
+//
+//  - exactly one input lifetime
+//  - or, multiple input lifetimes, but the function must also be a method with a
+//    `&self` or `&mut self` receiver
+//
+// In the first case, the output lifetime is inferred to be the same as the unique
+// input lifetime. In the second case, the lifetime is instead inferred to be the
+// same as the lifetime on `&self` or `&mut self`.
+//
+// Here are some examples of elision errors:
+//
+// ```
+// // error, no input lifetimes
+// fn foo() -> &str { }
+//
+// // error, `x` and `y` have distinct lifetimes inferred
+// fn bar(x: &str, y: &str) -> &str { }
+//
+// // error, `y`'s lifetime is inferred to be distinct from `x`'s
+// fn baz<'a>(x: &'a str, y: &str) -> &str { }
+// ```
+//
+// Lifetime elision in implementation headers was part of the lifetime elision
+// RFC. It is, however, [currently unimplemented][iss15872].
+//
+// [book-le]: https://doc.rust-lang.org/nightly/book/first-edition/lifetimes.html#lifetime-elision
+// [iss15872]: https://github.com/rust-lang/rust/issues/15872
+
+// Lifetime Elisions
+// Only one reference in input, so the output must be derived from that input
+// fn foo(&A) -> &B; // sugar for:
+// fn foo<'a>(&'a A) -> &'a B;
+//
+// Many inputs, assume they're all independent
+// fn foo(&A, &B, &C); // sugar for:
+// fn foo<'a, 'b, 'c>(&'a, &'b, &'c);
+//
+// Methods, assume all output lifetimes are derived from `self`
+// fn foo(&self, &B, &C) -> &D; // sugar for:
+// fn foo<'a, 'b, 'c>(&'a self, &'b B, &'c C) -> &'a D;
+
+pub struct Iter<'a, T: 'a> {
+    next: Option<&'a Node<T>>,
+}
+
+impl<T> List<T> {
+    pub fn iter(&self) -> Iter<T> {
+        Iter {
+            next: self.head.as_ref().map(|node| &**node),
+        }
+    }
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            self.next = node.next.as_ref().map(|node| &**node);
+            &node.elem
+        })
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::List;
@@ -193,5 +282,18 @@ mod test {
         assert_eq!(iter.next(), Some(3));
         assert_eq!(iter.next(), Some(2));
         assert_eq!(iter.next(), Some(1));
+    }
+
+    #[test]
+    fn iter() {
+        let mut list = List::new();
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        let mut iter = list.iter();
+        assert_eq!(iter.next(), Some(&3));
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&1));
     }
 }

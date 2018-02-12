@@ -14,6 +14,16 @@ impl List {
         List { head: None }
     }
 
+    // First, mem::replace(&mut option, None) is such an incredibly common idiom
+    // that Option actually just went ahead and made it a method: take
+
+    // Enum std::option::Option
+    // Type Option represents an optional value: every Option is either Some and
+    // contains a value, or None, and does not.
+    // pub enum Option<T> {
+    //    None,
+    //    Some(T),
+    // }
     // fn take(&mut self) -> Option<T>[src][−]
     //
     // Takes the value out of the option, leaving a None in its place.
@@ -26,6 +36,25 @@ impl List {
     // let mut x: Option<u32> = None;
     // x.take();
     // assert_eq!(x, None);
+
+    // Second, match option { None => None, Some(x) => Some(y) } is such an
+    // incredibly common idiom that it was called map. map takes a function to
+    // execute on x in the Some(x) to produce the y in Some(y).
+
+    // https://doc.rust-lang.org/std/option/enum.Option.html#method.map
+    // fn map<U, F>(self, f: F) -> Option<U>
+    //   where F: FnOnce(T) -> U,
+    //
+    //     Maps an Option<T> to Option<U> by applying a function to a contained value.
+    //     Examples
+    //     Convert an Option<String> into an Option<usize>, consuming the original:
+    //
+    // let maybe_some_string = Some(String::from("Hello, World!"));
+    // // `Option::map` takes self *by value*, consuming `maybe_some_string`
+    // let maybe_some_len = maybe_some_string.map(|s| s.len());
+
+    // assert_eq!(maybe_some_len, Some(13));
+
     pub fn push(&mut self, elem: i32) {
         let new_node = Box::new(Node {
             elem: elem,

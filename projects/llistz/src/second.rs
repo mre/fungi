@@ -71,6 +71,38 @@ impl<T> List<T> {
             node.elem
         })
     }
+
+    // Enum std::option::Option#as_ref
+    // https://doc.rust-lang.org/std/option/enum.Option.html#method.as_ref
+    // impl<T> Option<T> {
+    //     pub fn as_ref(&self) -> Option<&T>;
+    // }
+    //
+    // fn as_ref(&self) -> Option<&T>
+    //
+    // Converts from Option<T> to Option<&T>.
+    //
+    // Examples
+    // Convert an Option<String> into an Option<usize>, preserving the
+    // original. The map method takes the self argument by value, consuming
+    // the original, so this technique uses as_ref to first take an Option
+    // to a reference to the value inside the original.
+    //
+    //    let num_as_str: Option<String> = Some("10".to_string());
+    //    // First, cast `Option<String>` to `Option<&String>` with `as_ref`,
+    //    // then consume *that* with `map`, leaving `num_as_str` on the stack.
+    //    let num_as_int: Option<usize> = num_as_str.as_ref().map(|n| n.len());
+    //    println!("still can print num_as_str: {:?}", num_as_str);
+    //
+    // It demotes the Option to an Option to a reference to its internals.
+    pub fn peek(&self) -> Option<&T> {
+        // self.head.map(|node| &node.elem)
+        // Map takes self by value, which would move the Option out of the thing
+        // it's in. Previously this was fine because we had just taken it out,
+        // but now we actually want to leave it where it was. The correct way to
+        // handle this is with the as_ref method on Option
+        self.head.as_ref().map(|node| &node.elem)
+    }
 }
 
 impl<T> Drop for List<T> {

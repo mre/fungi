@@ -1,8 +1,16 @@
+// [...] reference counted garbage collection? Rc! Rc is just like Box, but we
+// can duplicate it, and its memory will only be freed when all the Rc's derived
+// from are dropped. Unforuntately, this flexibility comes at a serious cost: we
+// can only Deref an Rc. No DerefMut or DerefMove. This means we can't ever
+// really get data out of one of our lists, nor can we mutate them.
+
+use std::rc::Rc;
+
 pub struct List<T> {
     head: Link<T>,
 }
 
-type Link<T> = Option<Box<Node<T>>>;
+type Link<T> = Option<Rc<Node<T>>>;
 
 struct Node<T> {
     elem: T,

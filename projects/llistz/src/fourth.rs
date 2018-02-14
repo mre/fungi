@@ -24,6 +24,7 @@ impl<T> Node<T> {
     }
 }
 
+#[allow(dead_code)]
 impl<T> List<T> {
     pub fn new() -> Self {
         List {
@@ -154,6 +155,116 @@ impl<T> List<T> {
     //                     ^~~~~~
     // in lib.rs
     // #![feature(rc_unique, cell_extras)]
+
+    pub fn peek_front(&self) -> Option<Ref<T>> {
+        self.head
+            .as_ref()
+            .map(|node| Ref::map(node.borrow(), |node| &node.elem))
+    }
+
+    pub fn push_back(&mut self, elem: T) {
+        let new_tail = Node::new(elem);
+        match self.tail.take() {
+            Some(old_tail) => {
+                old_tail.borrow_mut().next = Some(new_tail.clone());
+                new_tail.borrow_mut().prev = Some(old_tail);
+                self.tail = Some(new_tail);
+            }
+            None => {
+                self.head = Some(new_tail.clone());
+                self.tail = Some(new_tail);
+            }
+        }
+    }
+
+    pub fn pop_back(&mut self) -> Option<T> {
+        self.tail.take().map(|old_tail| {
+            match old_tail.borrow_mut().prev.take() {
+                Some(new_tail) => {
+                    new_tail.borrow_mut().next.take();
+                    self.tail = Some(new_tail);
+                }
+                None => {
+                    self.head.take();
+                }
+            }
+            Rc::try_unwrap(old_tail).ok().unwrap().into_inner().elem
+        })
+    }
+
+    // Struct std::cell::Ref
+    // https://doc.rust-lang.org/std/cell/struct.Ref.html#method.map
+    //
+    // fn map<U, F>(orig: Ref<'b, T>, f: F) -> Ref<'b, U>
+    // where
+    //     F: FnOnce(&T) -> &U,
+    //     U: ?Sized,
+    //
+    //     Make a new Ref for a component of the borrowed data.
+    //
+    //     The RefCell is already immutably borrowed, so this cannot fail.
+    //
+    //     This is an associated function that needs to be used as
+    //     Ref::map(...). A method would interfere with methods of the same name
+    //     on the contents of a RefCell used through Deref.
+    //
+    //     Examples
+    //
+    // use std::cell::{RefCell, Ref};
+    //
+    // let c = RefCell::new((5, 'b'));
+    // let b1: Ref<(u32, char)> = c.borrow();
+    // let b2: Ref<u32> = Ref::map(b1, |t| &t.0);
+    // assert_eq!(*b2, 5)
+
+    // Struct std::cell::RefCell
+    // https://doc.rust-lang.org/std/cell/struct.RefCell.html#method.borrow
+    //
+    // fn borrow(&self) -> Ref<T>
+    //
+    //     Immutably borrows the wrapped value.
+    //     The borrow lasts until the returned Ref exits scope. Multiple
+    //     immutable borrows can be taken out at the same time.
+    //
+    //     Panics
+    //     Panics if the value is currently mutably borrowed. For a
+    //     non-panicking variant, use try_borrow.
+    //
+    //     Examples
+    //
+    // use std::cell::RefCell;
+    // let c = RefCell::new(5);
+    // let borrowed_five = c.borrow();
+    // let borrowed_five2 = c.borrow();
+    //
+    //     An example of panic:
+    //
+    // use std::cell::RefCell;
+    // use std::thread;
+    // let result = thread::spawn(move || {
+    //     let c = RefCell::new(5);
+    //     let m = c.borrow_mut();
+    //     let b = c.borrow(); // this causes a panic
+    // }).join();
+    // assert!(result.is_err());
+
+    pub fn peek_back(&self) -> Option<Ref<T>> {
+        self.tail
+            .as_ref()
+            .map(|node| Ref::map(node.borrow(), |node| &node.elem))
+    }
+
+    pub fn peek_back_mut(&mut self) -> Option<RefMut<T>> {
+        self.tail
+            .as_ref()
+            .map(|node| RefMut::map(node.borrow_mut(), |node| &mut node.elem))
+    }
+
+    pub fn peek_front_mut(&mut self) -> Option<RefMut<T>> {
+        self.head
+            .as_ref()
+            .map(|node| RefMut::map(node.borrow_mut(), |node| &mut node.elem))
+    }
 }
 
 impl<T> Drop for List<T> {

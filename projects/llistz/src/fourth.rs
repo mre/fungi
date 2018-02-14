@@ -52,6 +52,36 @@ impl<T> List<T> {
             }
         }
     }
+
+    // Now we can use Rc::try_unwrap, which moves out the contents of an Rc out if its refcount is 1.
+    //
+    // Rc::try_unwrap(old_head).unwrap().into_inner().elem
+    // Rc::try_unwrap returns a Result<T, Rc<T>>.
+
+    pub fn pop_front(&mut self) -> Option<T> {
+        self.head.take().map(|old_head| {
+            match old_head.borrow_mut().next.take() {
+                Some(new_head) => {
+                    new_head.borrow_mut().prev.take();
+                    self.head = Some(new_head);
+                }
+                None => {
+                    self.tail.take();
+                }
+            }
+            Rc::try_unwrap(old_head).ok().unwrap().into_inner().elem
+        })
+    }
+
+    pub fn peek_front(&self) -> Option<&T> {
+        self.head.as_ref().map(|node| &node.borrow().elem)
+    }
+}
+
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        while self.pop_front().is_some() {}
+    }
 }
 
 #[cfg(test)]

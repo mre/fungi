@@ -273,6 +273,39 @@ impl<T> Drop for List<T> {
     }
 }
 
+pub struct IntoIter<T>(List<T>);
+
+impl<T> List<T> {
+    pub fn into_iter(self) -> IntoIter<T> {
+        IntoIter(self)
+    }
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<T> {
+        self.0.pop_front()
+    }
+}
+
+// What if someone wants to iterate in the other direction?
+// [...] DoubleEndedIterator. DoubleEndedIterator inherits from Iterator
+// (meaning all DoubleEndedIterator are Iterators) and requires one new method:
+// next_back. It has the exact same signature as next, but it's supposed to
+// yield elements from the other end. The semantics of DoubleEndedIterator are
+// [...] the iterator becomes a deque. You can consume elements from the front
+// and back until the two ends converge, at which point the iterator is empty.
+// [...] the best part of this interface is that it exposes the rev
+// method, which wraps up the iterator to make a new one that yields the
+// elements in reverse order. The semantics of this are fairly straight-forward:
+// calls to next on the reversed iterator are just calls to next_back.
+
+impl<T> DoubleEndedIterator for IntoIter<T> {
+    fn next_back(&mut self) -> Option<T> {
+        self.0.pop_back()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::List;

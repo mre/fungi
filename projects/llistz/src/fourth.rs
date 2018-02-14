@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell, RefMut};
 
 pub struct List<T> {
     head: Link<T>,
@@ -73,8 +73,39 @@ impl<T> List<T> {
         })
     }
 
-    pub fn peek_front(&self) -> Option<&T> {
-        self.head.as_ref().map(|node| &node.borrow().elem)
+    // pub fn peek_front(&self) -> Option<&T> {
+    //     self.head.as_ref().map(|node| {
+    //         &node.elem
+    //     })
+    // }
+    //
+    // pub fn peek_front(&self) -> Option<&T> {
+    //     self.head.as_ref().map(|node| {
+    //         &node.borrow().elem
+    //     })
+    // }
+    //
+    // error: borrowed value does not live long enough
+    //     &node.borrow().elem
+    //     ^~~~~~~~~~~~~
+    // note: in expansion of closure expansion
+    // note: expansion site
+    // note: reference must be valid for the anonymous lifetime...
+    // note: ...but borrowed value is only valid for the block at...
+    //
+    // Borrow:
+    // fn borrow<'a>(&'a self) -> Ref<'a, T>
+    // fn borrow_mut<'a>(&'a self) -> RefMut<'a, T>
+
+    // Make a new Ref for a component of the borrowed data.
+    // map<U, F>(orig: Ref<'b, T>, f: F) -> Ref<'b, U>
+    // where F: FnOnce(&T) -> &U,
+    // U: ?Sized
+
+    pub fn peek_front(&self) -> Option<Ref<T>> {
+        self.head
+            .as_ref()
+            .map(|node| Ref::map(node.borrow(), |node| &node.elem))
     }
 }
 

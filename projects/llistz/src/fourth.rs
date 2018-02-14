@@ -96,17 +96,64 @@ impl<T> List<T> {
     // Borrow:
     // fn borrow<'a>(&'a self) -> Ref<'a, T>
     // fn borrow_mut<'a>(&'a self) -> RefMut<'a, T>
-
+    //
+    // Ref and RefMut implement Deref and DerefMut respectively. So for most
+    // intents and purposes they behave exactly like &T and &mut T. However,
+    // because of how those traits work, the reference that's returned is
+    // connected to the lifetime of the Ref, and not actual RefCell.
+    // When a Ref gets dropped, it tells the RefCell that it's not borrowed
+    // anymore. So if did manage to hold onto our reference longer than the Ref
+    // existed, we could get a RefMut while a reference was [...] around and
+    // [...] break Rust's type system [...].
+    // We only want to return a reference, but we need to keep this Ref thing
+    // around. But as soon as we return the reference from peek, the function is
+    // over and the Ref goes out of scope.
+    // [...] what if we just give up on totally hiding our implementation
+    // details? What if we returns Refs?
+    //
+    // pub fn peek_front(&self) -> Option<Ref<T>> {
+    //     self.head.as_ref().map(|node| {
+    //         node.borrow()
+    //     })
+    // }
+    //
+    //   error: mismatched types:
+    //   expected `core::option::Option<core::cell::Ref<'_, T>>`,
+    //   found `core::option::Option<core::cell::Ref<'_, fourth::Node<T>>>`
+    //   (expected type parameter, found struct `fourth::Node`) [E0308]
+    //     self.head.as_ref().map(|node| {
+    //         node.borrow()
+    //     })
+    //   help: run `rustc --explain E0308` to see a detailed explanation
+    //
+    // We have a Ref<Node<T>>, but we want a Ref<T>. We could abandon all hope
+    // of encapsulation and just return that. We could also make things even
+    // more complicated and wrap Ref<Node<T>> in a new type to only expose
+    // access to an &T.
+    //
+    // Or from a nightly:
     // Make a new Ref for a component of the borrowed data.
-    // map<U, F>(orig: Ref<'b, T>, f: F) -> Ref<'b, U>
-    // where F: FnOnce(&T) -> &U,
-    // U: ?Sized
+    // (just like you can map over an Option, you can map over a Ref).
+    //   map<U, F>(orig: Ref<'b, T>, f: F) -> Ref<'b, U>
+    //   where F: FnOnce(&T) -> &U, U: ?Sized
 
-    pub fn peek_front(&self) -> Option<Ref<T>> {
-        self.head
-            .as_ref()
-            .map(|node| Ref::map(node.borrow(), |node| &node.elem))
-    }
+    // pub fn peek_front(&self) -> Option<Ref<T>> {
+    //     self.head
+    //         .as_ref()
+    //         .map(|node| Ref::map(node.borrow(), |node| &node.elem))
+    // }
+    //
+    // src/fourth.rs:64:13: 64:21 error: use of unstable library feature 'cell_extras': recently added
+    //     Ref::map(node.borrow(), |node| &node.elem)
+    //     ^~~~~~~~
+    //     note: in expansion of closure expansion
+    //     note: expansion site
+    //     help: add #![feature(cell_extras)] to the crate attributes to enable
+    //     warning: unused import, #[warn(unused_imports)] on by default
+    //     use std::cell::{Ref, RefMut, RefCell};
+    //                     ^~~~~~
+    // in lib.rs
+    // #![feature(rc_unique, cell_extras)]
 }
 
 impl<T> Drop for List<T> {

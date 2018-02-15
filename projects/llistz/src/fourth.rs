@@ -1,3 +1,7 @@
+// http://cglab.ca/~abeinges/blah/too-many-lists/book/fourth.html
+// http://cglab.ca/~abeinges/blah/too-many-lists/book/fourth-symmetry.html
+// http://cglab.ca/~abeinges/blah/too-many-lists/book/fourth-iteration.html
+
 use std::rc::Rc;
 use std::cell::{Ref, RefCell, RefMut};
 

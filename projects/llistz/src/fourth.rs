@@ -333,11 +333,26 @@ impl<T> List<T> {
     }
 }
 
+// Struct std::cell::Ref
+// https://doc.rust-lang.org/std/cell/struct.Ref.html#method.map
+// pub fn map<U, F>(orig: Ref<'b, T>, f: F) -> Ref<'b, U>
+// where F: FnOnce(&T) -> &U, U: ?Sized
+// Make a new Ref for a component of the borrowed data.
+
+// Enum std::option::Option
+// https://doc.rust-lang.org/std/option/enum.Option.html#method.take
+// pub fn take(&mut self) -> Option<T>
+// Takes the value out of the option, leaving a None in its place.
+
+// http://cglab.ca/~abeinges/blah/too-many-lists/book/fourth-iteration.html
+//
 // impl<'a, T> Iterator for Iter<'a, T> {
 //     type Item = Ref<'a, T>;
 //     fn next(&mut self) -> Option<Self::Item> {
 //         self.0.take().map(|node_ref| {
+//             // node_ref start living here
 //             self.0 = node_ref.next.as_ref().map(|head| head.borrow());
+//             // but we trash the node_ref here
 //             Ref::map(node_ref, |node| &node.elem)
 //         })
 //     }
@@ -354,6 +369,14 @@ impl<T> List<T> {
 // us just split Refs up like that. The Ref we get out of head.borrow() is only
 // allowed to live as long as node_ref, but we end up trashing that in our
 // Ref::map call.
+
+// Iter(self.head.as_ref().map(|head| &head))
+// std::option::Option<&&std::rc::Rc<std::cell::RefCell<Node<T>>>>
+
+// Iter(self.head.as_ref().map(|head| &*head))
+// std::option::Option<&std::rc::Rc<std::cell::RefCell<Node<T>>>>
+
+// http://cglab.ca/~abeinges/blah/too-many-lists/book/fourth-final.html
 
 #[cfg(test)]
 mod test {

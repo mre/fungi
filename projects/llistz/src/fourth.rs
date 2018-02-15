@@ -316,7 +316,7 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
 // {
 //     fn borrow(&self) -> &Borrowed;
 // }
-
+//
 // Struct std::cell::RefCell
 // https://doc.rustrlang.org/std/cell/struct.RefCell.html#method.borrow
 // fn borrow(&self) -> Ref<T>
@@ -328,6 +328,28 @@ impl<T> List<T> {
         Iter(self.head.as_ref().map(|head| head.borrow()))
     }
 }
+
+// impl<'a, T> Iterator for Iter<'a, T> {
+//     type Item = Ref<'a, T>;
+//     fn next(&mut self) -> Option<Self::Item> {
+//         self.0.take().map(|node_ref| {
+//             self.0 = node_ref.next.as_ref().map(|head| head.borrow());
+//             Ref::map(node_ref, |node| &node.elem)
+//         })
+//     }
+// }
+//
+// error: `node_ref` does not live long enough
+// self.0 = node_ref.next.as_ref().map(|head| head.borrow());
+//          ^~~~~~~~
+// note: in expansion of closure expansion
+// note: reference must be valid for the lifetime 'a as defined on the block at
+// note: ...but borrowed value is only valid for the scope of parameters for function at
+//
+// node_ref doesn't live long enough. Unlike normal references, Rust doesn't let
+// us just split Refs up like that. The Ref we get out of head.borrow() is only
+// allowed to live as long as node_ref, but we end up trashing that in our
+// Ref::map call.
 
 #[cfg(test)]
 mod test {

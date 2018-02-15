@@ -306,6 +306,29 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
     }
 }
 
+// Trait std::borrow::Borrow
+// https://doc.rust-lang.org/std/borrow/trait.Borrow.html
+// https://doc.rust-lang.org/std/borrow/trait.Borrow.html#tymethod.borrow
+//
+// pub trait Borrow<Borrowed>
+// where
+//     Borrowed: ?Sized,
+// {
+//     fn borrow(&self) -> &Borrowed;
+// }
+
+// Struct std::cell::RefCell
+// https://doc.rustrlang.org/std/cell/struct.RefCell.html#method.borrow
+// fn borrow(&self) -> Ref<T>
+
+pub struct Iter<'a, T: 'a>(Option<Ref<'a, Node<T>>>);
+
+impl<T> List<T> {
+    pub fn iter(&self) -> Iter<T> {
+        Iter(self.head.as_ref().map(|head| head.borrow()))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::List;

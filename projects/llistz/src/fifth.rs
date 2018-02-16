@@ -73,6 +73,19 @@ impl<T> List<T> {
             next: None,
         });
 
+        // Function std::mem::replace
+        // https://doc.rust-lang.org/std/mem/fn.replace.html
+        // pub fn replace<T>(dest: &mut T, src: T) -> T
+        // Replaces the value at a mutable location with a new one, returning
+        // the old value, without deinitializing either one.
+        //
+        // use std::mem;
+        //
+        // let mut v: Vec<i32> = vec![1, 2];
+        // let old_v = mem::replace(&mut v, vec![3, 4, 5]);
+        // assert_eq!(2, old_v.len());
+        // assert_eq!(3, v.len());
+        //
         // swap the old tail to point to the new tail
         let old_tail = mem::replace(&mut self.tail, Some(new_tail));
 

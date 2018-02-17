@@ -39,9 +39,9 @@
 
 use std::mem;
 
-pub struct List<T> {
+pub struct List<'a, T: 'a> {
     head: Link<T>,
-    tail: Option<&mut Node<T>>,
+    tail: Option<&'a mut Node<T>>,
 }
 
 type Link<T> = Option<Box<Node<T>>>;
@@ -58,7 +58,7 @@ struct Node<T> {
     next: Link<T>,
 }
 
-impl<T> List<T> {
+impl<'a, T> List<'a, T> {
     pub fn new() -> Self {
         List {
             head: None,
@@ -118,7 +118,34 @@ impl<T> List<T> {
     // it when it's dropped. If our push implementation compiled, we'd
     // double-free the tail of our list.
 
-    pub fn push(&mut self, elem: T) {
+    // pub fn push(&mut self, elem: T) {
+    //     let new_tail = Box::new(Node {
+    //         elem: elem,
+    //         // When you push onto the tail, your next is always None
+    //         next: None,
+    //     });
+    //     // Put the box in the right place, and then grab a reference to its Node
+    //     let new_tail = match self.tail.take() {
+    //         Some(old_tail) => {
+    //             // If the old tail existed, update it to point to the new tail
+    //             old_tail.next = Some(new_tail);
+    //             old_tail.next.as_mut().map(|node| &mut **node)
+    //         }
+    //         None => {
+    //             // Otherwise, update the head to point to it
+    //             self.head = Some(new_tail);
+    //             self.head.as_mut().map(|node| &mut **node)
+    //         }
+    //     };
+    //     self.tail = new_tail;
+    // }
+
+    // error: missing lifetime specifier [E0106]
+    // tail: Option<&mut Node<T>>,
+    //              ^~~~~~~~~~~~
+    // help: run `rustc --explain E0106` to see a detailed explanation
+
+    pub fn push(&'a mut self, elem: T) {
         let new_tail = Box::new(Node {
             elem: elem,
             // When you push onto the tail, your next is always None

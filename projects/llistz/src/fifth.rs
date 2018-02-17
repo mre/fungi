@@ -41,7 +41,7 @@ use std::mem;
 
 pub struct List<T> {
     head: Link<T>,
-    tail: Link<T>,
+    tail: Option<&mut Node<T>>,
 }
 
 type Link<T> = Option<Box<Node<T>>>;
@@ -66,40 +66,39 @@ impl<T> List<T> {
         }
     }
 
-    pub fn push(&mut self, elem: T) {
-        let new_tail = Box::new(Node {
-            elem: elem,
-            // When you push onto the tail, your next is always None
-            next: None,
-        });
+    // Function std::mem::replace
+    // https://doc.rust-lang.org/std/mem/fn.replace.html
+    // pub fn replace<T>(dest: &mut T, src: T) -> T
+    // Replaces the value at a mutable location with a new one, returning
+    // the old value, without deinitializing either one.
+    //
+    // use std::mem;
+    //
+    // let mut v: Vec<i32> = vec![1, 2];
+    // let old_v = mem::replace(&mut v, vec![3, 4, 5]);
+    // assert_eq!(2, old_v.len());
+    // assert_eq!(3, v.len());
+    //
 
-        // Function std::mem::replace
-        // https://doc.rust-lang.org/std/mem/fn.replace.html
-        // pub fn replace<T>(dest: &mut T, src: T) -> T
-        // Replaces the value at a mutable location with a new one, returning
-        // the old value, without deinitializing either one.
-        //
-        // use std::mem;
-        //
-        // let mut v: Vec<i32> = vec![1, 2];
-        // let old_v = mem::replace(&mut v, vec![3, 4, 5]);
-        // assert_eq!(2, old_v.len());
-        // assert_eq!(3, v.len());
-        //
-        // swap the old tail to point to the new tail
-        let old_tail = mem::replace(&mut self.tail, Some(new_tail));
-
-        match old_tail {
-            Some(mut old_tail) => {
-                // If the old tail existed, update it to point to the new tail
-                old_tail.next = Some(new_tail);
-            }
-            None => {
-                // Otherwise, update the head to point to it
-                self.head = Some(new_tail);
-            }
-        }
-    }
+    // pub fn push(&mut self, elem: T) {
+    //     let new_tail = Box::new(Node {
+    //         elem: elem,
+    //         // When you push onto the tail, your next is always None
+    //         next: None,
+    //     });
+    //     // swap the old tail to point to the new tail
+    //     let old_tail = mem::replace(&mut self.tail, Some(new_tail));
+    //     match old_tail {
+    //         Some(mut old_tail) => {
+    //             // If the old tail existed, update it to point to the new tail
+    //             old_tail.next = Some(new_tail);
+    //         }
+    //         None => {
+    //             // Otherwise, update the head to point to it
+    //             self.head = Some(new_tail);
+    //         }
+    //     }
+    // }
 
     // error: use of moved value: `new_tail` [E0382]
     //          old_tail.next = Some(new_tail);
@@ -117,7 +116,31 @@ impl<T> List<T> {
     // Box doesn't implement Copy, so we can't just assign it to two locations.
     // More importantly, Box owns the thing it points to, and will try to free
     // it when it's dropped. If our push implementation compiled, we'd
-    // double-free the tail of our list
+    // double-free the tail of our list.
+
+    pub fn push(&mut self, elem: T) {
+        let new_tail = Box::new(Node {
+            elem: elem,
+            // When you push onto the tail, your next is always None
+            next: None,
+        });
+
+        // Put the box in the right place, and then grab a reference to its Node
+        let new_tail = match self.tail.take() {
+            Some(old_tail) => {
+                // If the old tail existed, update it to point to the new tail
+                old_tail.next = Some(new_tail);
+                old_tail.next.as_mut().map(|node| &mut **node)
+            }
+            None => {
+                // Otherwise, update the head to point to it
+                self.head = Some(new_tail);
+                self.head.as_mut().map(|node| &mut **node)
+            }
+        };
+
+        self.tail = new_tail;
+    }
 }
 
 #[cfg(test)]

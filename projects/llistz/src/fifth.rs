@@ -37,15 +37,15 @@
 // backwards. But if we instead invert push we only have to move the "head"
 // pointer forwards [...]
 
-use std::mem;
+// use std::mem;
 
 pub struct List<'a, T: 'a> {
     head: Link<T>,
     tail: Option<&'a mut Node<T>>,
 }
 
-type Link<T> = Option<Box<Node<T>>>;
-
+// type Link<T> = Option<Box<Node<T>>>;
+//
 // struct Node<T> {
 //     elem: T,
 //     next: Link<T>,
@@ -57,7 +57,7 @@ type Link<T> = Option<Box<Node<T>>>;
 //     elem: T,
 //     next: Link<T>,
 // }
-
+//
 // pub struct List<T> {
 //     head: Link<T>,
 //     tail: *mut Node<T>, // DANGER DANGER
@@ -200,10 +200,12 @@ impl<'a, T> List<'a, T> {
 
         let raw_tail: *mut _ = &mut *new_tail;
 
-        // .is_null checks for null, equivalent to checking for None
+        // Put the box in the right place, and then grab a reference to its Node
         if !self.tail.is_null() {
             // If the old tail existed, update it to point to the new tail
-            self.tail.next = Some(new_tail);
+            unsafe {
+                (*self.tail).next = Some(new_tail);
+            }
         } else {
             // Otherwise, update the head to point to it
             self.head = Some(new_tail);

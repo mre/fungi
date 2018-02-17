@@ -100,6 +100,24 @@ impl<T> List<T> {
             }
         }
     }
+
+    // error: use of moved value: `new_tail` [E0382]
+    //          old_tail.next = Some(new_tail);
+    //                               ^~~~~~~~
+    // note: `new_tail` moved here because it has type `Box<fifth::Node<T>>`, which is non-copyable
+    //  let old_tail = mem::replace(&mut self.tail, Some(new_tail));
+    //                                                   ^~~~~~~~
+    // error: use of moved value: `new_tail` [E0382]
+    //          self.head = Some(new_tail);
+    //                           ^~~~~~~~
+    // note: `new_tail` moved here because it has type `Box<fifth::Node<T>>`, which is non-copyable
+    // let old_tail = mem::replace(&mut self.tail, Some(new_tail));
+    //
+    // use of moved value: new_tail
+    // Box doesn't implement Copy, so we can't just assign it to two locations.
+    // More importantly, Box owns the thing it points to, and will try to free
+    // it when it's dropped. If our push implementation compiled, we'd
+    // double-free the tail of our list
 }
 
 #[cfg(test)]

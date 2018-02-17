@@ -39,10 +39,10 @@
 
 // use std::mem;
 
-pub struct List<'a, T: 'a> {
-    head: Link<T>,
-    tail: Option<&'a mut Node<T>>,
-}
+// pub struct List<'a, T: 'a> {
+//     head: Link<T>,
+//     tail: Option<&'a mut Node<T>>,
+// }
 
 // type Link<T> = Option<Box<Node<T>>>;
 //
@@ -65,6 +65,13 @@ pub struct List<'a, T: 'a> {
 
 // https://doc.rust-lang.org/nightly/nomicon/
 
+use std::ptr;
+
+pub struct List<T> {
+    head: Link<T>,
+    tail: *mut Node<T>,
+}
+
 type Link<T> = Option<Box<Node<T>>>;
 
 struct Node<T> {
@@ -72,22 +79,21 @@ struct Node<T> {
     next: Link<T>,
 }
 
-use std::ptr;
+pub struct IntoIter<T>(List<T>);
+
+pub struct Iter<'a, T: 'a> {
+    next: Option<&'a Node<T>>,
+}
+
+pub struct IterMut<'a, T: 'a> {
+    next: Option<&'a mut Node<T>>,
+}
 
 impl<T> List<T> {
     pub fn new() -> Self {
         List {
             head: None,
             tail: ptr::null_mut(),
-        }
-    }
-}
-
-impl<'a, T> List<'a, T> {
-    pub fn new() -> Self {
-        List {
-            head: None,
-            tail: None,
         }
     }
 
@@ -200,29 +206,24 @@ impl<'a, T> List<'a, T> {
 
         let raw_tail: *mut _ = &mut *new_tail;
 
-        // Put the box in the right place, and then grab a reference to its Node
         if !self.tail.is_null() {
-            // If the old tail existed, update it to point to the new tail
             unsafe {
                 (*self.tail).next = Some(new_tail);
             }
         } else {
-            // Otherwise, update the head to point to it
             self.head = Some(new_tail);
         }
 
         self.tail = raw_tail;
     }
 
-    pub fn pop(&'a mut self) -> Option<T> {
-        // Grab the list's current head
+    pub fn pop(&mut self) -> Option<T> {
         self.head.take().map(|head| {
             let head = *head;
             self.head = head.next;
 
-            // If we're out of `head`, make sure to set the tail to `None`.
             if self.head.is_none() {
-                self.tail = None;
+                self.tail = ptr::null_mut();
             }
 
             head.elem

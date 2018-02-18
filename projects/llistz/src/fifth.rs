@@ -266,6 +266,46 @@ impl<T> Drop for List<T> {
     }
 }
 
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.pop()
+    }
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            self.next = node.next.as_ref().map(|node| &**node);
+            &node.elem
+        })
+    }
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.take().map(|node| {
+            // .map(|node| node)
+            // expected type `std::option::Option<&'a mut fifth::Node<T>>`
+            // found type `std::option::Option<&mut std::boxed::Box<fifth::Node<T>>>`
+            //
+            // .map(|node| *node)
+            // expected type `std::option::Option<&'a mut fifth::Node<T>>`
+            // found type `std::option::Option<std::boxed::Box<fifth::Node<T>>> (rust-cargo)
+            //
+            // .map(|node| **node)
+            // expected type `std::option::Option<&'a mut fifth::Node<T>>`
+            // found type `std::option::Option<fifth::Node<T>>`
+            self.next = node.next.as_mut().map(|node| &mut **node);
+            &mut node.elem
+        })
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::List;

@@ -229,6 +229,32 @@ impl<T> List<T> {
             head.elem
         })
     }
+
+    // http://cglab.ca/~abeinges/blah/too-many-lists/book/fifth-final.html
+
+    pub fn peek(&self) -> Option<&T> {
+        self.head.as_ref().map(|node| &node.elem)
+    }
+
+    pub fn peek_mut(&mut self) -> Option<&mut T> {
+        self.head.as_mut().map(|node| &mut node.elem)
+    }
+
+    pub fn into_iter(self) -> IntoIter<T> {
+        IntoIter(self)
+    }
+
+    pub fn iter(&self) -> Iter<T> {
+        Iter {
+            next: self.head.as_ref().map(|node| &**node),
+        }
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<T> {
+        IterMut {
+            next: self.head.as_mut().map(|node| &mut **node),
+        }
+    }
 }
 
 #[cfg(test)]

@@ -164,6 +164,29 @@ impl Game {
         GameState::without_input(Self::cell, String::from("save_name"))
     }
 
+    fn cell(&mut self) -> GameState<Game> {
+        match &self.last_command as &str {
+            "" => {
+                println!("You are in a cell. You can inspect it or exit.");
+                GameState::with_input(Self::cell, String::from("cell"))
+            }
+            "inspect" => {
+                println!(
+                    "You are in a dark cell. It's damp and dirty. The door seems now open, you can exit."
+                );
+                GameState::with_input(Self::cell, String::from("cell"))
+            }
+            "exit" => {
+                println!("You follow the light...");
+                GameState::with_input(Self::hallway, String::from("hallway"))
+            }
+            _ => {
+                println!("I don't know how to do that! What do you want to do?");
+                GameState::with_input(Self::cell, String::from("cell"))
+            }
+        }
+    }
+
 fn main() {
     use std::io::Write;
     use std::env;

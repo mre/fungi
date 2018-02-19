@@ -101,6 +101,7 @@ struct Game {
     player: Player,
     last_command: String,
     door_locked: bool,
+    state_name: String,
 }
 
 // https://doc.rust-lang.org/std/borrow/trait.ToOwned.html#tymethod.to_owned
@@ -123,6 +124,7 @@ impl ::std::default::Default for Game {
             },
             door_locked: true,
             last_command: "".to_owned(),
+            state_name: "none".to_owned(),
         }
     }
 }

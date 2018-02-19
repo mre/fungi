@@ -87,12 +87,15 @@ impl<T> Deref for GameState<T> {
     }
 }
 
+/// The Player that is playing the current game.
 #[derive(Debug)]
 struct Player {
     name: String,
     has_key: bool,
 }
 
+/// A Game is the general struct that is fully associated to what is easy to
+/// expect from the concept of a single "game".
 #[derive(Debug)]
 struct Game {
     player: Player,
@@ -159,4 +162,52 @@ impl Game {
         GameState::without_input(Self::cell, String::from("save_name"))
     }
 
+fn main() {
+    use std::io::Write;
+    use std::env;
+    // the Game is created with its default values
+    let mut game = Game::default();
+
+    // the first GameState is without_input, sets the start and in named the same.
+    let mut game_state = GameState::without_input(Game::start, String::from("start"));
+
+    // we use the current game_state (here just "start") to "move/mutate/tick"
+    // the current game
+    game_state = game_state(&mut game);
+
+    // the main loop that keep the game ticking, from one state to the next.
+    // It stops only when the game_state is completed.
+    while !game_state.completed {
+        let key = "VERBOSE";
+        match env::var(key) {
+            Ok(_) => {
+                // a game does not explicitly have a game_state but has a name
+                // that can be set by the game_state only. (would be nice to
+                // have some sort of invariant for this statement).
+                println!("current game: {:?}", game);
+            }
+            Err(_) => (),
+        }
+
+        // here we check if the current game_state requires the user's input;
+        // at the end we need to set the last issued command.
+        if game_state.requires_input {
+            let mut buffer = String::new();
+            print!("> ");
+            ::std::io::stdout().flush().unwrap();
+            ::std::io::stdin().read_line(&mut buffer).unwrap();
+            game.last_command = buffer[0..buffer.len() - 1].to_owned();
+        } else {
+            // if the current game_state does not require input, the
+            // last_command is set to an "empty" value.
+            game.last_command = "".to_owned();
+        }
+
+        // marks the game with the current state (just for tracking: this
+        // dependency is not necessary at all).)
+        game.state_name = game_state.name.to_owned();
+
+        // it ticks the game to the next state.
+        game_state = game_state(&mut game);
+    }
 }

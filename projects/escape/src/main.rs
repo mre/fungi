@@ -142,4 +142,21 @@ impl Game {
         );
         GameState::completed(Self::end)
     }
+
+    // https://doc.rust-lang.org/std/mem/fn.swap.html
+    // Swaps the values at two mutable locations, without deinitializing either
+    // one.
+    //
+    // use std::mem;
+    // let mut x = 5;
+    // let mut y = 42;
+    // mem::swap(&mut x, &mut y);
+    // assert_eq!(42, x);
+    // assert_eq!(5, y);
+    fn save_name(&mut self) -> GameState<Game> {
+        ::std::mem::swap(&mut self.player.name, &mut self.last_command);
+        println!("Your name will be {}!", self.player.name);
+        GameState::without_input(Self::cell, String::from("save_name"))
+    }
+
 }

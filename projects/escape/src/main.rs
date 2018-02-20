@@ -240,6 +240,109 @@ impl Game {
         }
     }
 
+    fn table_with_key(&mut self) -> GameState<Game> {
+        match &self.last_command as &str {
+            "" => {
+                println!("You are at a dead end. There is a table in front of you. You can inspect it or go back.");
+                GameState::with_input(Self::table_with_key, String::from("table"))
+            }
+            "inspect" => {
+                println!(
+                    "On the table there are a key and a bottle; you can take the key or drink from the bottle"
+                );
+                GameState::with_input(Self::table_with_key, String::from("table"))
+            }
+            "take" => {
+                println!("You take the key from the table; it seems quite old");
+                if self.player.has_key {
+                    panic!("this is clearly a bug in the logic")
+                } else {
+                    GameState::without_input(Self::table_no_key, String::from("key"))
+                }
+            }
+            "drink" => {
+                println!(
+                    "The bottle seems new, with a colorless liquid inside; You take a sip from it"
+                );
+                GameState::without_input(Self::dead, String::from("dead"))
+            }
+            _ => {
+                println!("I don't know how to do that! What do you want to do?");
+                GameState::with_input(Self::table_with_key, String::from("table"))
+            }
+        }
+    }
+
+    fn table_no_key(&mut self) -> GameState<Game> {
+        match &self.last_command as &str {
+            "" => {
+                println!("You are at a dead end. There is a table in front of you. You can inspect it or go back.");
+                GameState::with_input(Self::table_with_key, String::from("table"))
+            }
+            "inspect" => {
+                println!(
+                    "On the table there is only a bottle; you can drink from the bottle or go back"
+                );
+                GameState::with_input(Self::table_with_key, String::from("table"))
+            }
+            "drink" => {
+                println!(
+                    "The bottle seems new, with a colorless liquid inside; You take a sip from it"
+                );
+                GameState::without_input(Self::dead, String::from("dead"))
+            }
+            _ => {
+                println!("I don't know how to do that! What do you want to do?");
+                GameState::with_input(Self::table_with_key, String::from("table"))
+            }
+        }
+    }
+
+    fn door_locked(&mut self) -> GameState<Game> {
+        match &self.last_command as &str {
+            "" => {
+                println!("You read a wooden, worn, dark door... you can inspect or go back");
+                GameState::with_input(Self::door_locked, String::from("door"))
+            }
+            "open" => {
+                if self.player.has_key {
+                    println!("You open the door and you can exit outside...",);
+                    GameState::with_input(Self::door_unlocked, String::from("door"))
+                } else {
+                    println!("You try the door but it's closed",);
+                    GameState::without_input(Self::door_locked, String::from("door"))
+                }
+            }
+            "back" => {
+                println!("You go back in the hallway.");
+                GameState::without_input(Self::hallway, String::from("hallway"))
+            }
+            _ => {
+                println!("I don't know how to do that! What do you want to do?");
+                GameState::with_input(Self::table_with_key, String::from("table"))
+            }
+        }
+    }
+
+    fn door_unlocked(&mut self) -> GameState<Game> {
+        unimplemented!();
+    }
+
+    fn dead(&mut self) -> GameState<Game> {
+        match &self.last_command as &str {
+            "" => {
+                println!("You are so dead...!");
+                self.reset();
+                GameState::without_input(Self::start, String::from("dead"))
+            }
+            _ => {
+                println!("I don't know how to do that! What do you want to do?");
+                GameState::with_input(Self::table_with_key, String::from("table"))
+            }
+        }
+    }
+}
+
 fn main() {
     use std::io::Write;
     use std::env;

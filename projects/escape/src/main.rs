@@ -187,6 +187,27 @@ impl Game {
         }
     }
 
+    fn hallway(&mut self) -> GameState<Game> {
+        match &self.last_command as &str {
+            "" => {
+                println!(
+                    "You are in a hallway. You can inspect it, go, back, go right or go left."
+                );
+                GameState::with_input(Self::hallway, String::from("hallway"))
+            }
+            "inspect" => {
+                println!(
+                    "You are in a hallway. There are no decorations nor windows. You can go right or go left."
+                );
+                GameState::with_input(Self::hallway, String::from("hallway"))
+            }
+            _ => {
+                println!("I don't know how to do that! What do you want to do?");
+                GameState::with_input(Self::hallway, String::from("cell"))
+            }
+        }
+    }
+
 fn main() {
     use std::io::Write;
     use std::env;

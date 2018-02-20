@@ -201,6 +201,28 @@ impl Game {
                 );
                 GameState::with_input(Self::hallway, String::from("hallway"))
             }
+            "back" => {
+                println!("You come back to your cell.");
+                GameState::without_input(Self::cell, String::from("cell"))
+            }
+            "left" => {
+                println!(
+                    "You run left until you reach a dead end. There is a table with a bottle."
+                );
+                if self.player.has_key {
+                    GameState::without_input(Self::table_no_key, String::from("table"))
+                } else {
+                    GameState::without_input(Self::table_with_key, String::from("table"))
+                }
+            }
+            "right" => {
+                println!("You walk right, until you reach a door.");
+                if self.door_locked {
+                    GameState::without_input(Self::door_locked, String::from("door"))
+                } else {
+                    GameState::without_input(Self::door_unlocked, String::from("door"))
+                }
+            }
             _ => {
                 println!("I don't know how to do that! What do you want to do?");
                 GameState::with_input(Self::hallway, String::from("cell"))

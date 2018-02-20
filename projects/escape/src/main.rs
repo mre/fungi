@@ -4,6 +4,16 @@
 // http://i7-dungeon.sourceforge.net/source_3.html
 // https://dev.to/mindflavor/lets-build-zork-using-rust-1opm
 
+// https://doc.rust-lang.org/std/macro.unimplemented.html
+// Macro std::unimplemented
+// A standardized placeholder for marking unfinished code.
+// This can be useful if you are prototyping and are just looking to
+// have your code typecheck, or if you're implementing a trait that
+// requires multiple methods, and you're only planning on using one of
+// them.
+// Panics: This will always panic!
+// unimplemented!();
+
 use std::ops::Deref;
 
 /// This function takes in account the mutable reference to its associated type

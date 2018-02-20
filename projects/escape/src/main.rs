@@ -16,6 +16,8 @@
 
 use std::ops::Deref;
 
+static MSG_DUNNO: &'static str = "I don't know how to do that! What do you want to do?";
+
 /// This function takes in account the mutable reference to its associated type
 /// and returns the next GameState.
 type ChangeStateFn<T> = fn(&mut T) -> GameState<T>;
@@ -191,7 +193,7 @@ impl Game {
                 GameState::with_input(Self::hallway, String::from("hallway"))
             }
             _ => {
-                println!("I don't know how to do that! What do you want to do?");
+                println!("{}", MSG_DUNNO);
                 GameState::with_input(Self::cell, String::from("cell"))
             }
         }
@@ -234,7 +236,7 @@ impl Game {
                 }
             }
             _ => {
-                println!("I don't know how to do that! What do you want to do?");
+                println!("{}", MSG_DUNNO);
                 GameState::with_input(Self::hallway, String::from("cell"))
             }
         }
@@ -267,7 +269,7 @@ impl Game {
                 GameState::without_input(Self::dead, String::from("dead"))
             }
             _ => {
-                println!("I don't know how to do that! What do you want to do?");
+                println!("{}", MSG_DUNNO);
                 GameState::with_input(Self::table_with_key, String::from("table"))
             }
         }
@@ -292,7 +294,7 @@ impl Game {
                 GameState::without_input(Self::dead, String::from("dead"))
             }
             _ => {
-                println!("I don't know how to do that! What do you want to do?");
+                println!("{}", MSG_DUNNO);
                 GameState::with_input(Self::table_with_key, String::from("table"))
             }
         }
@@ -318,7 +320,7 @@ impl Game {
                 GameState::without_input(Self::hallway, String::from("hallway"))
             }
             _ => {
-                println!("I don't know how to do that! What do you want to do?");
+                println!("{}", MSG_DUNNO);
                 GameState::with_input(Self::table_with_key, String::from("table"))
             }
         }
@@ -336,7 +338,7 @@ impl Game {
                 GameState::without_input(Self::start, String::from("dead"))
             }
             _ => {
-                println!("I don't know how to do that! What do you want to do?");
+                println!("{}", MSG_DUNNO);
                 GameState::with_input(Self::table_with_key, String::from("table"))
             }
         }

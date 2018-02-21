@@ -202,12 +202,12 @@ impl Game {
     fn hallway(&mut self) -> GameState<Game> {
         match &self.last_command as &str {
             "" => {
-                println!("You are in a hallway. You can inspect it, go back, go right or go left.");
+                println!("You are in a hallway. You can inspect it, go back, right or left.");
                 GameState::with_input(Self::hallway, String::from("hallway"))
             }
             "inspect" => {
                 println!(
-                    "You are in a hallway. There are no decorations nor windows. You can go right or go left."
+                    "You are in a hallway. There are no decorations nor windows. You can go back, right or left."
                 );
                 GameState::with_input(Self::hallway, String::from("hallway"))
             }
@@ -248,12 +248,12 @@ impl Game {
             }
             "inspect" => {
                 println!(
-                    "On the table there are a key and a bottle; you can take the key or drink from the bottle"
+                    "On the table there are a key and a bottle; you can take the key, drink from the bottle or go back."
                 );
                 GameState::with_input(Self::table_with_key, String::from("table"))
             }
             "take" => {
-                println!("You take the key from the table; it seems quite old");
+                println!("You take the key from the table; it seems quite old.");
                 if self.player.has_key {
                     panic!("this is clearly a bug in the logic")
                 } else {
@@ -263,7 +263,7 @@ impl Game {
             }
             "drink" => {
                 println!(
-                    "The bottle seems new, with a colorless liquid inside; You take a sip from it"
+                    "The bottle seems new, with a colorless liquid inside; You take a sip from it."
                 );
                 GameState::without_input(Self::dead, String::from("dead"))
             }

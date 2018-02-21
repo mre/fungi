@@ -68,8 +68,8 @@ impl<T> GameState<T> {
     }
 
     /// Retuns a completed GameState.
-    fn completed(function: ChangeStateFn<T>) -> GameState<T> {
-        GameState::new(function, false, true, String::from("completed"))
+    fn completed(next: ChangeStateFn<T>) -> GameState<T> {
+        GameState::new(next, false, true, String::from("completed"))
     }
 }
 
@@ -418,4 +418,6 @@ fn main() {
         // it ticks the game to the next state.
         game_state = game_state(&mut game);
     }
+    // Running the last state (that is supposed to be a "closing" one)
+    game_state(&mut game);
 }

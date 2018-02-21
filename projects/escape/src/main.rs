@@ -202,7 +202,9 @@ impl Game {
     fn hallway(&mut self) -> GameState<Game> {
         match &self.last_command as &str {
             "" => {
-                println!("You are in a hallway. You can inspect it, go back, right or left.");
+                println!(
+                    "You are in a hallway. You can inspect it, enter the cell, go right or left."
+                );
                 GameState::with_input(Self::hallway, String::from("hallway"))
             }
             "inspect" => {
@@ -211,7 +213,7 @@ impl Game {
                 );
                 GameState::with_input(Self::hallway, String::from("hallway"))
             }
-            "back" => {
+            "cell" => {
                 println!("You come back to your cell.");
                 GameState::without_input(Self::cell, String::from("cell"))
             }
@@ -245,9 +247,15 @@ impl Game {
                 GameState::with_input(Self::table_with_key, String::from("table"))
             }
             "inspect" => {
-                println!(
+                if self.player.has_key {
+                    println!(
+                        "On the table there is a bottle; you can drink from the bottle or go back."
+                    );
+                } else {
+                    println!(
                     "On the table there are a key and a bottle; you can take the key, drink from the bottle or go back."
                 );
+                }
                 GameState::with_input(Self::table_with_key, String::from("table"))
             }
             "take" => {
@@ -284,13 +292,13 @@ impl Game {
             }
             "inspect" => {
                 println!(
-                    "On the table there is only a bottle; you can drink from the bottle or go back"
+                    "On the table there is only a bottle; you can drink from the bottle or go back."
                 );
                 GameState::with_input(Self::table_with_key, String::from("table"))
             }
             "drink" => {
                 println!(
-                    "The bottle seems new, with a colorless liquid inside; You take a sip from it"
+                    "The bottle seems new, with a colorless liquid inside; You take a sip from it."
                 );
                 GameState::without_input(Self::dead, String::from("dead"))
             }
@@ -304,7 +312,9 @@ impl Game {
     fn door_locked(&mut self) -> GameState<Game> {
         match &self.last_command as &str {
             "" => {
-                println!("You read a wooden, worn, dark door... you can inspect or go back");
+                println!(
+                    "You read a wooden, worn, dark door... you can try to open it or go back."
+                );
                 GameState::with_input(Self::door_locked, String::from("door"))
             }
             "open" => {
@@ -312,7 +322,7 @@ impl Game {
                     println!("You open the door and you can exit outside...",);
                     GameState::without_input(Self::door_unlocked, String::from("door"))
                 } else {
-                    println!("You try the door but it's closed",);
+                    println!("You try the door but it's closed.");
                     GameState::without_input(Self::door_locked, String::from("door"))
                 }
             }
@@ -330,8 +340,8 @@ impl Game {
     fn door_unlocked(&mut self) -> GameState<Game> {
         match &self.last_command as &str {
             "" => {
-                println!("You finally see the light... you can exit go back");
-                GameState::with_input(Self::door_locked, String::from("door"))
+                println!("You finally see the light... you can exit or go back.");
+                GameState::with_input(Self::door_unlocked, String::from("door"))
             }
             "exit" => GameState::completed(Self::end),
             "back" => {

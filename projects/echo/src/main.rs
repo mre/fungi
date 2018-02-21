@@ -8,6 +8,34 @@ use tokio::executor::current_thread;
 use tokio::net::TcpListener;
 use tokio_io::{io, AsyncRead};
 
+static LOCAL_BINDING_ADDR: &'static str = "0.0.0.0";
+static LOCAL_BINDING_PORT: &'static str = "8080";
+
+// https://doc.rust-lang.org/std/string/struct.String.html#method.with_capacity
+// pub fn with_capacity(capacity: usize) -> String
+fn concat_strings(a: &str, b: &str) -> String {
+    let mut res = String::with_capacity(a.len() + b.len());
+    res.push_str(a);
+    res.push_str(b);
+    res
+}
+
+fn concat_all_strings(vargs: &[&str]) -> String {
+    let capacity = vargs
+        .iter()
+        .map(|s: &&str| s.chars().count())
+        .fold(0, |acc, len| acc + len);
+    let mut res = String::with_capacity(capacity);
+    vargs.iter().map
+    res.push_str(a);
+    res.push_str(b);
+    res
+}
+
+fn local_binding() -> String {
+    unimplemented!()
+}
+
 fn main() {
     // Bind the server's socket
     let addr = "127.0.0.1:12345".parse().unwrap();

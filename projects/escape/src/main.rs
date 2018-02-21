@@ -189,8 +189,8 @@ impl Game {
                 GameState::with_input(Self::cell, String::from("cell"))
             }
             "exit" => {
-                println!("You follow the light...");
-                GameState::with_input(Self::hallway, String::from("hallway"))
+                println!("You leave the cell..");
+                GameState::without_input(Self::hallway, String::from("hallway"))
             }
             _ => {
                 println!("{}", MSG_DUNNO);
@@ -202,9 +202,7 @@ impl Game {
     fn hallway(&mut self) -> GameState<Game> {
         match &self.last_command as &str {
             "" => {
-                println!(
-                    "You are in a hallway. You can inspect it, go, back, go right or go left."
-                );
+                println!("You are in a hallway. You can inspect it, go back, go right or go left.");
                 GameState::with_input(Self::hallway, String::from("hallway"))
             }
             "inspect" => {
@@ -259,6 +257,7 @@ impl Game {
                 if self.player.has_key {
                     panic!("this is clearly a bug in the logic")
                 } else {
+                    self.player.has_key = true;
                     GameState::without_input(Self::table_no_key, String::from("key"))
                 }
             }
@@ -267,6 +266,10 @@ impl Game {
                     "The bottle seems new, with a colorless liquid inside; You take a sip from it"
                 );
                 GameState::without_input(Self::dead, String::from("dead"))
+            }
+            "back" => {
+                println!("You go back in the hallway.");
+                GameState::without_input(Self::hallway, String::from("hallway"))
             }
             _ => {
                 println!("{}", MSG_DUNNO);
@@ -309,7 +312,7 @@ impl Game {
             "open" => {
                 if self.player.has_key {
                     println!("You open the door and you can exit outside...",);
-                    GameState::with_input(Self::door_unlocked, String::from("door"))
+                    GameState::without_input(Self::door_unlocked, String::from("door"))
                 } else {
                     println!("You try the door but it's closed",);
                     GameState::without_input(Self::door_locked, String::from("door"))

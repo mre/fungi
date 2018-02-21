@@ -216,9 +216,7 @@ impl Game {
                 GameState::without_input(Self::cell, String::from("cell"))
             }
             "left" => {
-                println!(
-                    "You run left until you reach a dead end. There is a table with a bottle."
-                );
+                println!("You walk left.");
                 if self.player.has_key {
                     GameState::without_input(Self::table_no_key, String::from("table"))
                 } else {
@@ -226,7 +224,7 @@ impl Game {
                 }
             }
             "right" => {
-                println!("You walk right, until you reach a door.");
+                println!("You walk right.");
                 if self.door_locked {
                     GameState::without_input(Self::door_locked, String::from("door"))
                 } else {
@@ -336,7 +334,7 @@ impl Game {
     fn dead(&mut self) -> GameState<Game> {
         match &self.last_command as &str {
             "" => {
-                println!("You are so dead...!");
+                println!("...\nYour head is spinning... everything around you vanish...\n");
                 self.reset();
                 GameState::without_input(Self::start, String::from("dead"))
             }

@@ -328,7 +328,21 @@ impl Game {
     }
 
     fn door_unlocked(&mut self) -> GameState<Game> {
-        unimplemented!();
+        match &self.last_command as &str {
+            "" => {
+                println!("You finally see the light... you can exit go back");
+                GameState::with_input(Self::door_locked, String::from("door"))
+            }
+            "exit" => GameState::completed(Self::end),
+            "back" => {
+                println!("You go back in the hallway.");
+                GameState::without_input(Self::hallway, String::from("hallway"))
+            }
+            _ => {
+                println!("{}", MSG_DUNNO);
+                GameState::with_input(Self::door_unlocked, String::from("table"))
+            }
+        }
     }
 
     fn dead(&mut self) -> GameState<Game> {

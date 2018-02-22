@@ -102,14 +102,33 @@ fn main() {
 
     println!("Teams: {:?}", teams_in_score_order);
 }
-Here we are using a mutable reference to sort the list of players on each team by highest score. The sort_by() function performs the sorting of the Vector/slice in place. This means we need the ability to mutate team in order to sort. I do not use .iter_mut() often, but sometimes functions like .sort_by() provide no immutable alternative.
+```
 
-I tend to use .iter() most. I try to be very concious and deliberate about when I move resources and default to borrowing (or referencing) first. The reference created by .iter() is short-lived, so we can move or use our original value afterwards. If you find yourself running into does not live long enough, move errors or using the .clone() function, this is a sign that you probably want to use .into_iter() instead.
+Here we are using a `mutable reference` to sort the list of players on each team
+by highest score. The `sort_by()` function performs the sorting of the
+Vector/slice in place. This means we need the ability to mutate team in order to
+sort. I do not use `.iter_mut()` often, but sometimes functions like
+`.sort_by()` provide no immutable alternative.
 
-IntoIter
+I tend to use `.iter()` most. I try to be very concious and deliberate about
+when I move resources and default to borrowing (or referencing) first. The
+reference created by `.iter()` is short-lived, so we can move or use our
+original value afterwards. If you find yourself running into "does not live long
+enough", "move errors" or using the `.clone()` function, this is a sign that you
+probably want to use `.into_iter()` instead.
 
-Use the into_iter() function when you want to move, instead of borrow, your value. The .into_iter() function creates a IntoIter<T> type that now has ownership of the original value. Like Iter<'a, T>, it is this IntoIter<T> type that actually implements the Iterator trait. The word into is commonly used in Rust to signal that T is being moved. The docs also use the words owned or consumed interchangeably with moved. I normally find myself using .into_iter() when I have a function that is transforming some values:
+## IntoIter
 
+Use the `into_iter()` function when you want to `move`, instead of `borrow`,
+your value. The `.into_iter()` function creates a `IntoIter<T>` type that now
+has *ownership* of the original value. Like `Iter<'a, T>`, it is this
+`IntoIter<T>` type that actually implements the `Iterator` trait. The word
+`into` is commonly used in Rust to signal that `T` is being moved. The docs also
+use the words `owned` or `consumed` interchangeably with moved. I normally find
+myself using `.into_iter()` when I have a function that is transforming some
+values:
+
+```rust
 fn get_names(v: Vec<(String, usize)>) -> Vec<String> {
     v.into_iter()
         .map(|(name, _score)| name)
@@ -122,7 +141,10 @@ fn main() {
 
     assert_eq!(names, ["Herman"]);
 }
-The get_names function is plucking out the name from a list of tuples. I chose .into_iter() here because we are transforming the tuple into a String type.
+```
+
+The `get_names` function is plucking out the name from a list of tuples. I chose
+`.into_iter()` here because we are transforming the tuple into a String type.
 
 The concept behind .into_iter() is similar to the core::convert::Into trait we discussed when accepting &str and String in a function. In fact, the std::iter::Iterator type implements std::iter::IntoIterator too. That means we can do something like vec![1, 2, 3, 4].into_iter().into_iter().into_iter(). In each subsequent call to .into_iter() just returns itself. This is an example of the identity function. I mention that only because I find it interesting to identify functional concepts that I see being used in the wild.
 

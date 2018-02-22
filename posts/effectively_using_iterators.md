@@ -41,10 +41,25 @@ fn main() {
 }
 ```
 
-In this example, we are using .map() and .fold() to count the number of bytes (not characters! Rust strings are UTF-8) for all strings in the names vector. We know that the len() function can use an immutable reference. As such, we prefer iter() instead of iter_mut() or into_iter(). This allows us to move the names vector later if we want. I put a bogus use_names_for_something() function in the example just to prove this. If we had used into_iter() instead, the compiler would have given us an error: use of moved value: names response.
+In this example, we are using `.map()` and `.fold()` to count the number of
+bytes (not characters! Rust strings are UTF-8) for all strings in the names
+vector. We know that the `len()` function can use an immutable reference. As
+such, we prefer `iter()` instead of `iter_mut()` or `into_iter()`. This allows
+us to move the names vector later if we want. I put a bogus
+`use_names_for_something()` function in the example just to prove this. If we
+had used `into_iter()` instead, the compiler would have given us an error: use
+of moved value: names response.
 
-The closure used in map() does not require the name parameter to have a type, but I specified the type to show how it is being passed as a reference. Notice that the type of name is &&str and not &str. The string "Jane" is of type &str. The iter() function creates an iterator that has a reference to each element in the names vector. Thus, we have a reference to a reference of a string slice. This can get a little unwieldy and I generally do not worry about the type. However, if we are destructuring the type, we do need to specify the reference:
+The closure used in `map()` does not require the `name` parameter to have a
+type, but I specified the type to show how it is being passed as a `reference`.
+Notice that the type of `name` is `&&str` and not `&str`. The string `"Jane"` is
+of type `&str`. The `iter()` function creates an _iterator_ that has a
+_reference_ to each element in the `names` vector. Thus, we have a reference to
+a reference of a string slice. This can get a little unwieldy and I generally do
+not worry about the type. However, if we are destructuring the type, we do need
+to specify the reference:
 
+```rust
 fn main() {
     let player_scores = [
         ("Jack", 20), ("Jane", 23), ("Jill", 18), ("John", 19),
@@ -59,10 +74,18 @@ fn main() {
 
     assert_eq!(players, ["Jack", "Jane", "Jill", "John"]);
 }
-In the above example, the compiler will complain that we are specifying the type (_, _) instead of &(_, _). Changing the pattern to &(player, _score) will satisfy the compiler.
+```
 
-Rust is immutable by default and iterators make it easy to manipulate data without needing mutability. If you do find yourself wanting to mutate some data, you can use the iter_mut() method to get a mutable reference to the values. Example use of iter_mut():
+In the above example, the compiler will complain that we are specifying the type
+`(_, _)` instead of `&(_, _)`. Changing the pattern to `&(player, _score)` will
+satisfy the compiler.
 
+Rust is immutable by default and iterators make it easy to manipulate data
+without needing mutability. If you do find yourself wanting to mutate some data,
+you can use the `iter_mut()` method to get a mutable reference to the values.
+Example use of `iter_mut()`:
+
+```rust
 fn main() {
     let mut teams = [
         [ ("Jack", 20), ("Jane", 23), ("Jill", 18), ("John", 19), ],

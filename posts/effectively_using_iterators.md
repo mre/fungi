@@ -158,8 +158,10 @@ interesting to identify functional concepts that I see being used in the wild.
 
 ## How for Loops Actually Work
 
-One of the first errors a new Rustacean will run into is the move error after using a for loop:
+One of the first errors a new Rustacean will run into is the "move error" after
+using a "for loop":
 
+```rust
 fn main() {
     let values = vec![1, 2, 3, 4];
 
@@ -169,8 +171,13 @@ fn main() {
 
     let y = values; // move error
 }
-The question we immediately ask ourselves is “How do I create a for loop that uses a reference?”. A for loop in Rust is really just syntatic sugar around .into_iter(). From the manual:
+```
 
+The question we immediately ask ourselves is "How do I create a for loop that
+uses a reference?". A `for loop` in Rust is really just syntatic sugar around
+`.into_iter()`. From the manual:
+
+```rust
 // Rough translation of the iteration without a `for` iterator.
 let mut it = values.into_iter();
 loop {
@@ -179,8 +186,13 @@ loop {
         None => break,
     }
 }
-Now that we know .into_iter() creates a type IntoIter<T> that moves T, this behavior makes perfect sense. If we want to use values after the for loop, we just need to use a reference instead:
+```
 
+Now that we know `.into_iter()` creates a type `IntoIter<T>` that moves `T`,
+this behavior makes perfect sense. If we want to use values after the
+`for loop`, we just need to use a reference instead:
+
+```rust
 fn main() {
     let values = vec![1, 2, 3, 4];
 
@@ -190,7 +202,12 @@ fn main() {
 
     let y = values; // perfectly valid
 }
-Instead of moving values, which is type Vec<i32>, we are moving &values, which is type &Vec<i32>. The for loop only borrows &values for the duration of the loop and we are able to move values as soon as the for loop is done.
+```
+
+Instead of moving `values`, which is type `Vec<i32>`, we are moving `&values`,
+which is type `&Vec<i32>`. The `for loop` only _borrows_ &values for the
+duration of the loop and we are able to move values as soon as the `for loop`
+is done.
 
 core::iter::Cloned
 

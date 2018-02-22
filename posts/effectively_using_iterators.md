@@ -14,10 +14,17 @@ Rust.
 
 ## Iter
 
-Most examples I have found use .iter(). We can call v.iter() on something like a vector or slice. This creates an Iter<'a, T> type and it is this Iter<'a, T> type that implements the Iterator trait and allows us to call functions like .map(). It is important to note that this Iter<'a, T> type only has a reference to T. This means that calling v.iter() will create a struct that borrows from v. Use the iter() function if you want to iterate over the values by reference.
+Most examples I have found use `.iter()`. We can call `v.iter()` on something
+like a _vector_ or _slice_. This creates an `Iter<'a, T>` type and it is this
+`Iter<'a, T>` type that implements the `Iterator` trait and allows us to call
+functions like `.map()`. It is important to note that this `Iter<'a, T>` type
+only has a reference to `T`. This means that calling `v.iter()` will create a
+`struct` that borrows from `v`. Use the `iter()` function if you want to iterate
+over the values by _reference_.
 
-Let us write a simple map/reduce example:
+Let us write a simple _map/reduce_ example:
 
+```rust
 fn use_names_for_something_else(_names: Vec<&str>) {
 }
 
@@ -32,6 +39,8 @@ fn main() {
     assert_eq!(total_bytes, 16);
     use_names_for_something_else(names);
 }
+```
+
 In this example, we are using .map() and .fold() to count the number of bytes (not characters! Rust strings are UTF-8) for all strings in the names vector. We know that the len() function can use an immutable reference. As such, we prefer iter() instead of iter_mut() or into_iter(). This allows us to move the names vector later if we want. I put a bogus use_names_for_something() function in the example just to prove this. If we had used into_iter() instead, the compiler would have given us an error: use of moved value: names response.
 
 The closure used in map() does not require the name parameter to have a type, but I specified the type to show how it is being passed as a reference. Notice that the type of name is &&str and not &str. The string "Jane" is of type &str. The iter() function creates an iterator that has a reference to each element in the names vector. Thus, we have a reference to a reference of a string slice. This can get a little unwieldy and I generally do not worry about the type. However, if we are destructuring the type, we do need to specify the reference:

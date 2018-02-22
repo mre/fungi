@@ -1,11 +1,12 @@
 # What is the difference between iter and into_iter?
 
-source: https://stackoverflow.com/questions/34733811/what-is-the-difference-between-iter-and-into-iter#34745885
+[source (StackOverflow)](https://stackoverflow.com/questions/34733811/what-is-the-difference-between-iter-and-into-iter#34745885)
 
-The first question is: "What is into_iter?"
+## The first question is: "What is into_iter?"
 
-into_iter comes from the IntoIterator trait:
+`into_iter` comes from the `IntoIterator` trait:
 
+```rust
 pub trait IntoIterator
 where
     <Self::IntoIter as Iterator>::Item == Self::Item,
@@ -14,13 +15,20 @@ where
     type IntoIter: Iterator;
     fn into_iter(self) -> Self::IntoIter;
 }
-You implement this trait when you want to specify how a particular type is to be converted into an iterator. Most notably, if a type implements IntoIterator it can be used in a for loop.
+```
 
-For example, Vec implements IntoIterator... thrice!
+You implement this trait when you want to specify how a particular type is to be
+_converted into an iterator_. Most notably, if a type implements `IntoIterator`
+it can be used in a for loop.
 
+For example, `Vec` implements `IntoIterator`... thrice!
+
+```
 impl<T> IntoIterator for Vec<T>
 impl<'a, T> IntoIterator for &'a Vec<T>
 impl<'a, T> IntoIterator for &'a mut Vec<T>
+```
+
 Each variant is slightly different.
 
 This one consumes the Vec and its iterator yields values (T directly):

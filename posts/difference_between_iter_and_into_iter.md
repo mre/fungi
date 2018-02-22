@@ -2,7 +2,7 @@
 
 [source (StackOverflow)](https://stackoverflow.com/questions/34733811/what-is-the-difference-between-iter-and-into-iter#34745885)
 
-## The first question is: "What is into_iter?"
+### The first question is: "What is into_iter?"
 
 `into_iter` comes from the `IntoIterator` trait:
 
@@ -19,7 +19,7 @@ where
 
 You implement this trait when you want to specify how a particular type is to be
 _converted into an iterator_. Most notably, if a type implements `IntoIterator`
-it can be used in a for loop.
+it can be used in a `for loop`.
 
 For example, `Vec` implements `IntoIterator`... thrice!
 
@@ -31,35 +31,45 @@ impl<'a, T> IntoIterator for &'a mut Vec<T>
 
 Each variant is slightly different.
 
-This one consumes the Vec and its iterator yields values (T directly):
+This one consumes the `Vec` and its iterator yields _values_ (`T` directly):
 
+```rust
 impl<T> IntoIterator for Vec<T> {
     type Item = T;
     type IntoIter = IntoIter<T>;
 
     fn into_iter(mut self) -> IntoIter<T> { /* ... */ }
 }
-The other two take the vector by reference (don't be fooled by the signature of into_iter(self) because self is a reference in both cases) and their iterators will produce references to the elements inside Vec.
+```
 
-This one yields immutable references:
+The other two take the vector _by reference_ (don't be fooled by the signature
+of `into_iter(self)` because `self` is a reference in both cases) and their
+iterators will produce references to the elements inside `Vec`.
 
+This one yields _immutable_ references:
+
+```rust
 impl<'a, T> IntoIterator for &'a Vec<T> {
     type Item = &'a T;
     type IntoIter = slice::Iter<'a, T>;
 
     fn into_iter(self) -> slice::Iter<'a, T> { /* ... */ }
 }
+```
+
 While this one yields mutable references:
 
+```rust
 impl<'a, T> IntoIterator for &'a mut Vec<T> {
     type Item = &'a mut T;
     type IntoIter = slice::IterMut<'a, T>;
 
     fn into_iter(self) -> slice::IterMut<'a, T> { /* ... */ }
 }
-So:
+```
 
-What is the difference between iter and into_iter?
+### What is the difference between `iter` and `into_iter`?
+
 into_iter is a generic method to obtain an iterator, whether this iterator yields values, immutable references or mutable references is context dependent and can sometimes be surprising.
 
 iter and iter_mut are ad-hoc methods. This works around the context-dependent bit and, by convention, let you obtain an iterator which will yield references.

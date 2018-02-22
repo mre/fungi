@@ -209,10 +209,12 @@ which is type `&Vec<i32>`. The `for loop` only _borrows_ &values for the
 duration of the loop and we are able to move values as soon as the `for loop`
 is done.
 
-core::iter::Cloned
+## core::iter::Cloned
 
-There are times when you want create a new value when iterating over your original value. You might first try something like:
+There are times when you want create a _new value_ when iterating over your
+_original_ value. You might first try something like:
 
+```rust
 fn main() {
     let x = vec!["Jill", "Jack", "Jane", "John"];
 
@@ -221,10 +223,31 @@ fn main() {
         .into_iter()
         .collect::<Vec<_>>();
 }
-Exercise for the reader: Why would .iter() not work in this example?
+```
 
-While this is valid, we want to give Rust every chance to optimize our code. What if we only wanted the first two names from that list?
+Exercise for the reader: Why would `.iter()` not work in this example?
 
+```
+  |
+4 |       let xx = x
+  |  ______________^
+5 | |         .clone()
+  | |________________^ temporary value does not live long enough
+6 |           .iter()
+7 |           .collect::<Vec<_>>();
+  |                               - temporary value dropped here while still borrowed
+8 |       println!("{:?}", xx)
+9 |   }
+  |   - temporary value needs to live until here
+  |
+  = note: consider using a `let` binding to increase its lifetime
+
+```
+
+While this is valid, we want to give Rust every chance to optimize our code.
+What if we only wanted the first two names from that list?
+
+```rust
 fn main() {
     let x = vec!["Jill", "Jack", "Jane", "John"];
 
@@ -234,8 +257,13 @@ fn main() {
         .take(2)
         .collect::<Vec<_>>();
 }
-If we clone all of x, then we are cloning all four elements, but we only need two of them. We can do better by using .map() to clone the elements of the underlying iterator:
+```
 
+If we clone all of `x`, then we are cloning all four elements, but we only need
+two of them. We can do better by using `.map()` to clone the elements of the
+underlying iterator:
+
+```rust
 fn main() {
     let x = vec!["Jill", "Jack", "Jane", "John"];
 
@@ -245,8 +273,14 @@ fn main() {
         .take(2)
         .collect::<Vec<_>>();
 }
-The Rust compiler can now optimize this code and only clone two out of the four elements of x. This pattern is used so often that Rust core now has a special function that does this for us called cloned(). This is a recent addition and will be stable in Rust 1.1. Our code now looks something like:
+```
 
+The Rust compiler can now optimize this code and only clone two out of the four
+elements of `x`. This pattern is used so often that Rust core now has a special
+function that does this for us called `cloned()`. This is a recent addition and
+will be stable in Rust 1.1. Our code now looks something like:
+
+```rust
 fn main() {
     let x = vec!["Jill", "Jack", "Jane", "John"];
 
@@ -256,9 +290,21 @@ fn main() {
         .take(2)
         .collect::<Vec<_>>();
 }
-Iterators Outside of Core
+```
 
-There is a really great crate, called itertools, that provides extra iterator adaptors, iterator methods and macros. If you are looking for some iterator functionality in the Rust docs and do not see it, there is a good chance it is part of itertools. I recently added an itertools::IterTools::sort_by() function so we can sort collections without needed to use a mutable iterator. One of the nice things about working with Rust is that the documentation looks the same across all these crates. The documentation for itertools looks the same as the documentation for Rust std library.
+## Iterators Outside of Core
+
+There is a really great crate, called `itertools`, that provides extra iterator
+adaptors, iterator methods and macros. If you are looking for some iterator
+functionality in the Rust docs and do not see it, there is a good chance it is
+part of `itertools`. I recently added an `itertools::IterTools::sort_by()`
+function so we can sort collections without needed to use a mutable iterator.
+One of the nice things about working with Rust is that the documentation looks
+the same across all these crates. The documentation for itertools looks the same
+as the documentation for Rust std library.
+
+- https://docs.rs/itertools/0.7.6/itertools/
+- https://github.com/bluss/rust-itertools
 
 ## Related
 

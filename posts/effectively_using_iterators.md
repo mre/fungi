@@ -144,11 +144,19 @@ fn main() {
 ```
 
 The `get_names` function is plucking out the name from a list of tuples. I chose
-`.into_iter()` here because we are transforming the tuple into a String type.
+`.into_iter()` here because we are _transforming_ the tuple into a
+`String` type.
 
-The concept behind .into_iter() is similar to the core::convert::Into trait we discussed when accepting &str and String in a function. In fact, the std::iter::Iterator type implements std::iter::IntoIterator too. That means we can do something like vec![1, 2, 3, 4].into_iter().into_iter().into_iter(). In each subsequent call to .into_iter() just returns itself. This is an example of the identity function. I mention that only because I find it interesting to identify functional concepts that I see being used in the wild.
+The concept behind `.into_iter()` is similar to the `core::convert::Into` trait
+we discussed when accepting `&str` and `String` in a function. In fact, the
+`std::iter::Iterator` type implements `std::iter::IntoIterator` too. That means
+we can do something like `vec![1, 2, 3, 4].into_iter().into_iter().into_iter()`.
 
-How for Loops Actually Work
+In each subsequent call to `.into_iter()` just returns itself. This is an
+example of the identity function. I mention that only because I find it
+interesting to identify functional concepts that I see being used in the wild.
+
+## How for Loops Actually Work
 
 One of the first errors a new Rustacean will run into is the move error after using a for loop:
 

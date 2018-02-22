@@ -70,21 +70,34 @@ impl<'a, T> IntoIterator for &'a mut Vec<T> {
 
 ### What is the difference between `iter` and `into_iter`?
 
-into_iter is a generic method to obtain an iterator, whether this iterator yields values, immutable references or mutable references is context dependent and can sometimes be surprising.
+`into_iter` is a generic method to obtain an _iterator_, whether this _iterator_
+yields _values_, _immutable references_ or _mutable references_ is *context*
+*dependent* and can sometimes be surprising.
 
-iter and iter_mut are ad-hoc methods. This works around the context-dependent bit and, by convention, let you obtain an iterator which will yield references.
+`iter` and `iter_mut` are ad-hoc methods. This works around the
+context-dependent bit and, by convention, let you obtain an _iterator_ which will
+yield _references_.
 
-The author of the Rust by Example post illustrates the surprise coming from the dependence on the context (i.e., the type) on which into_iter is called, and is also compounding the problem by using the fact that:
+The author of the Rust by Example post illustrates the surprise coming from the
+dependence on the context (i.e., the type) on which `into_iter` is called, and
+is also compounding the problem by using the fact that:
 
+```
 IntoIterator is not implemented for [T; N], only for &[T; N] and &mut [T; N]
-When a method is not implemented for a value, it is automatically searched for references to that value instead
-which is very surprising for into_iter since all types (except [T; N]) implement it for all 3 variations (value and references). It's not possible for the array to implement an iterator that yields values because it cannot "shrink" to give up its items.
 
-As to why arrays implement IntoIterator (in such a surprising fashion): it's to make it possible to iterate over references to them in for loops.
+When a method is not implemented for a value, it is automatically searched for
+references to that value instead.
+```
 
-IntoIterator trait: https://doc.rust-lang.org/std/iter/trait.IntoIterator.html
-yields values: https://doc.rust-lang.org/std/vec/struct.Vec.html#impl-IntoIterator
-yields immutable references: https://doc.rust-lang.org/std/vec/struct.Vec.html#impl-IntoIterator-1
-yields mutable references: https://doc.rust-lang.org/std/vec/struct.Vec.html#impl-IntoIterator-2
+which is very surprising for `into_iter` since all types (except `[T; N]`)
+implement it for all 3 variations (_value_ and _references_). It's not possible
+for the array to implement an _iterator_ that yields _values_ because it cannot
+"shrink" to give up its items.
 
-http://hermanradtke.com/2015/06/22/effectively-using-iterators-in-rust.html
+As to why arrays implement `IntoIterator` (in such a surprising fashion): it's
+to make it possible to iterate over references to them in for loops.
+
+- [IntoIterator trait](https://doc.rust-lang.org/std/iter/trait.IntoIterator.html)
+- [yields values](https://doc.rust-lang.org/std/vec/struct.Vec.html#impl-IntoIterator)
+- [yields immutable references](https://doc.rust-lang.org/std/vec/struct.Vec.html#impl-IntoIterator-1)
+- [yields mutable references](https://doc.rust-lang.org/std/vec/struct.Vec.html#impl-IntoIterator-2)

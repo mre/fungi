@@ -1,6 +1,5 @@
 # Effectively Using Iterators In Rust
 
-
 Written by [Herman J. Radtke III](http://hermanradtke.com/) on 22 Jun 2015
 [here](http://hermanradtke.com/2015/06/22/effectively-using-iterators-in-rust.html)
 
@@ -298,7 +297,8 @@ There is a really great crate, called `itertools`, that provides extra iterator
 adaptors, iterator methods and macros. If you are looking for some iterator
 functionality in the Rust docs and do not see it, there is a good chance it is
 part of `itertools`. I recently added an `itertools::IterTools::sort_by()`
-function so we can sort collections without needed to use a mutable iterator.
+function so we can sort collections without needed to use a _mutable iterator_.
+
 One of the nice things about working with Rust is that the documentation looks
 the same across all these crates. The documentation for itertools looks the same
 as the documentation for Rust std library.
@@ -309,3 +309,22 @@ as the documentation for Rust std library.
 ## Related
 
 [Creating a Rust function that accepts String or &str](http://hermanradtke.com/2015/05/06/creating-a-rust-function-that-accepts-string-or-str.html)
+
+## Sumamry
+
+- `impl<T> IntoIterator for Vec<T>`
+  consumes the Vec and its iterator yields values (T directly)
+
+  https://doc.rust-lang.org/std/vec/struct.Vec.html#impl-IntoIterator
+
+- `impl<'a, T> IntoIterator for &'a Vec<T>`
+  yields immutable references
+
+  https://doc.rust-lang.org/std/vec/struct.Vec.html#impl-IntoIterator-1
+
+- `impl<'a, T> IntoIterator for &'a mut Vec<T>`
+  yields mutable references
+
+  https://doc.rust-lang.org/std/vec/struct.Vec.html#impl-IntoIterator-2
+
+into_iter is a generic method to obtain an iterator, whether this iterator yields values, immutable references or mutable references is context dependent and can sometimes be surprising.

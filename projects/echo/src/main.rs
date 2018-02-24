@@ -27,19 +27,31 @@ fn concat_all_strings(vargs: &[&str]) -> String {
         .map(|s: &&str| s.chars().count())
         .fold(0, |acc, len| acc + len);
     let mut res = String::with_capacity(capacity);
-    vargs.iter().map
-    res.push_str(a);
-    res.push_str(b);
+    // vargs.iter().map(|s: &&str| res.push_str(s));
+    // map() is conceptually similar to a for loop. However, as map() is lazy,
+    // it is best used when you're already working with other iterators. If
+    // you're doing some sort of looping for a side effect, it's considered more
+    // idiomatic to use for than map().
+    // - https://doc.rust-lang.org/std/convert/trait.AsRef.html#tymethod.as_ref
+    // - https://doc.rust-lang.org/std/borrow/trait.Borrow.html
+    //
+    for s in vargs.iter() {
+        res.push_str(s);
+    }
     res
 }
 
 fn local_binding() -> String {
-    unimplemented!()
+    // Use AsRef when goal is to simply convert into a reference;
+    // Use Borrow when goal is related to writing code that is agnostic to the
+    // type of borrow and if is reference or value;
+    let vargs: &[&str] = &vec![LOCAL_BINDING_ADDR, ":", LOCAL_BINDING_PORT];
+    concat_all_strings(vargs)
 }
 
 fn main() {
     // Bind the server's socket
-    let addr = "127.0.0.1:12345".parse().unwrap();
+    let addr = local_binding().parse().unwrap();
     let tcp = TcpListener::bind(&addr).unwrap();
 
     // Iterate incoming connections

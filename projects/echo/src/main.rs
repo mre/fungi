@@ -13,6 +13,7 @@ static LOCAL_BINDING_PORT: &'static str = "8080";
 
 // https://doc.rust-lang.org/std/string/struct.String.html#method.with_capacity
 // pub fn with_capacity(capacity: usize) -> String
+#[allow(dead_code)]
 fn concat_strings(a: &str, b: &str) -> String {
     let mut res = String::with_capacity(a.len() + b.len());
     res.push_str(a);

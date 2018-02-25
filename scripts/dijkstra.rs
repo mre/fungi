@@ -18,6 +18,31 @@ struct State {
 // The priority queue depends on `Ord`.
 // Explicitly implement the trait so the queue becomes a min-heap
 // instead of a max-heap.
+//
+// It uses Enum std::cmp::Ordering#then_with
+// https://doc.rust-lang.org/std/cmp/enum.Ordering.html#method.then_with
+//
+// pub fn then_with<F>(self, f: F) -> Ordering
+// where F: FnOnce() -> Ordering,
+//
+//     Chains the ordering with the given function.
+//     Returns self when it's not Equal. Otherwise calls f and returns the result.
+//     Examples
+//
+// use std::cmp::Ordering;
+// let result = Ordering::Equal.then_with(|| Ordering::Less);
+// assert_eq!(result, Ordering::Less);
+// let result = Ordering::Less.then_with(|| Ordering::Equal);
+// assert_eq!(result, Ordering::Less);
+// let result = Ordering::Less.then_with(|| Ordering::Greater);
+// assert_eq!(result, Ordering::Less);
+// let result = Ordering::Equal.then_with(|| Ordering::Equal);
+// assert_eq!(result, Ordering::Equal);
+// let x: (i64, i64, i64) = (1, 2, 7);
+// let y: (i64, i64, i64)  = (1, 5, 3);
+// let result = x.0.cmp(&y.0).then_with(|| x.1.cmp(&y.1)).then_with(|| x.2.cmp(&y.2));
+// assert_eq!(result, Ordering::Less);
+//
 impl Ord for State {
     fn cmp(&self, other: &State) -> Ordering {
         // Notice that the we flip the ordering on costs.
@@ -45,14 +70,23 @@ struct Edge {
 
 // Dijkstra's shortest path algorithm.
 
-// Start at `start` and use `dist` to track the current shortest distance
-// to each node. This implementation isn't memory-efficient as it may leave duplicate
-// nodes in the queue. It also uses `usize::MAX` as a sentinel value,
+// Start at `start` and use `dist` to track the current shortest distance to
+// each node. This implementation isn't memory-efficient as it may leave
+// duplicate nodes in the queue. It also uses `usize::MAX` as a sentinel value,
 // for a simpler implementation.
 fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option<usize> {
+    // Everything is initialised at the MAX possible value (like infinity).
     // dist[node] = current shortest distance from `start` to `node`
+    // Since a node is a usize, it can be used to index the Vec and get the same
+    // behaviour of a HashMap.
     let mut dist: Vec<_> = (0..adj_list.len()).map(|_| usize::MAX).collect();
 
+    // Module std::collections::binary_heap
+    // https://doc.rust-lang.org/std/collections/binary_heap/index.html
+    //
+    // Struct std::collections::binary_heap::BinaryHeap
+    // A priority queue implemented with a binary heap.
+    // This will be a max-heap.
     let mut heap = BinaryHeap::new();
 
     // We're at `start`, with a zero cost

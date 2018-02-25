@@ -1,3 +1,10 @@
+// https://doc.rust-lang.org/std/collections/binary_heap/
+// This is a larger example that implements Dijkstra's algorithm to solve the
+// shortest path problem on a directed graph. It shows how to use BinaryHeap
+// with custom types.
+//
+// - https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+// - https://en.wikipedia.org/wiki/Shortest_path_problem
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::usize;

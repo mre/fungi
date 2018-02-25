@@ -77,7 +77,7 @@ mod tests {
         let a: Thing = Thing { content: 0 };
         let b: Thing = Thing { content: 1 };
 
-        assert_eq!(&a.cmp(&b), &Ordering::Less);
+        assert_eq!(&a.cmp(&b), &Ordering::Greater);
         assert_eq!(&b.cmp(&a), &Ordering::Less);
         assert_eq!(&a.cmp(&a), &Ordering::Equal);
     }

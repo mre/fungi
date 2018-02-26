@@ -82,6 +82,36 @@ mod tests {
         assert_eq!(&a.cmp(&a), &Ordering::Equal);
     }
 
+    // #[test]
+    pub fn things_are_pushed_in_the_heap() {
+        let a: Thing = Thing { content: 0 };
+        let b: Thing = Thing { content: 1 };
+        let c: Thing = Thing { content: 2 };
+
+        let mut heap = BinaryHeap::new();
+
+        assert_eq!(heap.peek(), None);
+        heap.push(a);
+        heap.push(b);
+        heap.push(c);
+
+        assert_eq!(heap.peek(), Some(&a));
+        assert_eq!(heap.len(), 3);
+
+        for x in &heap {
+            println!("{}", x);
+        }
+
+        assert_eq!(heap.pop(), Some(a));
+        assert_eq!(heap.pop(), Some(b));
+        assert_eq!(heap.pop(), Some(c));
+        assert_eq!(heap.pop(), None);
+
+        heap.clear();
+
+        assert!(heap.is_empty())
+    }
+
     //  #[test]
     #[allow(dead_code)]
     pub fn things_explode() {
@@ -92,6 +122,7 @@ mod tests {
 // rustc scripts/binary_heap.rs --out-dir ./target && ./target/binary_heap
 fn main() {
     tests::things_are_comparable();
+    tests::things_are_pushed_in_the_heap();
 
     max_heap()
 }

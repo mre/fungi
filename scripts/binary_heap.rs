@@ -1,5 +1,6 @@
 // https://doc.rust-lang.org/std/collections/binary_heap/struct.BinaryHeap.html
 
+use std::fmt;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
@@ -43,9 +44,15 @@ fn max_heap() {
 }
 
 // Thing have a priority, an ordering, where the lower is the greater.
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 struct Thing {
     content: usize,
+}
+
+impl fmt::Display for Thing {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.content)
+    }
 }
 
 // Trait std::cmp::Ord

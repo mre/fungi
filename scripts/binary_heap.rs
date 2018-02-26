@@ -91,9 +91,9 @@ mod tests {
 
     // #[test]
     pub fn things_are_pushed_in_the_heap() {
-        let a: Thing = Thing { content: 0 };
-        let b: Thing = Thing { content: 1 };
-        let c: Thing = Thing { content: 2 };
+        let a: &Thing = &Thing { content: 0 };
+        let b: &Thing = &Thing { content: 1 };
+        let c: &Thing = &Thing { content: 2 };
 
         let mut heap = BinaryHeap::new();
 

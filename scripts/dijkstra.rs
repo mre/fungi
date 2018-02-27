@@ -92,15 +92,18 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
     //
     // Struct std::collections::binary_heap::BinaryHeap
     // A priority queue implemented with a binary heap.
-    // This will be a max-heap.
+    // This will be a min-heap.
     let mut heap = BinaryHeap::new();
 
     // We're at `start`, with a zero cost
     dist[start] = 0;
+    println!("start node: {} with dist: {}", start, dist[start]);
+
     heap.push(State {
         cost: 0,
         position: start,
     });
+    println!("top of the heap is {}", heap.peek());
 
     // Examine the frontier with lower cost nodes first (min-heap)
     while let Some(State { cost, position }) = heap.pop() {
@@ -135,6 +138,7 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
     None
 }
 
+// rustc scripts/dijkstra.rs --out-dir ./target && ./target/dijkstra
 fn main() {
     // This is the directed graph we're going to use.
     // The node numbers correspond to the different states,

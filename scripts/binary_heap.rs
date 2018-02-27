@@ -75,6 +75,30 @@ impl PartialOrd for Thing {
     }
 }
 
+fn min_heap() {
+    let mut heap = BinaryHeap::new();
+
+    assert_eq!(heap.peek(), None);
+
+    let a: &Thing = &Thing { content: 0 };
+    let b: &Thing = &Thing { content: 1 };
+    let c: &Thing = &Thing { content: 2 };
+
+    heap.push(c);
+    heap.push(a);
+    heap.push(b);
+
+    assert_eq!(heap.peek(), Some(&a));
+
+    for x in &heap {
+        println!("{}", x);
+    }
+
+    heap.clear();
+
+    assert!(heap.is_empty())
+}
+
 // #[cfg(test)]
 mod tests {
     use super::*;
@@ -98,6 +122,7 @@ mod tests {
         let mut heap = BinaryHeap::new();
 
         assert_eq!(heap.peek(), None);
+
         heap.push(a);
         heap.push(b);
         heap.push(c);
@@ -131,5 +156,7 @@ fn main() {
     tests::things_are_comparable();
     tests::things_are_pushed_in_the_heap();
 
-    max_heap()
+    max_heap();
+    println!("---");
+    min_heap()
 }

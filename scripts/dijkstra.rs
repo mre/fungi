@@ -9,10 +9,16 @@ use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::usize;
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 struct State {
     cost: usize,
     position: usize,
+}
+
+impl fmt::Display for State {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "pos: {}, cost: {}", self.position, self.cost)
+    }
 }
 
 // The priority queue depends on `Ord`.

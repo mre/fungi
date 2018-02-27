@@ -35,15 +35,6 @@ fn one() {
 // combination, you can use a marker value (this same approach is used by Path
 // in the standard library, incidentally). Like so:
 
-fn two() {
-    let maybe_my_struct: Option<Box<MyStruct>> = Some(Box::new(MyStruct { foo: 42 }));
-    println!("{:?}", maybe_my_struct);
-
-    // Instead of displaying directly, display via a custom marker.
-    println!("{}", maybe_my_struct.display());
-    println!("{}", None::<Box<MyStruct>>.display());
-}
-
 // This is the marker we'll use to define our custom Display impl.
 struct MmsDisplay<'a>(&'a Option<Box<MyStruct>>);
 
@@ -66,6 +57,15 @@ impl<'a> fmt::Display for MmsDisplay<'a> {
             None => write!(formatter, "No struct"),
         }
     }
+}
+
+fn two() {
+    let maybe_my_struct: Option<Box<MyStruct>> = Some(Box::new(MyStruct { foo: 42 }));
+    println!("{:?}", maybe_my_struct);
+
+    // Instead of displaying directly, display via a custom marker.
+    println!("{}", maybe_my_struct.display());
+    println!("{}", None::<Box<MyStruct>>.display());
 }
 
 // Source: https://stackoverflow.com/a/30554247

@@ -5,6 +5,8 @@
 //
 // - https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 // - https://en.wikipedia.org/wiki/Shortest_path_problem
+
+use std::fmt;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::usize;
@@ -15,9 +17,31 @@ struct State {
     position: usize,
 }
 
-impl fmt::Display for State {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "pos: {}, cost: {}", self.position, self.cost)
+// StateDisplay is a "marker value".
+struct StateDisplay<'a>(Option<Box<&'a State>>);
+
+// CustomStateDisplay is a trait that introduce the `display` function to its
+// implementer. In this signature, `display` takes just the `self` that is
+// actually implementing this trait, and returns a `StateDisplay`.
+trait CustomStateDisplay {
+    fn display<'a>(&'a self) -> StateDisplay<'a>;
+}
+
+// For the type that we want to Display, the implementation of the trait
+// CustomStateDisplay is obvious (since the StateDisplay is a single value
+// tuple struct around it).
+impl<'b> CustomStateDisplay for Option<Box<&'b State>> {
+    fn display<'a>(&'a self) -> StateDisplay<'a> {
+        StateDisplay(self)
+    }
+}
+
+impl<'a> fmt::Display for StateDisplay<'a> {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match *self.0 {
+            Some(ref sd) => write!(formatter, "pos: {}, cost: {}", sd.position, sd.cost),
+            None => write!(formatter, "No struct"),
+        }
     }
 }
 
@@ -103,7 +127,7 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
         cost: 0,
         position: start,
     });
-    println!("top of the heap is {}", heap.peek());
+    println!("top of the heap is {}", heap.peek().display());
 
     // Examine the frontier with lower cost nodes first (min-heap)
     while let Some(State { cost, position }) = heap.pop() {

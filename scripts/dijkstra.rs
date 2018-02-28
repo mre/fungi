@@ -18,7 +18,7 @@ struct State {
 }
 
 // StateDisplay is a "marker value".
-struct StateDisplay<'a>(Option<Box<&'a State>>);
+struct StateDisplay<'a>(Option<&'a State>);
 
 // CustomStateDisplay is a trait that introduce the `display` function to its
 // implementer. In this signature, `display` takes just the `self` that is
@@ -30,15 +30,15 @@ trait CustomStateDisplay {
 // For the type that we want to Display, the implementation of the trait
 // CustomStateDisplay is obvious (since the StateDisplay is a single value
 // tuple struct around it).
-impl<'b> CustomStateDisplay for Option<Box<&'b State>> {
+impl<'b> CustomStateDisplay for Option<&'b State> {
     fn display<'a>(&'a self) -> StateDisplay<'a> {
-        StateDisplay(self)
+        StateDisplay(*self)
     }
 }
 
 impl<'a> fmt::Display for StateDisplay<'a> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        match *self.0 {
+        match self.0 {
             Some(ref sd) => write!(formatter, "pos: {}, cost: {}", sd.position, sd.cost),
             None => write!(formatter, "No struct"),
         }

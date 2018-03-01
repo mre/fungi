@@ -139,13 +139,15 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
 
     // We're at `start`, with a zero cost
     dist[start] = 0;
-    println!("start node: {} with dist: {}", start, dist[start]);
 
     heap.push(State {
         cost: 0,
         position: start,
     });
-    println!("top of the heap is {}", heap.peek().display());
+    println!(
+        "the start node is (top of the heap): {}",
+        heap.peek().custom_display()
+    );
 
     // Examine the frontier with lower cost nodes first (min-heap)
     while let Some(State { cost, position }) = heap.pop() {

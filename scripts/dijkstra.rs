@@ -19,6 +19,7 @@ struct State {
 
 // StateDisplay is a "marker value". It's a struct wrapping the type we want to
 // print is a single value tuple.
+// We use this `StateDisplay` to carry around our Option type.
 struct StateDisplay<'a>(Option<&'a State>);
 
 // CustomStateDisplay is a trait that introduce the `custom_display` function to
@@ -30,15 +31,29 @@ trait CustomStateDisplay {
     fn custom_display<'a>(&'a self) -> StateDisplay<'a>;
 }
 
-// For the type that we want to Display, the implementation of the trait
-// CustomStateDisplay is obvious (since the StateDisplay is a single value
-// tuple struct around it).
+// For the type that we want to print (using the Display trait), the
+// implementation of the trait CustomStateDisplay is obvious (since the
+// StateDisplay is a single value tuple struct around it).
+// With this, our Option type will now be an implementor of the
+// CustomStateDisplay.
 impl<'b> CustomStateDisplay for Option<&'b State> {
-    fn display<'a>(&'a self) -> StateDisplay<'a> {
+    fn custom_display<'a>(&'a self) -> StateDisplay<'a> {
         StateDisplay(*self)
     }
 }
 
+// Since StateDisplay is "the thing that we can print", we can now properly
+// implement the "Trait std::fmt::Display" from its definition:
+//   - https://doc.rust-lang.org/std/fmt/
+//   - https://doc.rust-lang.org/std/fmt/trait.Display.html
+//
+// pub trait Display { fn fmt(&self, f: &mut Formatter) -> Result<(), Error>; }
+//
+// Doing this we will have the elements needed for printing a custom Option
+// type: the wrapper for the type, the function to wrap the Option type and the
+// implementation of Display for the wrapper.
+// We only need to call the "wrapping function" (custom_display) from our
+// Option type and use the result within a "Displayable" contenxt, like print!.
 impl<'a> fmt::Display for StateDisplay<'a> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self.0 {

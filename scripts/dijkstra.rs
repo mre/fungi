@@ -17,14 +17,17 @@ struct State {
     position: usize,
 }
 
-// StateDisplay is a "marker value".
+// StateDisplay is a "marker value". It's a struct wrapping the type we want to
+// print is a single value tuple.
 struct StateDisplay<'a>(Option<&'a State>);
 
-// CustomStateDisplay is a trait that introduce the `display` function to its
-// implementer. In this signature, `display` takes just the `self` that is
-// actually implementing this trait, and returns a `StateDisplay`.
+// CustomStateDisplay is a trait that introduce the `custom_display` function to
+// its implementors. In this signature, `custom_display` takes just the `self`
+// that is actually implementing this trait, and returns a `StateDisplay`. So,
+// `custom_display` is a function that will return a StateDisplay with the same
+// lifetime (some sort of a "constuctor").
 trait CustomStateDisplay {
-    fn display<'a>(&'a self) -> StateDisplay<'a>;
+    fn custom_display<'a>(&'a self) -> StateDisplay<'a>;
 }
 
 // For the type that we want to Display, the implementation of the trait

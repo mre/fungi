@@ -150,11 +150,28 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
     );
 
     // Examine the frontier with lower cost nodes first (min-heap)
-    while let Some(State { cost, position }) = heap.pop() {
-        println!("popped node pos: {}, cost: {}", position, cost);
-        println!("top of the heap is {}", heap.peek().display());
+    // while let Some(State { cost, position }) = heap.pop() {
+    //
+    // rustc --explain E0165
+    // while let top = heap.pop() {
+    loop {
+        let top = heap.pop();
+
+        if top.is_none() {
+            println!("the heap is empty");
+        }
+
+        // https://doc.rust-lang.org/std/option/enum.Option.html
+        // pub fn as_ref(&self) -> Option<&T>
+        // Converts from Option<T> to Option<&T>.
+        // pub fn expect(self, msg: &str) -> T
+        // Unwraps an option, yielding the content of a Some.
+        println!("popped node: {}", top.as_ref().custom_display());
+        let State { cost, position } = top.expect("the world is ending");
+
         // Alternatively we could have continued to find all shortest paths
         if position == goal {
+            println!("goal reached");
             return Some(cost);
         }
 
@@ -178,6 +195,7 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
                 dist[next.position] = next.cost;
             }
         }
+        println!("top of the heap is {}", heap.peek().custom_display());
     }
 
     // Goal not reachable

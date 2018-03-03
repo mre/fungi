@@ -116,6 +116,10 @@ struct Edge {
     cost: usize,
 }
 
+fn distance_vector(l: usize) -> Vec<usize> {
+    return (0..l).map(|_| usize::MAX).collect();
+}
+
 // Dijkstra's shortest path algorithm.
 
 // Start at `start` and use `dist` to track the current shortest distance to
@@ -127,7 +131,7 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
     // dist[node] = current shortest distance from `start` to `node`
     // Since a node is a usize, it can be used to index the Vec and get the same
     // behaviour of a HashMap.
-    let mut dist: Vec<_> = (0..adj_list.len()).map(|_| usize::MAX).collect();
+    let mut dist: Vec<_> = distance_vector(adj_list.len());
 
     // Module std::collections::binary_heap
     // https://doc.rust-lang.org/std/collections/binary_heap/index.html

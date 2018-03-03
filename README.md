@@ -17,11 +17,42 @@ rustup run nightly cargo install rustfmt-nightly --force
 export DYLD_LIBRARY_PATH=$(rustc --print sysroot)/lib:$DYLD_LIBRARY_PATH
 ```
 
+With `rustup update` you will get:
+
+```
+info: installing component 'rustc'
+info: installing component 'rust-std'
+info: installing component 'cargo'
+info: installing component 'rust-docs'
+info: installing component 'rustfmt-preview'
+info: installing component 'rust-src'
+```
+
+With `rustup toolchain install nightly` you will get:
+
+```
+info: syncing channel updates for 'nightly-x86_64-apple-darwin'
+```
+
+With `rustup component add rustfmt-preview --toolchain=nightly` you will get:
+
+```
+info: component 'rustfmt-preview' for target 'x86_64-apple-darwin' is up to date
+```
+
+And to finish: `cargo +nightly install clippy racer --force`.
+
+```
+Summary Successfully installed clippy, racer!
+```
+
+In summary:
+
 ```
 rustup update
 rustup toolchain install nightly
 rustup component add rustfmt-preview --toolchain=nightly
-cargo +nightly install clippy
+cargo +nightly install clippy racer --force
 ```
 
 ## Versions
@@ -45,7 +76,23 @@ cargo-fmt --version
 racer --version
 racer 2.0.12
 racer complete std::io::B
+```
 
+- [racer](https://github.com/racer-rust/racer)
+- [emacs-racer](https://github.com/racer-rust/emacs-racer)
+- [cargo](https://github.com/rust-lang/cargo/)
+- [rust-mode](https://github.com/rust-lang/rust-mode)
+- [rustup](https://github.com/rust-lang-nursery/rustup.rs)
+- [rustfmt](https://github.com/rust-lang-nursery/rustfmt)
+
+### Docs
+
+```
+$ rustup doc
+
+file:///Users/user/.rustup/toolchains/nightly-x86_64-apple-darwin/share/doc/rust/html/index.html
+
+This page is an overview of the documentation included with your Rust install...
 ```
 
 ### Links

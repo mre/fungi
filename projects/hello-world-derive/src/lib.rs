@@ -61,6 +61,18 @@ impl fmt::Debug for Point {
 ///     Pancakes::hello_world();
 /// }
 /// ```
+///
+/// With Custom attributes:
+/// ```
+/// #[derive(HelloWorld)]
+/// #[HelloWorldName = "the best Pancakes"]
+/// struct Pancakes;
+///
+/// fn main() {
+///     Pancakes::hello_world();
+/// }
+/// ```
+///
 extern crate proc_macro;
 extern crate syn;
 

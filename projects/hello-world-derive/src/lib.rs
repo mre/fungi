@@ -13,12 +13,16 @@
 // Procedural Macros: https://doc.rust-lang.org/book/first-edition/procedural-macros.html
 // Commenting: https://doc.rust-lang.org/book/second-edition/ch14-02-publishing-to-crates-io.html
 
+// A Point that have a derived Debug trait.
+#[allow(dead_code)]
 #[derive(Debug)]
 struct DPoint {
     x: i32,
     y: i32,
 }
 
+// A Point that has a custom explicitly derived Debug trait.
+#[allow(dead_code)]
 struct Point {
     x: i32,
     y: i32,
@@ -57,7 +61,6 @@ impl fmt::Debug for Point {
 ///     Pancakes::hello_world();
 /// }
 /// ```
-
 extern crate proc_macro;
 extern crate syn;
 
@@ -79,7 +82,7 @@ pub fn hello_world(input: TokenStream) -> TokenStream {
     //  are deriving HelloWorld. At the moment, the only thing you can
     //  do with a TokenStream is convert it to a string.
     let s = input.to_string();
-    
+
     // Parse the string representation.
     // syn is a crate for parsing Rust code.
     // quote it's essentially the dual of syn as it will make generating
@@ -88,11 +91,21 @@ pub fn hello_world(input: TokenStream) -> TokenStream {
 
     // Build the impl
     let gen = impl_hello_world(&ast);
-    
+
     // Return the generated impl
     gen.parse().unwrap()
 }
 
+fn impl_hello_world(ast: &syn::DeriveInput) -> quote::Tokens {
+    let name = &ast.ident;
+    quote! {
+        impl HelloWorld for #name {
+            fn hello_world() {
+                println!("Hello, World! My name is {}", stringify!(#name));
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

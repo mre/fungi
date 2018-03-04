@@ -57,7 +57,42 @@ impl fmt::Debug for Point {
 ///     Pancakes::hello_world();
 /// }
 /// ```
+
+extern crate proc_macro;
+extern crate syn;
+
+#[macro_use]
+extern crate quote;
+
+use proc_macro::TokenStream;
+
+/// hello_world
 ///
+/// We are going to take a String of the Rust code for the type we are
+/// deriving, parse it using syn, construct the implementation of
+/// hello_world (using quote), then pass it back to Rust compiler.
+#[proc_macro_derive(HelloWorld)]
+pub fn hello_world(input: TokenStream) -> TokenStream {
+    // Construct a string representation of the type definition.
+    // `input: TokenSteam` is immediately converted to a String.  This
+    //  String is a string representation of the Rust code for which we
+    //  are deriving HelloWorld. At the moment, the only thing you can
+    //  do with a TokenStream is convert it to a string.
+    let s = input.to_string();
+    
+    // Parse the string representation.
+    // syn is a crate for parsing Rust code.
+    // quote it's essentially the dual of syn as it will make generating
+    // Rust code really easy.
+    let ast = syn::parse_derive_input(&s).unwrap();
+
+    // Build the impl
+    let gen = impl_hello_world(&ast);
+    
+    // Return the generated impl
+    gen.parse().unwrap()
+}
+
 
 #[cfg(test)]
 mod tests {

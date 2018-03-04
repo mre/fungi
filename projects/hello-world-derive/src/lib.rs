@@ -86,7 +86,7 @@ use proc_macro::TokenStream;
 /// We are going to take a String of the Rust code for the type we are
 /// deriving, parse it using syn, construct the implementation of
 /// hello_world (using quote), then pass it back to Rust compiler.
-#[proc_macro_derive(HelloWorld)]
+#[proc_macro_derive(HelloWorld, attributes(HelloWorldName))]
 pub fn hello_world(input: TokenStream) -> TokenStream {
     // Construct a string representation of the type definition.
     // `input: TokenSteam` is immediately converted to a String.  This
@@ -108,14 +108,30 @@ pub fn hello_world(input: TokenStream) -> TokenStream {
     gen.parse().unwrap()
 }
 
+// The ast argument is a struct that gives us a representation of our
+// type (which can be either a struct or an enum).
+//   - https://docs.rs/syn/0.11.11/syn/struct.DeriveInput.html
+//   - https://docs.rs/quote
+// We are able to get the name of the type using ast.ident. The quote!
+// macro lets us write up the Rust code that we wish to return and
+// convert it into Tokens. quote! lets us use some really cool
+// templating mechanics; we simply write #name and quote! will replace
+// it with the variable named name.
 fn impl_hello_world(ast: &syn::DeriveInput) -> quote::Tokens {
     let name = &ast.ident;
-    quote! {
-        impl HelloWorld for #name {
-            fn hello_world() {
-                println!("Hello, World! My name is {}", stringify!(#name));
+    // Check if derive(HelloWorld) was specified for a struct
+    if let syn::Body::Struct(_) = ast.body {
+        // Yes, this is a struct
+        quote! {
+            impl HelloWorld for #name {
+                fn hello_world() {
+                    println!("Hello, World! My name is {}", stringify!(#name));
+                }
             }
         }
+    } else {
+        //Nope. This is an Enum. We cannot handle these!
+        panic!("#[derive(HelloWorld)] is only defined for structs, not for enums!");
     }
 }
 

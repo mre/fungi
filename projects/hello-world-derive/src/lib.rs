@@ -80,7 +80,6 @@ impl fmt::Debug for Point {
 ///     Pancakes::hello_world();
 /// }
 /// ```
-
 extern crate proc_macro;
 extern crate syn;
 
@@ -143,10 +142,30 @@ fn impl_hello_world(ast: &syn::DeriveInput) -> quote::Tokens {
     }
 }
 
+// Quote 0.4.2
+// https://docs.rs/quote/0.4.2/quote/
+
+// Syn 0.12.13
+// https://dtolnay.github.io/syn/syn/
+// https://docs.rs/syn/0.12.13/syn/
+
+// TokenStream
+// https://doc.rust-lang.org/proc_macro/struct.TokenStream.html
+
 #[cfg(test)]
 mod tests {
     #[test]
     fn it_works_as_unit_test() {
-        assert_eq!(2 + 2, 4);
+        assert_eq!(true, true);
+    }
+
+    #[test]
+    fn it_uses_token_streams() {
+        use std::str::FromStr;
+
+        let s = "5";
+        let x = i32::from_str(s).unwrap();
+
+        assert_eq!(5, x);
     }
 }

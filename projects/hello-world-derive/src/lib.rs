@@ -63,7 +63,15 @@ impl fmt::Debug for Point {
 /// ```
 ///
 /// With Custom attributes:
+///
 /// ```
+/// #[macro_use]
+/// extern crate hello_world_derive;
+///
+/// trait HelloWorld {
+///     fn hello_world();
+/// }
+///
 /// #[derive(HelloWorld)]
 /// #[HelloWorldName = "the best Pancakes"]
 /// struct Pancakes;
@@ -72,7 +80,7 @@ impl fmt::Debug for Point {
 ///     Pancakes::hello_world();
 /// }
 /// ```
-///
+
 extern crate proc_macro;
 extern crate syn;
 
@@ -138,7 +146,7 @@ fn impl_hello_world(ast: &syn::DeriveInput) -> quote::Tokens {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn it_works() {
+    fn it_works_as_unit_test() {
         assert_eq!(2 + 2, 4);
     }
 }

@@ -154,18 +154,62 @@ fn impl_hello_world(ast: &syn::DeriveInput) -> quote::Tokens {
 
 #[cfg(test)]
 mod tests {
+    // https://doc.rust-lang.org/proc_macro/index.html
+    extern crate proc_macro;
+    // use proc_macro::TokenStream;
+    // use proc_macro::LexError;
+
+    // use std::str::FromStr;
+
     #[test]
     fn it_works_as_unit_test() {
         assert_eq!(true, true);
     }
 
     #[test]
-    fn it_uses_token_streams() {
+    fn it_creates_strings() {
         use std::str::FromStr;
 
         let s = "5";
         let x = i32::from_str(s).unwrap();
 
         assert_eq!(5, x);
+    }
+
+    #[test]
+    #[ignore]
+    fn it_uses_token_streams_correctly() {
+        use std::str::FromStr;
+        use quote::Tokens;
+        use proc_macro::TokenStream;
+        
+        // LexError
+        // https://doc.rust-lang.org/proc_macro/struct.LexError.html
+        // let r: Result<TokenStream, LexError> = TokenStream::from_str("");
+        // let e: LexError = r.unwrap_err();
+        // println!("err is {:?}", e);
+
+        // ProcMacro - TokenStream
+        // https://doc.rust-lang.org/proc_macro/index.html
+        // https://doc.rust-lang.org/proc_macro/struct.TokenStream.html
+        
+        let mut tokens = Tokens::new();
+        tokens.append("10".to_string());
+        println!("TSs are {:?}", tokens);
+
+        // Enum std::result::Result - MapErr
+        // pub fn map_err<F, O>(self, op: O) -> Result<T, F> 
+        // where O: FnOnce(E) -> F, 
+        // Maps a Result<T, E> to Result<T, F> by applying a function to
+        // a contained Err value, leaving an Ok value untouched.
+        // This function can be used to pass through a successful result
+        // while handling an error.
+        //   -  https://doc.rust-lang.org/std/result/enum.Result.html#method.map_err
+
+        let r = TokenStream::from_str(&tokens.to_string()).map_err(|e| format!("Et tu, Brute? {:?}", e));
+        println!("TS is {:?}", r);
+        
+        assert_eq!(true, true);
+        assert_eq!(r.is_ok(), true);
     }
 }

@@ -102,16 +102,27 @@ pub fn hello_world(input: TokenStream) -> TokenStream {
     //  do with a TokenStream is convert it to a string.
     let s = input.to_string();
 
+    println!("input is {:?}", s);
+    // use std::str::FromStr;
+    // TokenStream::from_str("").unwrap()
+
     // Parse the string representation.
     // syn is a crate for parsing Rust code.
     // quote it's essentially the dual of syn as it will make generating
     // Rust code really easy.
-    let ast = syn::parse_derive_input(&s).unwrap();
-
-    // Build the impl
+    println!("deriving input...");
+    let r_ast = syn::parse_derive_input(&s);
+    if r_ast.is_err() {
+        let err = r_ast.unwrap_err();
+        println!("something went wrong...");
+        panic!(err);
+    }
+    println!("unwrapping the AST");
+    let ast = r_ast.unwrap();
+    println!("Build the impl");
     let gen = impl_hello_world(&ast);
 
-    // Return the generated impl
+    println!("Return the generated impl");
     gen.parse().unwrap()
 }
 
@@ -128,7 +139,6 @@ fn impl_hello_world(ast: &syn::DeriveInput) -> quote::Tokens {
     let name = &ast.ident;
     // Check if derive(HelloWorld) was specified for a struct
     if let syn::Body::Struct(_) = ast.body {
-        // Yes, this is a struct
         quote! {
             impl HelloWorld for #name {
                 fn hello_world() {
@@ -137,7 +147,6 @@ fn impl_hello_world(ast: &syn::DeriveInput) -> quote::Tokens {
             }
         }
     } else {
-        //Nope. This is an Enum. We cannot handle these!
         panic!("#[derive(HelloWorld)] is only defined for structs, not for enums!");
     }
 }
@@ -154,12 +163,17 @@ fn impl_hello_world(ast: &syn::DeriveInput) -> quote::Tokens {
 
 #[cfg(test)]
 mod tests {
+    #[macro_use]
+    use super::*;
+    // use super::hello_world;
+    // extern crate hello_world_derive;
+
     // https://doc.rust-lang.org/proc_macro/index.html
     extern crate proc_macro;
-    // use proc_macro::TokenStream;
-    // use proc_macro::LexError;
 
-    // use std::str::FromStr;
+    use std::str::FromStr;
+    use quote::Tokens;
+    use proc_macro::TokenStream;
 
     #[test]
     fn it_works_as_unit_test() {
@@ -168,21 +182,20 @@ mod tests {
 
     #[test]
     fn it_creates_strings() {
-        use std::str::FromStr;
-
         let s = "5";
         let x = i32::from_str(s).unwrap();
 
         assert_eq!(5, x);
     }
 
+    // ignoring because:
+    // RUST_TEST_THREADS=1 cargo test -- --nocapture
+    // thread 'tests::it_uses_token_streams_correctly' panicked at
+    // 'proc_macro::__internal::with_sess() called before
+    // set_parse_sess()!', libproc_macro/lib.rs:864:9
     #[test]
     #[ignore]
     fn it_uses_token_streams_correctly() {
-        use std::str::FromStr;
-        use quote::Tokens;
-        use proc_macro::TokenStream;
-        
         // LexError
         // https://doc.rust-lang.org/proc_macro/struct.LexError.html
         // let r: Result<TokenStream, LexError> = TokenStream::from_str("");
@@ -192,24 +205,42 @@ mod tests {
         // ProcMacro - TokenStream
         // https://doc.rust-lang.org/proc_macro/index.html
         // https://doc.rust-lang.org/proc_macro/struct.TokenStream.html
-        
+
+        // #[derive(HelloWorld)]
+        // #[HelloWorldName = "the Foos"]
+        #[allow(dead_code)]
+        struct Foos;
+
         let mut tokens = Tokens::new();
-        tokens.append("10".to_string());
+        tokens.append("#[HelloWorldName = \"the Foos\"]\nstruct Foos;".to_string());
         println!("TSs are {:?}", tokens);
 
         // Enum std::result::Result - MapErr
-        // pub fn map_err<F, O>(self, op: O) -> Result<T, F> 
-        // where O: FnOnce(E) -> F, 
+        // pub fn map_err<F, O>(self, op: O) -> Result<T, F>
+        // where O: FnOnce(E) -> F,
         // Maps a Result<T, E> to Result<T, F> by applying a function to
         // a contained Err value, leaving an Ok value untouched.
         // This function can be used to pass through a successful result
         // while handling an error.
         //   -  https://doc.rust-lang.org/std/result/enum.Result.html#method.map_err
 
-        let r = TokenStream::from_str(&tokens.to_string()).map_err(|e| format!("Et tu, Brute? {:?}", e));
-        println!("TS is {:?}", r);
-        
+        let r = TokenStream::from_str(&tokens.to_string())
+            .map_err(|e| format!("Et tu, Brute? {:?}", e));
+
+        println!("TSr is {:?}", r);
+
         assert_eq!(true, true);
+        // assert_eq!(r.is_ok(), true);
+    }
+
+    #[test]
+    #[ignore]
+    fn it_prints_the_expected_greeting() {
+        let mut tokens = Tokens::new();
+        tokens.append("Point { x: 2, y: 3 }".to_string());
+        let r = TokenStream::from_str(&tokens.to_string())
+            .map_err(|e| format!("Et tu, Brute? {:?}", e));
         assert_eq!(r.is_ok(), true);
+        hello_world(r.unwrap());
     }
 }

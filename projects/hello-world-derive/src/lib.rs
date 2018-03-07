@@ -26,19 +26,28 @@
 ///     fn hello_world();
 /// }
 ///
-/// #[derive(HelloWorld)]
+/// trait HelloWorldName {
+///     fn hello_world_name() -> String;
+/// }
+///
+/// #[derive(HelloWorld, HelloWorldName)]
 /// struct FrenchToast;
 ///
-/// #[derive(HelloWorld)]
+/// #[derive(HelloWorld, HelloWorldName)]
 /// struct Waffles;
 ///
-/// #[derive(HelloWorld)]
+/// #[derive(HelloWorld, HelloWorldName)]
 /// struct Pancakes;
 ///
 /// fn main() {
 ///     FrenchToast::hello_world();
+///     println!("FrenchToast HWN: {}", FrenchToast::hello_world_name());
+///
 ///     Waffles::hello_world();
+///     println!("Waffles HWN: {}", Waffles::hello_world_name());
+///
 ///     Pancakes::hello_world();
+///     println!("Pancakes HWN: {}", Pancakes::hello_world_name());
 /// }
 /// ```
 ///
@@ -52,14 +61,19 @@
 ///     fn hello_world();
 /// }
 ///
-/// #[derive(HelloWorld)]
-/// #[HelloWorldName = "the best Pancakes"]
+/// trait HelloWorldName {
+///     fn hello_world_name() -> String;
+/// }
+///
+/// #[derive(HelloWorld, HelloWorldName)]
+/// #[WorldName = "the best Pancakes"]
 /// struct Pancakes;
 ///
 /// fn main() {
 ///     Pancakes::hello_world();
 /// }
 /// ```
+
 extern crate proc_macro;
 extern crate syn;
 
@@ -73,7 +87,7 @@ use proc_macro::TokenStream;
 /// We are going to take a String of the Rust code for the type we are
 /// deriving, parse it using syn, construct the implementation of
 /// hello_world (using quote), then pass it back to Rust compiler.
-#[proc_macro_derive(HelloWorld, attributes(HelloWorldName))]
+#[proc_macro_derive(HelloWorld, attributes(WorldName))]
 pub fn hello_world(input: TokenStream) -> TokenStream {
     // Construct a string representation of the type definition.
     // `input: TokenSteam` is immediately converted to a String.  This

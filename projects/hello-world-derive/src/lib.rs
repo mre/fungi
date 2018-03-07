@@ -104,27 +104,26 @@ pub fn hello_world(input: TokenStream) -> TokenStream {
     //  do with a TokenStream is convert it to a string.
     let s = input.to_string();
 
-    println!("input is {:?}", s);
-    // use std::str::FromStr;
-    // TokenStream::from_str("").unwrap()
+    println!("[proc_macro] input is {:?}", s);
 
     // Parse the string representation.
     // syn is a crate for parsing Rust code.
     // quote it's essentially the dual of syn as it will make generating
     // Rust code really easy.
-    println!("deriving input...");
+    println!("[proc_macro] deriving input...");
     let r_ast = syn::parse_derive_input(&s);
     if r_ast.is_err() {
         let err = r_ast.unwrap_err();
-        println!("something went wrong...");
+        println!("[proc_macro] something went wrong...");
         panic!(err);
     }
-    println!("unwrapping the AST");
+    
+    println!("[proc_macro] unwrapping the AST");
     let ast = r_ast.unwrap();
-    println!("Build the impl");
+    println!("[proc_macro] build the impl");
     let gen = impl_hello_world(&ast);
 
-    println!("Return the generated impl");
+    println!("[proc_macro] return the generated impl");
     gen.parse().unwrap()
 }
 

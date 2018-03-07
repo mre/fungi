@@ -8,10 +8,12 @@
 //! of Rust called "procedural macros." Eventually, procedural macros
 //! will allow for all sorts of advanced metaprogramming in Rust, but
 //! today, they're only for custom derive.
-
-// Sources
-// Procedural Macros: https://doc.rust-lang.org/book/first-edition/procedural-macros.html
-// Commenting: https://doc.rust-lang.org/book/second-edition/ch14-02-publishing-to-crates-io.html
+//!
+//! Sources:
+//!  - Procedural Macros: https://doc.rust-lang.org/book/first-edition/procedural-macros.html
+//!  - Commenting: https://doc.rust-lang.org/book/second-edition/ch14-02-publishing-to-crates-io.html
+//!  - https://doc.rust-lang.org/nightly/unstable-book/language-features/proc-macro.html
+//!  - https://doc.rust-lang.org/proc_macro/index.html
 
 // A Point that have a derived Debug trait.
 #[allow(dead_code)]
@@ -36,7 +38,7 @@ impl fmt::Debug for Point {
     }
 }
 
-/// Examples
+/// Examples:
 ///
 /// ```
 /// #[macro_use]

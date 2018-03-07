@@ -144,6 +144,35 @@ fn impl_hello_world(ast: &syn::DeriveInput) -> quote::Tokens {
     }
 }
 
+#[proc_macro_derive(HelloWorldName, attributes(Prefix))]
+pub fn hello_world_name(input: TokenStream) -> TokenStream {
+    let s = input.to_string();
+    let r_ast = syn::parse_derive_input(&s);
+    if r_ast.is_err() {
+        let err = r_ast.unwrap_err();
+        println!("[proc_macro] something went wrong...");
+        panic!(err);
+    }
+    let ast = r_ast.unwrap();
+    let gen = impl_hello_world_name(&ast);
+    gen.parse().unwrap()
+}
+
+fn impl_hello_world_name(ast: &syn::DeriveInput) -> quote::Tokens {
+    let name = &ast.ident;
+    if let syn::Body::Struct(_) = ast.body {
+        quote! {
+            impl HelloWorldName for #name {
+                fn hello_world_name() -> String {
+                    format!("Hello, World! My name is {}", stringify!(#name))
+                }
+            }
+        }
+    } else {
+        panic!("#[derive(HelloWorldName)] is only defined for structs, not for enums!");
+    }
+}
+
 // Quote 0.4.2
 // https://docs.rs/quote/0.4.2/quote/
 
@@ -156,7 +185,7 @@ fn impl_hello_world(ast: &syn::DeriveInput) -> quote::Tokens {
 
 #[cfg(test)]
 mod tests {
-    #[macro_use]
+    // #[macro_use]
     use super::{hello_world};
     // extern crate hello_world_derive;
 

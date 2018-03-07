@@ -164,8 +164,7 @@ fn impl_hello_world(ast: &syn::DeriveInput) -> quote::Tokens {
 #[cfg(test)]
 mod tests {
     #[macro_use]
-    use super::*;
-    // use super::hello_world;
+    use super::{hello_world};
     // extern crate hello_world_derive;
 
     // https://doc.rust-lang.org/proc_macro/index.html
@@ -207,9 +206,7 @@ mod tests {
         // https://doc.rust-lang.org/proc_macro/struct.TokenStream.html
 
         // #[derive(HelloWorld)]
-        // #[HelloWorldName = "the Foos"]
-        #[allow(dead_code)]
-        struct Foos;
+        // struct Foos;
 
         let mut tokens = Tokens::new();
         tokens.append("#[HelloWorldName = \"the Foos\"]\nstruct Foos;".to_string());
@@ -230,7 +227,7 @@ mod tests {
         println!("TSr is {:?}", r);
 
         assert_eq!(true, true);
-        // assert_eq!(r.is_ok(), true);
+        assert_eq!(r.is_ok(), true);
     }
 
     #[test]

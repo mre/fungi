@@ -14,29 +14,7 @@
 //!  - Commenting: https://doc.rust-lang.org/book/second-edition/ch14-02-publishing-to-crates-io.html
 //!  - https://doc.rust-lang.org/nightly/unstable-book/language-features/proc-macro.html
 //!  - https://doc.rust-lang.org/proc_macro/index.html
-
-// A Point that have a derived Debug trait.
-#[allow(dead_code)]
-#[derive(Debug)]
-struct DPoint {
-    x: i32,
-    y: i32,
-}
-
-// A Point that has a custom explicitly derived Debug trait.
-#[allow(dead_code)]
-struct Point {
-    x: i32,
-    y: i32,
-}
-
-use std::fmt;
-
-impl fmt::Debug for Point {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Point {{ x: {}, y: {} }}", self.x, self.y)
-    }
-}
+//!  - http://words.steveklabnik.com/an-overview-of-macros-in-rust
 
 /// Examples:
 ///

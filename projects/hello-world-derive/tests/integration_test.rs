@@ -10,15 +10,15 @@ trait HelloWorld {
 }
 
 #[derive(HelloWorld)]
-#[HelloWorldName = "the best FT"]
+#[WorldName = "the best FT"]
 struct FrenchToast;
 
 #[derive(HelloWorld)]
-#[HelloWorldName = "the best WF"]
+#[WorldName = "the best WF"]
 struct Waffles;
 
 #[derive(HelloWorld)]
-#[HelloWorldName = "the best PC"]
+#[WorldName = "the best PC"]
 struct Pancakes;
 
 #[test]

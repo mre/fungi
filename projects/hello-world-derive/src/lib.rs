@@ -16,6 +16,39 @@
 //!  - https://doc.rust-lang.org/proc_macro/index.html
 //!  - http://words.steveklabnik.com/an-overview-of-macros-in-rust
 
+// Macro in DOCTESTS:
+// Doc tests automatically wrap the code block in extern crate foo; fn
+// main() { … } if they don’t find these elements in the code, but to
+// get an exported macro you need the #[macro_use] attribute on the
+// extern crate foo;.
+//
+// Thus, you should write this:
+//
+// ... /// Usage:
+// ... ///
+// ... /// ```
+// ... /// # #[macro_use] extern crate foo; fn main() {
+// ... /// let x = addone!(100);
+// ... /// # }
+// ... /// ```
+//
+// #[macro_export]
+// macro_rules! addone {
+//     ($x:expr) => ($x + 1)
+// }
+//
+// (The lines prefixed with # get hidden in the output, but included,
+// sans the marker, in the code that gets compiled for the doc test.)
+//
+// This is covered in The Rust Programming Language, first edition.
+//
+// As for std, there is an implied #[macro_use] extern crate std; in all
+// crates that lack the #![no_std] crate attribute, so its macros
+// immediately work.
+//
+// - https://doc.rust-lang.org/stable/book/first-edition/documentation.html#documenting-macros
+// - https://stackoverflow.com/a/31644342
+
 /// Examples:
 ///
 /// ```
@@ -73,7 +106,6 @@
 ///     Pancakes::hello_world();
 /// }
 /// ```
-
 extern crate proc_macro;
 extern crate syn;
 
@@ -109,7 +141,7 @@ pub fn hello_world(input: TokenStream) -> TokenStream {
         println!("[proc_macro] something went wrong...");
         panic!(err);
     }
-    
+
     println!("[proc_macro] unwrapping the AST");
     let ast = r_ast.unwrap();
     println!("[proc_macro] build the impl");

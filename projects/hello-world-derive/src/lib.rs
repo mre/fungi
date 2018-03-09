@@ -113,6 +113,15 @@ extern crate syn;
 extern crate quote;
 
 use proc_macro::TokenStream;
+use std::env;
+
+fn verbose() -> bool {
+    let key = "VERBOSE";
+    match env::var(key) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
 
 /// hello_world
 ///
@@ -128,26 +137,37 @@ pub fn hello_world(input: TokenStream) -> TokenStream {
     //  do with a TokenStream is convert it to a string.
     let s = input.to_string();
 
-    println!("[proc_macro] input is {:?}", s);
+    if verbose() {
+        println!("[proc_macro] input is {:?}", s);
+    }
 
     // Parse the string representation.
     // syn is a crate for parsing Rust code.
     // quote it's essentially the dual of syn as it will make generating
     // Rust code really easy.
-    println!("[proc_macro] deriving input...");
+    if verbose() {
+        println!("[proc_macro] deriving input...");
+    }
     let r_ast = syn::parse_derive_input(&s);
     if r_ast.is_err() {
         let err = r_ast.unwrap_err();
-        println!("[proc_macro] something went wrong...");
+        if verbose() {
+            println!("[proc_macro] something went wrong...");
+        }
         panic!(err);
     }
 
-    println!("[proc_macro] unwrapping the AST");
+    if verbose() {
+        println!("[proc_macro] unwrapping the AST");
+    }
     let ast = r_ast.unwrap();
-    println!("[proc_macro] build the impl");
+    if verbose() {
+        println!("[proc_macro] build the impl");
+    }
     let gen = impl_hello_world(&ast);
-
-    println!("[proc_macro] return the generated impl");
+    if verbose() {
+        println!("[proc_macro] return the generated impl");
+    }
     gen.parse().unwrap()
 }
 
@@ -182,9 +202,12 @@ pub fn hello_world_name(input: TokenStream) -> TokenStream {
     let r_ast = syn::parse_derive_input(&s);
     if r_ast.is_err() {
         let err = r_ast.unwrap_err();
-        println!("[proc_macro] something went wrong...");
+        if verbose() {
+            println!("[proc_macro] something went wrong...");
+        }
         panic!(err);
     }
+
     let ast = r_ast.unwrap();
     let gen = impl_hello_world_name(&ast);
     gen.parse().unwrap()
@@ -192,6 +215,13 @@ pub fn hello_world_name(input: TokenStream) -> TokenStream {
 
 fn impl_hello_world_name(ast: &syn::DeriveInput) -> quote::Tokens {
     let name = &ast.ident;
+    // https://docs.rs/syn/0.11.11/syn/struct.DeriveInput.html
+    // let attrs: &Vec<&str> = &ast.attrs.iter().map(|f| f.name()).collect();
+    // println!("{:?}", attrs);
+    //
+    // https://dtolnay.github.io/syn/syn/struct.Attribute.html
+    // let p = &ast.attrs.clone().remove(0);
+    // println!("{:?}", p);
     if let syn::Body::Struct(_) = ast.body {
         quote! {
             impl HelloWorldName for #name {
@@ -215,14 +245,18 @@ fn impl_hello_world_name(ast: &syn::DeriveInput) -> quote::Tokens {
 // TokenStream
 // https://doc.rust-lang.org/proc_macro/struct.TokenStream.html
 
+// ConditionalCompilation
+// https://rustbyexample.com/attribute/cfg.html
+// https://doc.rust-lang.org/reference/attributes.html#conditional-compilation
+// https://rust-lang-nursery.github.io/api-guidelines/macros.html
+
+// https://doc.rust-lang.org/proc_macro/index.html
+// extern crate proc_macro;
+
 #[cfg(test)]
 mod tests {
-    // #[macro_use]
-    use super::{hello_world};
-    // extern crate hello_world_derive;
-
-    // https://doc.rust-lang.org/proc_macro/index.html
-    extern crate proc_macro;
+    use super::hello_world;
+    use super::hello_world_name;
 
     use std::str::FromStr;
     use quote::Tokens;
@@ -293,5 +327,14 @@ mod tests {
             .map_err(|e| format!("Et tu, Brute? {:?}", e));
         assert_eq!(r.is_ok(), true);
         hello_world(r.unwrap());
+    }
+
+    #[test]
+    #[ignore]
+    fn it_prints_the_expected_string() {
+        // https://github.com/rust-lang/rust/blob/e8af0f4c1f121263e55da29854208db0ae1fea54/src/libproc_macro/lib.rs#L865
+        // https://github.com/ryoon/rustc-1.19.0/blob/4ca47e69f710b93580101782576ebad2bef64749/src/libproc_macro/lib.rs#L146
+        // https://github.com/rust-lang/rust/issues/39870
+        hello_world_name(TokenStream::from_str("").unwrap());
     }
 }

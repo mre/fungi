@@ -1,0 +1,197 @@
+* Stuff the Identity Function Does (in Rust)
+  :PROPERTIES:
+  :CUSTOM_ID: stuff-the-identity-function-does-in-rust
+  :END:
+
+#+BEGIN_QUOTE
+  Oct 11, 2015
+  https://bluss.github.io/rust/fun/2015/10/11/stuff-the-identity-function-does/
+  https://bluss.github.io//
+#+END_QUOTE
+
+The identity function looks like this in Rust:
+
+#+BEGIN_EXAMPLE
+    /// The identity function.
+    fn id<T>(x: T) -> T { x }
+#+END_EXAMPLE
+
+=id= returns the same value that is passed in:
+
+#+BEGIN_EXAMPLE
+    assert_eq!(1, id(1));
+#+END_EXAMPLE
+
+Beyond the obvious, it does some curious and fun things!
+
+You can test this blog post's code in the Rust Playground.
+
+#+BEGIN_EXAMPLE
+    id Type Hints or Coerces
+
+    let string = "hi".to_string();
+    // Coerce a &String to &str, with id:
+    match id::<&str>(&string) {
+        "hi" => {}
+        _ => panic!("at the disco"),
+    }
+#+END_EXAMPLE
+
+No magic, it's just that you can specify with an explicit type which
+identity function you are calling. If the expression can coerce to that
+type, then it compiles.
+
+** id Forces References To Move
+   :PROPERTIES:
+   :CUSTOM_ID: id-forces-references-to-move
+   :END:
+
+Let's say we have a simple recursive datastructure:
+
+#+BEGIN_EXAMPLE
+    struct List {
+        next: Option<Box<List>>,
+    }
+#+END_EXAMPLE
+
+And we want to walk it, with a mutable reference, through a loop.
+
+#+BEGIN_EXAMPLE
+    impl List {
+        fn walk_the_list(&mut self) {
+            let mut current = self;
+            loop {
+                match current.next {
+                    None => return,
+                    Some(ref mut inner) => current = inner,
+                }
+            }
+        }
+    }
+#+END_EXAMPLE
+
+Looks good? Rustc disagrees! (compile in the playground)
+
+#+BEGIN_EXAMPLE
+    error: cannot borrow `current.next.0` as mutable more than once at a time [E0499]
+              Some(ref mut inner) => current = inner,
+                   ^~~~~~~~~~~~~
+#+END_EXAMPLE
+
+It turns out Rust's mutable references do something interesting, and
+most of the time it's very useful: when they are passed, they /reborrow/
+the local variable rather than move it. The explicit equivalent of the
+/reborrow/ would be =&mut *current=.
+
+=id= tells a mutable reference to move instead of reborrow! This way it
+compiles:
+
+#+BEGIN_EXAMPLE
+    impl List {
+        fn walk_the_list(&mut self) {
+            let mut current = self;
+            loop {
+                match id(current).next {
+                    None => return,
+                    Some(ref mut inner) => current = inner,
+                }
+            }
+        }
+    }
+#+END_EXAMPLE
+
+This is a point where Rust could improve by learning to infer whether to
+reborrow or move mutable references. Until then, we have =id=.
+
+** id Makes Immutable Locals Mutable
+   :PROPERTIES:
+   :CUSTOM_ID: id-makes-immutable-locals-mutable
+   :END:
+
+=id= returns just the same thing as you pass in. Except it's now an
+rvalue, and implicitly mutable.
+
+#+BEGIN_EXAMPLE
+    impl List {
+        fn consume_the_list(self) {
+            // error: cannot borrow immutable local variable `self` as mutable
+            // self.walk_the_list();
+
+            id(self).walk_the_list();
+        }
+    }
+#+END_EXAMPLE
+
+This is no violation of Rust philosophy. Using =mut= on locals is simple
+and pragmatic, and mutability radiates from the owner. If your value is
+now a temporary, it's not owned by an immutable binding anymore (or any
+other variable binding).
+
+** Rust has Dedicated Syntax for This!
+   :PROPERTIES:
+   :CUSTOM_ID: rust-has-dedicated-syntax-for-this
+   :END:
+
+If you thought that was cryptic, here's one better. The secret syntax is
+just ={= and its companion =}=, and it allows you to manipulate move
+semantics just the same way id does:
+
+#+BEGIN_EXAMPLE
+    impl List {
+        fn walk_the_list_with_braces(&mut self) {
+            let mut current = self;
+            loop {
+                match {current}.next {
+                    None => return,
+                    Some(ref mut inner) => current = inner,
+                }
+            }
+        }
+
+        fn consume_the_list_with_braces(self) {
+            {self}.walk_the_list_with_braces();
+        }
+    }
+#+END_EXAMPLE
+
+** Force a Move Today
+   :PROPERTIES:
+   :CUSTOM_ID: force-a-move-today
+   :END:
+
+If you actually use this, I think moving is actually a pretty good name
+(move is taken, it's a keyword). Save the ={}= for obfuscation contests.
+
+#+BEGIN_EXAMPLE
+    /// The identity function.
+    ///
+    /// Also forces the argument to move.
+    fn moving<T>(x: T) -> T { x }
+#+END_EXAMPLE
+
+** Epilogue
+   :PROPERTIES:
+   :CUSTOM_ID: epilogue
+   :END:
+
+It's February 2017 and this is hilarious:
+
+Calling =id::<&T>(p)=, since it's a passing a shared reference, inserts
+a =noalias= annotation for the pointer =p=, which might otherwise not
+have been there! As soon as llvm's metadata propagation improves, it
+might even have actual use.
+
+** Links
+   :PROPERTIES:
+   :CUSTOM_ID: links
+   :END:
+
+- [0]
+  [[https://bluss.github.io/rust/fun/2015/10/11/stuff-the-identity-function-does/][Stuff
+  the Identity Function Does (in Rust)]]
+- [3]
+  [[https://play.rust-lang.org/?gist=724e8c931a8e7515ef31&version=stable][this
+  blog post's code in the Rust Playground]]
+- [4]
+  [[https://play.rust-lang.org/?gist=613e13fd515bfca647ca&version=stable][compile
+  in the playground]]

@@ -1,0 +1,43 @@
+* Tiny-ls
+  :PROPERTIES:
+  :CUSTOM_ID: tiny-ls
+  :END:
+
+This small piece of code follows a post written by Matthias Endler,
+published on 9th of March 2018 /"A Tiny =ls= Clone Written in Rust"/.
+
+Original post [[https://matthias-endler.de/2018/ls/][here]].
+
+Some useful link:
+
+- [[https://unix.stackexchange.com/a/43047]["What is the number between
+  file permission and owner in ls -l command output"]]
+- [[http://man7.org/linux/man-pages/man1/ls.1.html]["GNU coreutils"]]
+- [[https://developer.apple.com/legacy/library/documentation/Darwin/Reference/ManPages/man1/ls.1.html]["Darwin"]]
+- [[https://doc.rust-lang.org/std/fs/fn.read_dir.html#examples]["Function
+  std::fs::read\_dir"]]
+- [[]["libc"]]
+- [[https://crates.io/crates/structopt]["structopt"]]
+- [[https://github.com/TeXitoi/structopt]["structopt" project
+  homepage“]]
+- [[https://crates.io/crates/cargo-edit]["cargo-edit"]]
+- [[https://doc.rust-lang.org/src/std/path.rs.html#1107-1109]["PathBuf
+  owns the inner path string"]]
+- [[https://doc.rust-lang.org/src/std/path.rs.html#1629-1631]["Path
+  simply provides a reference to it"]]
+- [[https://doc.rust-lang.org/stable/std/fs/struct.Metadata.html]["FS
+  metadata: the documentation"]]
+- [[https://doc.rust-lang.org/stable/std/time/struct.SystemTime.html]["SystemTime"]]
+- [[https://play.rust-lang.org/?gist=96e18ed541abe896f761d601cdf50561&version=stable]["this
+  code"]]
+- [[https://doc.rust-lang.org/std/fmt/]["std::fmt"]]
+- [[https://en.wikipedia.org/wiki/File_system_permissions]["differences
+  between the Unix derivatives"]]
+- [[https://en.wikipedia.org/wiki/Access_control_list]["access control
+  list"]]
+- [[https://access.redhat.com/documentation/en-us/red_…nux/chap-security-enhanced_linux-selinux_contexts]["SELinux
+  context"]]
+- [[https://en.wikipedia.org/wiki/Extended_file_attributes]["extended
+  file attributes"]]
+- [[https://doc.rust-lang.org/std/os/unix/fs/trait.PermissionsExt.html]["std::os::unix::fs::PermissionsExt"]]
+- [[https://the.exa.website/]["exa"]]

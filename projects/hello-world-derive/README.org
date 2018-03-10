@@ -1,0 +1,9 @@
+* HelloWorldDerive
+  :PROPERTIES:
+  :CUSTOM_ID: helloworldderive
+  :END:
+
+Following
+[[https://doc.rust-lang.org/book/first-edition/procedural-macros.html][this
+page]] of [[https://doc.rust-lang.org/book/first-edition/][The Book
+(first edition)]].

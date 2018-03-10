@@ -1,0 +1,11 @@
+* LListz
+  :PROPERTIES:
+  :CUSTOM_ID: llistz
+  :END:
+
+Code for and from the series of posts
+[[http://cglab.ca/~abeinges/blah/too-many-lists/book/][Learning Rust
+With Entirely Too Many Linked Lists]]
+
+Original source
+[[https://github.com/rust-unofficial/too-many-lists][here]].

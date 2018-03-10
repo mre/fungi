@@ -214,14 +214,16 @@ pub fn hello_world_name(input: TokenStream) -> TokenStream {
 }
 
 fn impl_hello_world_name(ast: &syn::DeriveInput) -> quote::Tokens {
-    let name = &ast.ident;
+    let name: syn::Ident = ast.ident;
     // https://docs.rs/syn/0.11.11/syn/struct.DeriveInput.html
     // let attrs: &Vec<&str> = &ast.attrs.iter().map(|f| f.name()).collect();
     // println!("{:?}", attrs);
     //
     // https://dtolnay.github.io/syn/syn/struct.Attribute.html
-    // let p = &ast.attrs.clone().remove(0);
-    // println!("{:?}", p);
+    let mut p: std::vec::Vec<syn::Attribute> = ast.attrs.clone();
+    if p.len() > 0 {
+        println!("ATTRS ---------------------------> {:?}", p.pop());
+    }
     if let syn::Body::Struct(_) = ast.body {
         quote! {
             impl HelloWorldName for #name {

@@ -1,0 +1,12 @@
+[package]
+name = "tiny-ls"
+version = "0.1.0"
+authors = ["Edoardo Rossi <edd.rossi@gmail.com>"]
+
+[dependencies]
+# https://crates.io/crates/structopt
+structopt = "0.2.5"
+# https://crates.io/crates/chrono
+chrono = "0.4.0"
+# https://crates.io/crates/libc
+libc = "0.2.39"

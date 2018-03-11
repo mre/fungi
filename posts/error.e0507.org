@@ -1,21 +1,23 @@
+* Rust - Error E0507
+
 You tried to move out of a value which was borrowed. Erroneous code
 example:
 
-#+BEGIN_EXAMPLE
-    use std::cell::RefCell;
+#+BEGIN_SRC rust
+  use std::cell::RefCell;
 
-    struct TheDarkKnight;
+  struct TheDarkKnight;
 
-    impl TheDarkKnight {
-        fn nothing_is_true(self) {}
-    }
+  impl TheDarkKnight {
+      fn nothing_is_true(self) {}
+  }
 
-    fn main() {
-        let x = RefCell::new(TheDarkKnight);
+  fn main() {
+      let x = RefCell::new(TheDarkKnight);
 
-        x.borrow().nothing_is_true(); // error: cannot move out of borrowed content
-    }
-#+END_EXAMPLE
+      x.borrow().nothing_is_true(); // error: cannot move out of borrowed content
+  }
+#+END_SRC
 
 Here, the =nothing_is_true= method takes the ownership of =self=.
 However, =self= cannot be moved because =.borrow()= only provides an
@@ -28,121 +30,118 @@ However, =self= cannot be moved because =.borrow()= only provides an
 
 Examples:
 
-#+BEGIN_EXAMPLE
-    use std::cell::RefCell;
+#+BEGIN_SRC rust
+use std::cell::RefCell;
 
-    struct TheDarkKnight;
+struct TheDarkKnight;
 
-    impl TheDarkKnight {
-        fn nothing_is_true(&self) {} // First case, we don't take ownership
-    }
+impl TheDarkKnight {
+    fn nothing_is_true(&self) {} // First case, we don't take ownership
+}
 
-    fn main() {
-        let x = RefCell::new(TheDarkKnight);
+fn main() {
+    let x = RefCell::new(TheDarkKnight);
 
-        x.borrow().nothing_is_true(); // ok!
-    }
-#+END_EXAMPLE
+    x.borrow().nothing_is_true(); // ok!
+}
+#+END_SRC
 
 Or:
 
-#+BEGIN_EXAMPLE
-    use std::cell::RefCell;
+#+BEGIN_SRC rust
+use std::cell::RefCell;
 
-    struct TheDarkKnight;
+struct TheDarkKnight;
 
-    impl TheDarkKnight {
-        fn nothing_is_true(self) {}
-    }
+impl TheDarkKnight {
+    fn nothing_is_true(self) {}
+}
 
-    fn main() {
-        let x = RefCell::new(TheDarkKnight);
-        let x = x.into_inner(); // we get back ownership
+fn main() {
+    let x = RefCell::new(TheDarkKnight);
+    let x = x.into_inner(); // we get back ownership
 
-        x.nothing_is_true(); // ok!
-    }
-#+END_EXAMPLE
+    x.nothing_is_true(); // ok!
+}
+#+END_SRC
 
-[[https://doc.rust-lang.org/std/cell/struct.RefCell.html#method.into_inner][Struct
-std::cell::RefCell]]
+- [[https://doc.rust-lang.org/std/cell/struct.RefCell.html#method.into_inner][Struct std::cell::RefCell#into_inner]]
 
-#+BEGIN_EXAMPLE
-    pub fn into_inner(self) -> T
-#+END_EXAMPLE
+#+BEGIN_SRC rust
+pub fn into_inner(self) -> T
+#+END_SRC
 
 Consumes the RefCell, returning the wrapped value.
-
 Examples
 
-#+BEGIN_EXAMPLE
-    use std::cell::RefCell;
-    let c = RefCell::new(5);
-    let five = c.into_inner();
-#+END_EXAMPLE
+#+BEGIN_SRC rust
+use std::cell::RefCell;
+let c = RefCell::new(5);
+let five = c.into_inner();
+#+END_SRC
 
 Or:
 
-#+BEGIN_EXAMPLE
-    use std::cell::RefCell;
+#+BEGIN_SRC rust
+use std::cell::RefCell;
 
-    #[derive(Clone, Copy)] // we implement the Copy trait
-    struct TheDarkKnight;
+#[derive(Clone, Copy)] // we implement the Copy trait
+struct TheDarkKnight;
 
-    impl TheDarkKnight {
-        fn nothing_is_true(self) {}
-    }
+impl TheDarkKnight {
+    fn nothing_is_true(self) {}
+}
 
-    fn main() {
-        let x = RefCell::new(TheDarkKnight);
+fn main() {
+    let x = RefCell::new(TheDarkKnight);
 
-        x.borrow().nothing_is_true(); // ok!
-    }
-#+END_EXAMPLE
+    x.borrow().nothing_is_true(); // ok!
+}
+#+END_SRC
 
 Moving a member out of a mutably borrowed struct will also cause =E0507=
 error:
 
-#+BEGIN_EXAMPLE
-    struct TheDarkKnight;
+#+BEGIN_SRC rust
+struct TheDarkKnight;
 
-    impl TheDarkKnight {
-        fn nothing_is_true(self) {}
-    }
+impl TheDarkKnight {
+    fn nothing_is_true(self) {}
+}
 
-    struct Batcave {
-        knight: TheDarkKnight
-    }
+struct Batcave {
+    knight: TheDarkKnight
+}
 
-    fn main() {
-        let mut cave = Batcave {
-            knight: TheDarkKnight
-        };
-        let borrowed = &mut cave;
-
-        borrowed.knight.nothing_is_true(); // E0507
-    }
-#+END_EXAMPLE
-
-It is fine only if you put something back. =mem::replace= can be used
-for that:
-
-#+BEGIN_EXAMPLE
-    use std::mem;
-
+fn main() {
     let mut cave = Batcave {
         knight: TheDarkKnight
     };
     let borrowed = &mut cave;
 
-    mem::replace(&mut borrowed.knight, TheDarkKnight).nothing_is_true(); // ok!
-#+END_EXAMPLE
+    borrowed.knight.nothing_is_true(); // E0507
+}
+#+END_SRC
 
-[[https://doc.rust-lang.org/std/mem/fn.replace.html][Function
-std::mem::replace]]
+It is fine only if you put something back. =mem::replace= can be used
+for that:
 
-#+BEGIN_EXAMPLE
-    pub fn replace<T>(dest: &mut T, src: T) -> T
-#+END_EXAMPLE
+#+BEGIN_SRC rust
+use std::mem;
+
+let mut cave = Batcave {
+    knight: TheDarkKnight
+};
+let borrowed = &mut cave;
+
+mem::replace(&mut borrowed.knight, TheDarkKnight).nothing_is_true(); // ok!
+#+END_SRC
+
+- [[https://doc.rust-lang.org/std/mem/fn.replace.html][Function std::mem::replace]]
+
+#+BEGIN_SRC rust
+pub fn replace<T>(dest: &mut T, src: T) -> T
+#+END_SRC
 
 Replaces the value at a mutable location with a new one, returning the
 old value, without deinitializing either one.
@@ -151,48 +150,49 @@ Examples
 
 A simple example:
 
-#+BEGIN_EXAMPLE
-    use std::mem;
+#+BEGIN_SRC
+use std::mem;
 
-    let mut v: Vec<i32> = vec![1, 2];
+let mut v: Vec<i32> = vec![1, 2];
 
-    let old_v = mem::replace(&mut v, vec![3, 4, 5]);
-    assert_eq!(2, old_v.len());
-    assert_eq!(3, v.len());
-#+END_EXAMPLE
+let old_v = mem::replace(&mut v, vec![3, 4, 5]);
+assert_eq!(2, old_v.len());
+assert_eq!(3, v.len());
+#+END_SRC
 
 =replace= allows consumption of a struct field by replacing it with
 another value. Without =replace= you can run into issues like these:
 
-#+BEGIN_EXAMPLE
-    // This does not compile
+#+BEGIN_SRC rust
+// This does not compile
 
-    struct Buffer<T> { buf: Vec<T> }
+struct Buffer<T> { buf: Vec<T> }
 
-    impl<T> Buffer<T> {
-        fn get_and_reset(&mut self) -> Vec<T> {
-            // error: cannot move out of dereference of `&mut`-pointer
-            let buf = self.buf;
-            self.buf = Vec::new();
-            buf
-        }
+impl<T> Buffer<T> {
+    fn get_and_reset(&mut self) -> Vec<T> {
+        // error: cannot move out of dereference of `&mut`-pointer
+        let buf = self.buf;
+        self.buf = Vec::new();
+        buf
     }
-#+END_EXAMPLE
+}
+#+END_SRC
 
 Note that =T= does not necessarily implement =Clone=, so it can't even
-clone and reset =self.buf=. But =replace= can be used to disassociate
+clone and reset =self.buf=. But =replace= can be used to _disassociate_
 the original value of =self.buf= from =self=, allowing it to be
 returned:
 
-#+BEGIN_EXAMPLE
-    use std::mem;
+#+BEGIN_SRC
+use std::mem;
 
-    impl<T> Buffer<T> {
-        fn get_and_reset(&mut self) -> Vec<T> {
-            mem::replace(&mut self.buf, Vec::new())
-        }
+impl<T> Buffer<T> {
+    fn get_and_reset(&mut self) -> Vec<T> {
+        mem::replace(&mut self.buf, Vec::new())
     }
-#+END_EXAMPLE
+}
+#+END_SRC
 
 You can find more information about borrowing in the rust-book:
+
 http://doc.rust-lang.org/book/first-edition/references-and-borrowing.html

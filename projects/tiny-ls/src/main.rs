@@ -118,7 +118,10 @@ fn run(dir: &PathBuf) -> Result<(), Box<Error>> {
                 file_name
             );
         }
+    } else {
+        println!("works only with directories...");
     }
+    
     Ok(())
 }
 

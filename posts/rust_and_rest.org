@@ -315,12 +315,11 @@ Don't be afraid of using C libraries like curl instead of native Rust
 things. [...]
 
 If you want to see the code, the entire git repository of the client can
-be found online: =getsentry/sentry-cli=[5].
+be found online: =getsentry/sentry-cli= [5].
 
 This entry was tagged api, http, rest and rust
 
-- [0] [[http://lucumr.pocoo.org/2016/7/10/rust-rest/][Rust and Rest |
-  Armin Ronacher's Thoughts and Writings]]
+- [0] [[http://lucumr.pocoo.org/2016/7/10/rust-rest/][Rust and Rest | Armin Ronacher's Thoughts and Writings]]
 - [1] [[http://www.getsentry.com/][Sentry]]
 - [2] [[http://hyper.rs/][hyper]]
 - [3] [[https://crates.io/crates/curl][rust-curl]]

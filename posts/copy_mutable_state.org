@@ -1,0 +1,160 @@
+* Coping with Mutable State in Multiple Threads with Rust
+  :PROPERTIES:
+  :CUSTOM_ID: coping-with-mutable-state-in-multiple-threads-with-rust
+  :END:
+
+#+BEGIN_QUOTE
+  Kevin Hoffman Mar 5, 2018
+  [[https://medium.com/@KevinHoffman/coping-with-mutable-state-in-multiple-threads-with-rust-9059c83b6c01][source]]
+#+END_QUOTE
+
+[...] freedom from data races. The compiler will literally not allow you
+to build code that could ever produce a situation where two threads can
+mutate the same data. [...]
+
+Every language has its own way of dealing with concurrency. In Go, we
+can spin up goroutines (also called "green" or lightweight threads), and
+get data in and out of them, simplifying synchronization with channels.
+In Elixir, we create a module with functions that communicate with a
+process (the Erlang BEAM version of a green thread, of which we can
+create millions). In Java and C#, we have OS threads and data access is
+synchronized through mutex and atomic counting guards around critical
+sections. Additionally, we have deeply integrated concurrency models
+like those used by Android, where you can start an activity as a
+background service and communicate with it by sending and subscribing to
+events. Event dispatch to the Android activity is always
+single-threaded, freeing the developer from the complexities of critical
+sections and mutexes.
+
+Rust has heavyweight threads, mutexes, atomic reference counting, and
+channels. For me, this wide range of choices led to a lot of confusion
+on how I should or should not deal with concurrency. Let's take an
+example where I've got two background threads contributing to mutable
+state. One thread is reading bank transactions from a file source while
+the other is reading them from mobile applications (simulated to keep
+the sample simple). To make this work, each of the threads needs a
+thread-safe reference to the bank account being mutated. Here's the
+account struct that allows for thread-safe, multi-threaded mutation:
+#[derive(Debug)] struct Transaction { amount: isize, timestamp: u64,
+txid: String, } #[derive(Debug)] struct Account { account\_number:
+String, transactions: Mutex<Vec>, acct\_type: String, } Unlike some
+other languages, where the mutex and the data it protects are isolated
+and it's left to the developer to guard the right code, in Rust the
+mutex contains (owns) the data it protects. Calling lock on a mutex will
+block all other threads until the produced guard is dropped. This is how
+we can add transactions to a shared account from multiple threads: let
+my\_savings = Arc::new(Account::new("0001")); let feed\_account =
+my\_savings.clone(); // clones the ref, not the item let mobile\_account
+= my\_savings.clone();
+
+let file\_feed = spawn(move || {
+
+#+BEGIN_EXAMPLE
+    let mut tx_guard = feed_account.transactions.lock().unwrap();
+
+    tx_guard.push(Transaction {
+        amount: 500,
+        timestamp: 12,
+        txid: "tx-001".to_owned(),
+    });
+
+    tx_guard.push( Transaction {
+        amount: 750,
+        timestamp: 4,
+        txid: "tx-002".to_owned(),
+    })
+#+END_EXAMPLE
+
+});
+
+let mobile\_feed = spawn(move || {
+
+#+BEGIN_EXAMPLE
+    mobile_account.transactions.lock().unwrap().push(Transaction {
+        amount: 50,
+        timestamp: 7,
+        txid: "tx-003".to_owned(),
+    });
+#+END_EXAMPLE
+
+});
+
+file\_feed.join().unwrap(); mobile\_feed.join().unwrap(); I had an
+"a-ha!" moment when I realized that cloning an Arc actually just creates
+a new reference to the original heap-stored value, it doesn't duplicate
+the underlying data. This creation of a copy of a heap reference is
+something that many other languages do implicitly. In the first thread I
+store the guard in a variable tx\_guard because I need it to survive
+long enough to handle both push calls. In the second one I can do it
+inline because it only lasts until the end of the function call.
+Finally, I call join to wait for both threads to complete. I can then
+inspect the transactions field from the original account and see that it
+contains my transactions in an unpredictable order: println!("mutating
+from bg threads:\n\t{:?}", my\_savings.transactions); This compiles and
+runs and we have guaranteed thread-safe access to the vector of
+transactions in the single shared savings account. This is excellent,
+but it feels a little off to me. Mutexes are powerful but they're not as
+safe as we like to think. Even in Rust, you can still produce deadlocks
+waiting for a mutex to be dropped. My exposure to Elixir also makes me
+chafe at the idea of multiple threads mutating a shared component,
+regardless of how "safe" it might seem to the compiler. I think we can
+do better. Obviously everyone has their own opinions here and some
+prefer the flexibility and straightforward nature of mutexes, others
+prefer channels. If I were to modify my sample such that the background
+threads are emitting data on sender channels, then the background
+threads are no longer mutating shared data. I can write them in such a
+style as they are emitting immutable messages or events, and this feels
+more natural to me. Removing the ability to mutate data cross-thread, I
+can simplify my account struct so it contains no mutexes:
+#[derive(Debug)] struct Account2 { account\_number: String,
+transactions: Vec, acct\_type: String, } I also don't need an Arc
+because I'm not sharing a value of this type across threads --- I'm
+keeping it private to whatever thread is responsible for maintaining
+this data. Now, instead of cloning an Arc to give multiple threads
+access to the data, I can just clone a Sender channel and give a
+separate sender to each thread while those channels all still send to
+the same receiver: let (tx, rx) = mpsc::channel();
+
+let tx2 = mpsc::Sender::clone(&tx);
+
+let file\_feed2 = spawn(move || { tx.send(Transaction { amount: 500,
+timestamp: 12, txid: "ch-tx-001".to\_owned(), }).unwrap();
+tx.send(Transaction { amount: 750, timestamp: 4, txid:
+"ch-tx-002".to\_owned(), }).unwrap(); });
+
+let mobile\_feed2 = spawn(move || { tx2.send(Transaction { amount: 50,
+timestamp: 7, txid: "ch-tx-003".to\_owned(), }).unwrap(); });
+
+file\_feed2.join().unwrap(); mobile\_feed2.join().unwrap(); One
+interesting side effect here is that while these channels are doing
+their background work, the mutable savings account value may not even
+exist yet. Now the main thread (or a third processing thread, etc) can
+gather up the values from these channels and do thread-private mutation:
+let mut tl\_savings = Account2 { acct\_type: "Savings".to\_owned(),
+account\_number: "0001".to\_owned(), transactions: Vec::new(), };
+
+for transaction in rx { tl\_savings.transactions.push(transaction); }
+The last for loop works because receiver channels can be treated like
+iterators, where the next function blocks until there's a value
+available on the channel. The for loop stops when the sender channel is
+dropped, which could happen if the thread holding the sender goes away.
+In the case of my sample, this for loop completes because even before I
+start, the senders have both dropped due to the calls to join. You're
+free to use mutexes if you like, but I've also found that giving a
+thread the ability to directly mutate shared state, even under the
+umbrella of mutex safety, creates too tight a coupling. What if I want
+to change the shape of the Account struct? If I change the thing that is
+wrapped in a mutex, this could then cause cascading changes to all of my
+worker thread code. I can hide the transactions field behind functions
+like add\_transaction as a start, but channels allow even more loose
+coupling and as long as I treat the immutable messages being passed as a
+strong contract, my code can stay more loosely coupled and, in my
+opinion, more easily tested. In conclusion, the only parting advice I
+have is that Rust has a steep learning curve, and shared mutation across
+threads is pretty high up on that curve. I had to spend some time
+getting familiar with building apps that don't do this for a while
+before diving into the deep end of the thread pool (get it? thread
+pool??). When you are ready for concurrency in Rust, I highly recommend
+trying a "channel-first" approach to finding concurrency solutions and
+only using mutexes if channels become unwieldy.
+RustRustlangThreadingMultithreadingMutex

@@ -1,0 +1,277 @@
+* Three Algorithm Optimizations Outside [Place], [Other place]
+  :PROPERTIES:
+  :CUSTOM_ID: three-algorithm-optimizations-outside-place-other-place
+  :END:
+
+https://medium.com/@urschrei/three-algorithm-optimizations-outside-place-other-place-294de5a68f27
+
+Recently, I came across an ad for a job that had a precondition for
+application: it required you to first solve a programming challenge:
+
+Given a list of words, two "strings" are classified as "matching" if
+there exists a one-to-one mapping between them. Thus, the strings
+FOOFOOFOO and BAABAABAA are considered matching, because F and B, and O
+and A map to each other, producing the same "pattern".
+
+Given a newline-delimited file of 500k strings, how many of them are
+"matching"? Setting aside for a moment the infinitely more interesting
+questions "What even is a string?" and "Programming challenge?" I spent
+a slow afternoon pondering the problem:
+
+The strings in the file are uppercase ASCII
+
+We can keep a "stack" of characters we've seen, and the order in which
+they've been seen.
+
+If the first character in each string is somehow mapped to 0, and
+mappings for subsequent new characters that are "seen" increase by 1,
+patterns can trivially be compared to see whether they match.
+
+I write a lot of Rust these days, and I was curious to see how fast it
+would be, but more importantly, how much more code I'd have to write
+compared to my usual go-to for this kind of thing: Python. By now, all
+thoughts of applying for the job had long been forgotten. I typed the
+dread words cargo new --bin patterns into my terminal.
+
+** Speeding Up Your Program, 101
+   :PROPERTIES:
+   :CUSTOM_ID: speeding-up-your-program-101
+   :END:
+
+Before you write any Rust code, ask yourself: "Is it possible that any
+of the operations in my program could be carried out in a way which is
+embarassingly parallel" If the answer is yes, Rayon is probably the
+best, most robust solution. What do we mean by "embarrassingly
+parallel"? We mean tasks or operations that;
+
+- [[https://docs.rs/rayon/1.0.0/rayon/][rayon]]
+- [[https://books.google.nl/books?id=vfvPrSz7R7QC&q=embarrasingly&redir_esc=y#v=onepage&q=embarrasingly&f=false][embarassingly]]
+- [[https://llvm.org/docs/LinkTimeOptimization.html#example-of-link-time-optimization][LinkTimeOptimisation]]
+
+"[...] can easily be divided into components that can be executed
+concurrently." (Herlihy and Shavit, 2012, p.14)
+
+This is obviously the case here: when transforming strings into integer
+lists each transformation is independent, and there's no need to keep
+track of any other state, or carry out any other operations that have
+side-effects. In practice, this meant that I'd be able to replace
+sequential iteration with parallel iteration in several hot loops.
+
+"the means of labour passes through different metamorphoses, whose
+culmination is the machine"
+
+The next question I asked myself was "Have I turned on LTO"? The
+drawback of LTO is that it can severely increase compilation times, but
+one can cope with that by compiling in release mode as rarely as
+possible. To use LTO for release and benchmark builds, edit Cargo.toml,
+adding two sections:
+
+#+BEGIN_EXAMPLE
+    [profile.release]
+    lto = true
+    [profile.bench]
+    lto = true
+#+END_EXAMPLE
+
+The last thing I needed to do was specify how many codegen units I
+wanted. Recently, Rust has been improving its compile times by
+generating multiple codegen units, allowing LLVM to process them in
+parallel. The performance impact is the opposite of LTO: keeping it
+switched on can make your program a little slower. But just like LTO,
+you can mitigate this at the expense of compilation time: add
+codegen-units = 1 to the release and bench profiles.
+
+** Opening a File and Getting Strings
+   :PROPERTIES:
+   :CUSTOM_ID: opening-a-file-and-getting-strings
+   :END:
+
+This is how you should (probably) do it: BufRead is fast and easy to
+use.
+
+#+BEGIN_EXAMPLE
+    fn file_to_lines<P>(filename: P) -> Vec<String>
+        where
+            P: AsRef<Path>,
+    {
+        let file = File::open(filename).expect("Couldn't open file");
+        let buf = BufReader::new(file);
+        buf.lines()
+            .map(|line| line.expect("Could not parse line"))
+            .collect()
+    }
+#+END_EXAMPLE
+
+I won't spend too much time on this, but if you're wondering what that
+=AsRef<Path>= thing is, this is a good explanation: it's a convenient
+way of being able to pass any of several types to the function, any of
+which can be used to open the file they point to. The error-handling is
+intentionally unsophisticated, because it can be; if we can't open the
+file or map its contents into Strings, we may as well give up.
+
+** Generating Patterns
+   :PROPERTIES:
+   :CUSTOM_ID: generating-patterns
+   :END:
+
+The First Attempt
+
+#+BEGIN_EXAMPLE
+    fn generate_pattern(hs: &str) -> Vec<u8> {
+        let mut stack = String::with_capacity(hs.len()).to_owned();
+        let mut pattern = Vec::with_capacity(hs.len());
+        for character in hs.chars() {
+            if let Some(needle) = stack.find(character) {
+                pattern.push(needle as u8)
+            } else {
+                stack.push_str(&character.to_string());
+                pattern.push((stack.len() - 1) as u8)
+            }
+        }
+        pattern
+    }
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+    let a = "HELLOWORLD";
+    let p = generate_pattern(a);
+    println!("{:?}", p);
+    [0, 1, 2, 2, 3, 4, 3, 5, 2, 6]
+#+END_EXAMPLE
+
+The function accepts a string slice, and I used a mutable String to keep
+track of characters I'd "seen", storing the pattern in a Vec. I
+pre-allocated their lengths to ensure that they wouldn't have to
+re-allocate, because that's slow. Next, I looped through the input,
+using =find= to check the stack for the character. =find= returns an
+Option containing the index (remember "if we could somehow map the first
+character to 0"), if it was found, or None. In that case, I pushed the
+new character onto the stack, and pushed its length-1 (i.e. the new
+character's index position) onto the pattern. Pretty simple. Alas, the
+benchmark was the harbinger of bad news:
+
+1,288 ns/iter (+/- 990)
+
+Assuming the measurement noise on my ancient laptop is constant, that's
+almost 0.0013 ms for the string GRUNDRISSE. Give me strength. The Second
+Attempt Because the input was uppercase ASCII, I realised that I could
+use bytes, which can be translated into base-10 integers very quickly:
+fn generate\_pattern(haystack: &str) -> Vec { let mut stack: Vec<&u8> =
+Vec::with\_capacity(haystack.len()); let mut pattern =
+Vec::with\_capacity(haystack.len()); for b in haystack.as\_bytes() { if
+let Some(n) = stack.iter().position(|&elem| elem == b) { pattern.push(n)
+} else { stack.push(byte); pattern.push(stack.len() - 1); } } pattern }
+I was now using a Vec as my stack, and using the position method on an
+iterator over it to check whether I'd "seen" a byte, allowing me to
+avoid all the String overhead. What about the benchmark? 130 ns/iter
+(+/- 52) An order of magnitude speedup in what is probably the hottest
+code in the program. This was better. But the usize types continued to
+bother me. This is all ASCII, so I should be able to use u8 everywhere.
+The Third Attempt In despair, I turned to IRC. A couple of people had
+some interesting suggestions, and we eventually settled on: fn
+generate\_pattern(haystack: &str) -> Vec { let mut total = 0u8; let mut
+stack = [0u8; 128]; let mut pattern =
+Vec::with\_capacity(haystack.len()); for &byte in haystack.as\_bytes() {
+if byte as usize > 127 { println!("Got a non-uppercase ASCII
+character!"); exit(1) } let mut needle = stack[byte as usize]; if needle
+== 0 { total += 1; stack[byte as usize] = total; needle = total; }
+pattern.push(needle - 1) } pattern } We started off with an array
+representing ASCII characters, all initialised to 0. If we saw a "new"
+byte, we bumped total by 1, and set that byte's entry to total's current
+value, before pushing it onto the pattern. Otherwise, it was an existing
+entry, and we simply pushed its value onto the pattern. But was it
+faster? 54 ns/iter (+/- 47) Good enough. If you really want to go down
+the rabbit-hole, this StackOverflow thread is probably a good place to
+start --- a cursory glance looks like 54 ns is good performance for the
+string above.
+
+- [[https://stackoverflow.com/questions/34365746/whats-the-fastest-way-to-convert-hex-to-integer-in-c][thread]]
+
+A final note: by checking for byte values greater than 127, gracefully
+exiting if we encounter one, the function performs some rudimentary
+error-handling. A more sophisticated approach might use get\_mut()
+instead of indexing into the array, as it would return None (meaning a
+byte outside the ASCII uppercase range was encountered), and since
+Option can trivially be mapped to Result you could be even more flexible
+about handling unexpected input. Frequency Counting Things became
+slightly more complicated at this point (but not that complicated, don't
+worry): pub fn count\_frequency(patterns: &[Vec]) -> u32 { let mut freq:
+HashMap<&[u8], u32> = HashMap::with\_capacity(patterns.len()); patterns
+.iter() .for\_each(|pattern| *freq.entry(pattern).or\_insert(0) += 1);
+freq .par\_iter() .filter(|&(\_, &value)| value > 1) .fold(|| 0, |accum,
+entry| accum + entry.1) .sum() } The function accepts a slice of the
+patterns, in case I wanted to use them for something afterwards, and
+then instantiates a new HashMap which has the same capacity as the
+slice, to avoid re-allocating. Next, I iterated over the slice, adding
+each pattern to the HashMap using its Entry API. This is a fast, compact
+way of updating values: if a pattern (key) exists, bump its value by 1.
+Otherwise, insert it as a new key. This is also one part of the program
+that couldn't be trivially parallelised: because the iterator needed
+mutable access to every key (I didn't know which one, if any, I'd need
+to update), it had to iterate sequentially --- even if I hadn't realised
+this, the compiler would have helped me out by refusing to mutably
+borrow freq in more than one place. Once I'd built the HashMap (which is
+in fact a frequency table), I needed to filter, then aggregate the
+results: filter its values, retaining only counts greater than 1 use a
+fold to accumulate the remaining values sum the result of the fold,
+giving me the final count. In theory, the final step shouldn't have been
+necessary, because fold should accumulate the values into a single
+result, but Rayon's fold is slightly different: it returns a Struct
+containing intermediate sums of the input sequence, which have been
+calculated in parallel. The number of these summed items and their
+sequence is non-deterministic, requiring us to specify a final sum(), in
+order to produce the count. The benchmark showed ~15 ms. I had no idea
+whether that was slow, but I did know that Rust's default SipHash
+algorithm isn't the fastest, because it's also intended to be robust
+against DoS attacks. In this case, that wasn't a concern, so I swapped
+in the HashMap from the Fnv crate. The Fowler-Noll-Vo algorithm yields
+better hashing performance for small integer keys. And the benchmark?
+10,001 ns/iter (+/- 500) I was now ready to actually run the program.
+
+- [[https://docs.rs/rayon/1.0.0/rayon/iter/trait.ParallelIterator.html#method.fold][fold]]
+- [[https://crates.io/crates/fnv][fnv]]
+
+** Results
+   :PROPERTIES:
+   :CUSTOM_ID: results
+   :END:
+
+On my desktop 3.4 GHz Core i7, with a warm cache, it runs in 200 ms. Is
+that fast? I...don't really know. It certainly feels fast. That's
+actually all I'm interested in. Complexity I was reasonably sure that
+the program as a whole ran in linear time: building the initial String
+Vec, followed by one pass over each String, a handful of hopefully
+constant-time Vec-insertion and HashMap operations, and a final
+linear-time pass to aggregate the result. Still, why not verify? Oh, but
+I have no intention of embarrassing myself and you by attempting a big-O
+proof of my program --- that would be ridiculous. Instead, I sliced up
+the input into files increasing by 5k strings each time, then ran the
+program on each one, timing it using Hyperfine. Finally, I opened a
+Jupyter notebook, pulled the results into a Pandas DataFrame, fitted a
+line using Statsmodels, and graphed the results using Matplotlib:
+
+This image is huge While I was using Python, I took the opportunity to
+write my comparison program: #!/usr/bin/env python # coding: utf-8 from
+sys import exit from collections import Counter
+
+def generate\_patterns(haystack): """ Generate tuples of integers from
+ASCII uppercase strings """ total = 0 # we begin having seen no bytes
+stack = [0] * 128 pattern = [] for char in haystack: byte = ord(char) if
+byte > 127: print("Found a non-uppercase ASCII character!") exit(1)
+else: needle = stack[byte] if needle == 0: total += 1 stack[byte] =
+total needle = total pattern.append(needle - 1) # we need tuples because
+lists aren't hashable return tuple(pattern) if *name* == "*main*": with
+open("words.txt", 'r') as f: cts = Counter((generate\_patterns(line) for
+line in f)) friendly = sum( {ptn: ct for ptn, ct in cts.items() if ct >
+1}.values() ) print("Number of friendly strings: %s" % friendly) Python
+has several features that make the program trivial to write: A context
+manager closes the file when we finish reading from it We can iterate
+over one line at a time, generating its pattern Generators mean we don't
+have to worry about intermediate allocations The built-in Collections
+library makes frequency-counting easy Dict comprehensions make filtering
+on values easy. I ended up with 26 LoC, and a wall-clock time of around
+7 seconds to process 500k strings. Quite compact (Rust is around 59
+LoC), but nowhere near as fast (Rust is around 33x faster). Of course,
+there's lots of low-hanging fruit here, and I didn't even look at NumPy,
+so the speed comparison isn't intended to be meaningful, but I was
+pleasantly surprised by the length and conciseness of my Rust program.

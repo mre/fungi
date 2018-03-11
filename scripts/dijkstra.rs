@@ -116,6 +116,14 @@ struct Edge {
     cost: usize,
 }
 
+// Returns a Vector of usize of length l.
+//
+// * Primitive Type usize
+// The pointer-sized unsigned integer type.
+// The size of this primitive is how many bytes it takes to reference
+// any location in memory. For example, on a 32 bit target, this is 4
+// bytes and on a 64 bit target, this is 8 bytes.
+// https://doc.rust-lang.org/std/primitive.usize.html
 fn distance_vector(l: usize) -> Vec<usize> {
     return (0..l).map(|_| usize::MAX).collect();
 }
@@ -141,36 +149,51 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
     // This will be a min-heap.
     let mut heap = BinaryHeap::new();
 
-    // We're at `start`, with a zero cost
+    // We're at `start`, with a zero cost.
+    // We can use dist as an hashmap.
     dist[start] = 0;
 
     heap.push(State {
         cost: 0,
         position: start,
     });
+    
     println!(
         "the start node is (top of the heap): {}",
         heap.peek().custom_display()
     );
 
     // Examine the frontier with lower cost nodes first (min-heap)
-    // while let Some(State { cost, position }) = heap.pop() {
+    //
+    // we cannot use a while-let (without matching on Some here because of E0165
+    // while let top = heap.pop() {
+    //
     //
     // rustc --explain E0165
-    // while let top = heap.pop() {
+    // A while-let pattern attempts to match the pattern, and enters the
+    // body if the match was successful. If the match is irrefutable
+    // (when it cannot fail to match), use a regular `let`-binding
+    // inside a `loop` instead.
+    //
+    // while let Some(State { cost, position }) = heap.pop() {
     loop {
-        let top = heap.pop();
-
+        // https://doc.rust-lang.org/std/option/enum.Option.html
+        //
+        // as_ref
+        //   pub fn as_ref(&self) -> Option<&T>
+        // Converts from Option<T> to Option<&T>.
+        //
+        // expect
+        //   pub fn expect(self, msg: &str) -> T
+        // Unwraps an option, yielding the content of a Some.
+        
+        println!("popped node: {}", top.as_ref().custom_display());
+        let top: Option<State> = heap.pop();
         if top.is_none() {
             println!("the heap is empty");
+            break;
         }
 
-        // https://doc.rust-lang.org/std/option/enum.Option.html
-        // pub fn as_ref(&self) -> Option<&T>
-        // Converts from Option<T> to Option<&T>.
-        // pub fn expect(self, msg: &str) -> T
-        // Unwraps an option, yielding the content of a Some.
-        println!("popped node: {}", top.as_ref().custom_display());
         let State { cost, position } = top.expect("the world is ending");
 
         // Alternatively we could have continued to find all shortest paths

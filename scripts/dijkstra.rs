@@ -111,6 +111,7 @@ impl PartialOrd for State {
 }
 
 // Each node is represented as an `usize`, for a shorter implementation.
+#[derive(Debug)]
 struct Edge {
     node: usize,
     cost: usize,
@@ -159,8 +160,9 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
     });
 
     println!(
-        "the start node is (top of the heap): {}",
-        heap.peek().custom_display()
+        " - the start node is: {} (top of the heap), the graph has {} nodes",
+        heap.peek().custom_display(),
+        dist.len(),
     );
 
     // Examine the frontier with lower cost nodes first (min-heap)
@@ -188,7 +190,7 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
         // Unwraps an option, yielding the content of a Some.
 
         let top: Option<State> = heap.pop();
-        println!("popped node: {}", top.as_ref().custom_display());
+        println!(" - popped node: {}", top.as_ref().custom_display());
         if top.is_none() {
             println!("the heap is empty");
             break;
@@ -200,7 +202,7 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
         // The node popped from the heap is the destination to reach, the
         // cost is included in the State.
         if position == goal {
-            println!("goal reached");
+            println!(" [goal reached] returning: cost is {}", cost);
             return Some(cost);
         }
 
@@ -209,26 +211,49 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
         // the cost in the corresponding vector of distances. This state can be
         // discarded (continue).
         if cost > dist[position] {
-            println!("before the continue");
+            println!(" - [skip] state cost is greater than the one found");
             continue;
         }
 
         // For each node we can reach, see if we can find a way with
         // a lower cost going through this node
+        println!(
+            " from position {} we have {} edges",
+            position,
+            &adj_list[position].len()
+        );
         for edge in &adj_list[position] {
+            println!(
+                " - considering edge: cost {} to go to: {}",
+                edge.cost, edge.node
+            );
             let next = State {
                 cost: cost + edge.cost,
                 position: edge.node,
             };
+            println!(
+                " - next possible state, cost: {}, node: {}",
+                edge.cost, edge.node
+            );
 
             // If so, add it to the frontier and continue
+            println!(
+                "   checking if is worth reaching \
+                 the node {} with the new cost (was {})",
+                next.position, cost
+            );
             if next.cost < dist[next.position] {
+                println!(
+                    "   better cost found ({}) to go to {}: [pushed to heap]",
+                    next.cost, next.position
+                );
                 heap.push(next);
                 // Relaxation, we have now found a better way
                 dist[next.position] = next.cost;
+            } else {
+                println!("   nope, ignoring this new state [discard]");
             }
         }
-        println!("top of the heap is {}", heap.peek().custom_display());
     }
 
     // Goal not reachable

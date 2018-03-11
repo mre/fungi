@@ -157,7 +157,7 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
         cost: 0,
         position: start,
     });
-    
+
     println!(
         "the start node is (top of the heap): {}",
         heap.peek().custom_display()
@@ -186,9 +186,9 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
         // expect
         //   pub fn expect(self, msg: &str) -> T
         // Unwraps an option, yielding the content of a Some.
-        
-        println!("popped node: {}", top.as_ref().custom_display());
+
         let top: Option<State> = heap.pop();
+        println!("popped node: {}", top.as_ref().custom_display());
         if top.is_none() {
             println!("the heap is empty");
             break;
@@ -196,16 +196,23 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
 
         let State { cost, position } = top.expect("the world is ending");
 
-        // Alternatively we could have continued to find all shortest paths
+        // Alternatively we could have continued to find all shortest paths.
+        // The node popped from the heap is the destination to reach, the
+        // cost is included in the State.
         if position == goal {
             println!("goal reached");
             return Some(cost);
         }
 
-        // Important as we may have already found a better way
+        // Important as we may have already found a better way.
+        // The cost in the State that we popped from the heap is greater than
+        // the cost in the corresponding vector of distances. This state can be
+        // discarded (continue).
         if cost > dist[position] {
+            println!("before the continue");
             continue;
         }
+        println!("after the continue");
 
         // For each node we can reach, see if we can find a way with
         // a lower cost going through this node
@@ -269,7 +276,17 @@ fn main() {
         vec![],
     ];
 
+    fn from_to(f: usize, t: usize) -> () {
+        let s: String = format!(
+            "=== Dijkstra shortest path, from {from} to {to}\n",
+            from=f,
+            to=t);
+        print!("{}", s)
+    }
+
+    from_to(0, 1);
     assert_eq!(shortest_path(&graph, 0, 1), Some(1));
+    format!("\n");
     assert_eq!(shortest_path(&graph, 0, 3), Some(3));
     assert_eq!(shortest_path(&graph, 3, 0), Some(7));
     assert_eq!(shortest_path(&graph, 0, 4), Some(5));

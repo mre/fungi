@@ -22,6 +22,9 @@ struct Opt {
 }
 
 fn parse_permissions(mode: u16) -> String {
+    if mode > 511 {
+        panic!("unrecognised mode: allowed from 000 to 777");
+    }
     let user = triplet(mode, S_IRUSR, S_IWUSR, S_IXUSR);
     let group = triplet(mode, S_IRGRP, S_IWGRP, S_IXGRP);
     let other = triplet(mode, S_IROTH, S_IWOTH, S_IXOTH);
@@ -149,6 +152,54 @@ mod tests {
             expected,
             result
         );
+    }
+
+    #[test]
+    fn parse_permissions_works_for_ugorx() {
+        let expected: String = "r-xr-xr-x".to_owned();
+        let result: String = parse_permissions(0o555);
+
+        assert_eq!(
+            result,
+            expected,
+            "Value expected: `{}` but the result was: `{}`",
+            expected,
+            result
+        );
+    }
+
+    #[test]
+    fn parse_permissions_works_for_no_permissions() {
+        let expected: String = "---------".to_owned();
+        let result: String = parse_permissions(0o000);
+
+        assert_eq!(
+            result,
+            expected,
+            "Value expected: `{}` but the result was: `{}`",
+            expected,
+            result
+        );
+    }
+
+    #[test]
+    fn parse_permissions_works_for_max_permissions() {
+        let expected: String = "rwxrwxrwx".to_owned();
+        let result: String = parse_permissions(0o777);
+
+        assert_eq!(
+            result,
+            expected,
+            "Value expected: `{}` but the result was: `{}`",
+            expected,
+            result
+        );
+    }
+    
+    #[test]
+    #[should_panic]
+    fn parse_permissions_panics_for_bogus_permissions() {
+        parse_permissions(888);
     }
 
     #[test]

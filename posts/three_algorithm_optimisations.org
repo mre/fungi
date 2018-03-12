@@ -116,9 +116,9 @@ file or map its contents into Strings, we may as well give up.
    :CUSTOM_ID: generating-patterns
    :END:
 
-The First Attempt
+*** The First Attempt
 
-#+BEGIN_SRC rust
+#+begin_src rust
 fn generate_pattern(hs: &str) -> Vec<u8> {
     let mut stack = String::with_capacity(hs.len()).to_owned();
     let mut pattern = Vec::with_capacity(hs.len());
@@ -137,7 +137,7 @@ fn generate_pattern(hs: &str) -> Vec<u8> {
     }
     pattern
 }
-#+END_SRC
+#+end_src
 
 #+BEGIN_EXAMPLE
     let a = "HELLOWORLD";
@@ -160,8 +160,11 @@ benchmark was the harbinger of bad news:
 1,288 ns/iter (+/- 990)
 
 Assuming the measurement noise on my ancient laptop is constant, that's
-almost 0.0013 ms for the string GRUNDRISSE. Give me strength. The Second
-Attempt Because the input was uppercase ASCII, I realised that I could
+almost 0.0013 ms for the string GRUNDRISSE. Give me strength. 
+
+*** The Second Attempt
+
+Because the input was uppercase ASCII, I realised that I could
 use bytes, which can be translated into base-10 integers very quickly:
 
 #+begin_src rust
@@ -180,14 +183,24 @@ fn generate_pattern(haystack: &str) -> Vec<usize> {
 }
 #+end_src
 
-I was now using a Vec as my stack, and using the position method on an
+I was now using a Vec as my stack, and using the =position= method on an
 iterator over it to check whether I'd "seen" a byte, allowing me to
 avoid all the String overhead. What about the benchmark? 130 ns/iter
 (+/- 52) An order of magnitude speedup in what is probably the hottest
 code in the program. This was better. But the usize types continued to
 bother me. This is all ASCII, so I should be able to use u8 everywhere.
 
-The Third Attempt 
+- https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.position
+
+#+begin_src rust
+fn position<P>(&mut self, predicate: P) -> Option<usize> 
+where
+    P: FnMut(Self::Item) -> bool, 
+#+end_src
+
+Searches for an element in an iterator, returning its index.
+
+** The Third Attempt 
 
 In despair, I turned to IRC. A couple of people had
 some interesting suggestions, and we eventually settled on:

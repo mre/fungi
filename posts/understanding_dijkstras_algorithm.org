@@ -1,15 +1,10 @@
-Aos Dabbagh About 02-24-2018 | tags: [ algorithms ] Understanding
-Dijkstra's Algorithm Introduction
+* Understanding Dijkstra's Algorithm Introduction
 
-When I first started learning algorithms and data structures, every
-resource I came across would mention Dijkstra's algorithm in a sort of
-mystical, this-is-beyond-your-lowly-understanding manner. I disagree
-with that approach (in fact, I disagree with that approach for just
-about everything). Now that I've actually invested some time into
-learning it, it really isn't as frightful as I was told to believe. I
-will (to the best of my ability) elucidate Dijkstra's algorithm here.
+From a post of _ Aos Dabbagh, 02-24-2018_
 
-Single source shortest path
+[...]
+
+** Single source shortest path
 
 Dijkstra's algorithm is used to solve the single source shortest path.
 What does that mean? Starting at a single point, what is the shortest
@@ -20,16 +15,12 @@ time. Let's say you are given the diagram below, each node depicts a
 certain location and the number in blue a "distance" between to the two
 node. What is the shortest path from node S to H?
 
-Dijkstra Graph Ex 1
+- [image] Dijkstra Graph Ex 1
 
-It is not so obvious at first glance. Indeed, this is also only a simple
-example. Imagine the entirety of Manhattan mapped out. The complexity of
-the diagram would increase by a million-fold! Having said that, we will
-come back to this diagram to solve our problem. For now we require some
-additional background knowledge before we go about implementing
-Dijkstra's algorithm.
+[...] For now we require some additional background knowledge before we
+go about implementing Dijkstra's algorithm.
 
-Breadth-first search
+** Breadth-first search
 
 At its heart, Dijkstra's algorithm is really only a modified bread-first
 search. Breadth-first search (BFS) is a graph traversal algorithm which
@@ -38,7 +29,7 @@ next level of neighbors (neighbors' neighbors). Let's see how this would
 play out using the figure above (forgetting about the numbers for a
 minute) starting at S:
 
-BFS
+- [image] BFS
 
 We see that S has 2 neighbors, A and F. We add these on our todo list to
 explore (marked in gray). We start with A which was at the top of our
@@ -59,7 +50,7 @@ so that we don't explore it again. Eventually, we'll have explored all
 the nodes! But where is the logic coming from for this magical "todo
 list"? That is our next topic...
 
-The queue
+** The queue
 
 I hand-waved our addition of the nodes to a todo list, but it is a
 legitimate data structure with a name: a queue. Breadth-first search
@@ -72,7 +63,7 @@ the ones who came before you have been checked out. The queue's most
 important operations are enqueue which adds an item to the end, and
 dequeue which removes the first item in line.
 
-A simple BFS implementation
+** A simple BFS implementation
 
 Now that we know about a queue, let's build a simple implementation of
 breadth-first search. I won't get into the specifics of graph
@@ -80,23 +71,21 @@ representation in code, but it is typically represented as an "adjacency
 list" -- a hash object with the keys as nodes, and the values as
 neighbors:
 
-* Simple graph representation like adjacency list
-  :PROPERTIES:
-  :CUSTOM_ID: simple-graph-representation-like-adjacency-list
-  :END:
+- Simple graph representation like adjacency list
+- using an array to represent our list
 
-* using an array to represent our list
-  :PROPERTIES:
-  :CUSTOM_ID: using-an-array-to-represent-our-list
-  :END:
-
+#+BEGIN_EXAMPLE
 graph = { 'A': ['B', 'C'], 'B': ['A', 'E'], 'C': ['A', 'D'], 'D': ['C',
-'E'] 'E': ['B', 'D'] } And this is how this graph would look like:
+'E'] 'E': ['B', 'D'] } 
+#+END_EXAMPLE
 
-SG
+And this is how this graph would look like:
+
+- [image] SG
 
 Now let's implement BFS:
 
+#+BEGIN_SRC ruby
 def bfs(graph, source) q = Queue.new # Keep track of what we've explored
 explored = Hash.new
 
@@ -106,26 +95,27 @@ explored = Hash.new
 !q.empty? node = q.dequeue explored[node] = true # Get the neighbor
 nodes neighbors = graph[node]
 
-#+BEGIN_EXAMPLE
     # For each neighbor node, add it to the queue
     # unless we've previously explored it
     neighbors.each do |v|
       q.enqueue(v) unless explored[v]
     end
+  end 
+end 
 #+END_EXAMPLE
 
-end end This will traverse our graph layer-by-layer, node-by-node. This
+This will traverse our graph layer-by-layer, node-by-node. This
 is as barebones as it gets of course but it gives us an idea of how a
 BFS algorithm would look like and how we can modify it to fit our needs.
 
-Enter the priority queue
+** Enter the priority queue
 
 One of Dijkstra's algorithm modifications on breadth-first search is its
 use of a priority queue instead of a normal queue. With a priority
 queue, each task added to the queue has a "priority" and will slot in
 accordingly into the queue based on its priority level.
 
-PQ
+- [image] PQ
 
 The figure above shows a queue consisting of items with rankings based
 on priority. In this case, the item with priority 2 would be dequeued
@@ -134,7 +124,7 @@ go before the item with priority 5 but after the one ranked 3. This is
 known as a minimum priority queue -- the smallest priority will be
 highest ranked and will be processed first.
 
-Implementing Dijkstra's algorithm
+** Implementing Dijkstra's algorithm
 
 We've now been introduced to all of the pieces of the puzzle -- let's
 fit them together. We will use the priority queue in place of the normal
@@ -154,7 +144,7 @@ source Optionally, we can provide a target node and as soon as that node
 is dequeued, we can stop our search Let's see these steps in action
 using the graph we started with:
 
-DAGIF
+- [image] DAGIF
 
 Based on the animation above, our shortest path from S to H is
 S->F->G->H and has a distance of 14. Another thing to note is that our
@@ -165,22 +155,28 @@ enqueue any node that does not satisfy the greedy score.
 
 Let's see the algorithm implementation:
 
-def dijkstra(graph, source) pq = PriorityQueue.new # Initialize
-distances for all nodes at infinity dist = Hash.new(Float::INFINITY) #
-Get edge lengths lengths = graph.get\_lengths
+#+BEGIN_SRC ruby
+def dijkstra(graph, source)
+  pq = PriorityQueue.new
+  # Initialize distances for all nodes at infinity
+  dist = Hash.new(Float::INFINITY)
+  # Get edge lengths
+  lengths = graph.get_lengths
 
-# Initialize source node and insert into queue dist[source] = 0 #
-Priority queue holds nodes as key/value pairs pq.enqueue(source,
-dist[source])
+  # Initialize source node and insert into queue
+  dist[source] = 0
+  # Priority queue holds nodes as key/value pairs
+  pq.enqueue(source, dist[source])
 
-while !pq.empty? node = pq.dequeue[:key] neighbors = graph[node]
+  while !pq.empty?
+    node = pq.dequeue[:key]
+    neighbors = graph[node]
 
-#+BEGIN_EXAMPLE
     neighbors.each do |neighbor|
-      # Calculate tentative distance
+      # Calculate tentative distance 
       # (Dijkstra's greedy score)
       tent_dist = dist[node] + lengths[node][neighbor]
-
+      
       if tent_dist < dist[neighbor]
         # Set neighbor's new distance as it is shorter
         dist[neighbor] = tent_dist
@@ -188,17 +184,19 @@ while !pq.empty? node = pq.dequeue[:key] neighbors = graph[node]
         pq.enqueue(neighbor, dist[neighbor])
       end
     end
-#+END_EXAMPLE
+  end
+  return dist # Or whatever else you want
+end
+#+END_SRC
 
-end return dist # Or whatever else you want end This algorithm looks
-very similar to BFS! We just added the calculation of the greedy score
-which determined how to prioritize insertion into our priority queue.
-One thing to note is I glanced over getting edge lengths as it is just a
-detail of implementation. The usual way to do this is to construct a
-2-dimensional matrix between nodes and fill out lengths. It can also be
-done by creating a hash.
+This algorithm looks very similar to BFS! We just added the calculation
+of the greedy score which determined how to prioritize insertion into
+our priority queue.  One thing to note is I glanced over getting edge
+lengths as it is just a detail of implementation. The usual way to do
+this is to construct a 2-dimensional matrix between nodes and fill out
+lengths. It can also be done by creating a hash.
 
-Improvements and other thoughts
+** Improvements and other thoughts
 
 As it stands, the running time of our algorithm is not too great. If we
 assume a naive implementation of a priority queue (enqueue will scan
@@ -225,11 +223,7 @@ is Bellman-Ford algorithm for that situation.
 
 Fin
 
-This has been a fun dive into a famous algorithm. It is elegant, and
-surprisingly simple once we spent a little time into it. I hope you
-enjoyed reading this as much as I enjoyed creating it!
-
-© Aos Dabbagh
+[...]
 
 - https://aos.github.io/2018/02/24/understanding-dijkstras-algorithm/
 - https://en.wikipedia.org/wiki/Dijkstra%27s\_algorithm

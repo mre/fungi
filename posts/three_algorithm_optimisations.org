@@ -3,7 +3,7 @@
   :CUSTOM_ID: three-algorithm-optimizations-outside-place-other-place
   :END:
 
-https://medium.com/@urschrei/three-algorithm-optimizations-outside-place-other-place-294de5a68f27
+[[https://medium.com/@urschrei/three-algorithm-optimizations-outside-place-other-place-294de5a68f27][source]]
 
 Recently, I came across an ad for a job that had a precondition for
 application: it required you to first solve a programming challenge:
@@ -18,7 +18,7 @@ Given a newline-delimited file of 500k strings, how many of them are
 questions "What even is a string?" and "Programming challenge?" I spent
 a slow afternoon pondering the problem:
 
-The strings in the file are uppercase ASCII
+- The strings in the file are uppercase ASCII
 
 We can keep a "stack" of characters we've seen, and the order in which
 they've been seen.
@@ -44,9 +44,9 @@ embarassingly parallel" If the answer is yes, Rayon is probably the
 best, most robust solution. What do we mean by "embarrassingly
 parallel"? We mean tasks or operations that;
 
-- [[https://docs.rs/rayon/1.0.0/rayon/][rayon]]
-- [[https://books.google.nl/books?id=vfvPrSz7R7QC&q=embarrasingly&redir_esc=y#v=onepage&q=embarrasingly&f=false][embarassingly]]
-- [[https://llvm.org/docs/LinkTimeOptimization.html#example-of-link-time-optimization][LinkTimeOptimisation]]
+- [[https://docs.rs/rayon/1.0.0/rayon/][rayon;]]
+- [[https://books.google.nl/books?id%3DvfvPrSz7R7QC&q%3Dembarrasingly&redir_esc%3Dy#v%3Donepage&q%3Dembarrasingly&f%3Dfalse][embarassingly parallel]];
+- [[https://llvm.org/docs/LinkTimeOptimization.html#example-of-link-time-optimization][LinkTimeOptimisation]];
 
 "[...] can easily be divided into components that can be executed
 concurrently." (Herlihy and Shavit, 2012, p.14)
@@ -73,6 +73,8 @@ adding two sections:
     lto = true
 #+END_EXAMPLE
 
+- [[https://github.com/rust-lang/rust/issues/10741][rust-lang/rust Support LTO #10741]]
+
 The last thing I needed to do was specify how many codegen units I
 wanted. Recently, Rust has been improving its compile times by
 generating multiple codegen units, allowing LLVM to process them in
@@ -89,18 +91,18 @@ codegen-units = 1 to the release and bench profiles.
 This is how you should (probably) do it: BufRead is fast and easy to
 use.
 
-#+BEGIN_EXAMPLE
-    fn file_to_lines<P>(filename: P) -> Vec<String>
-        where
-            P: AsRef<Path>,
-    {
-        let file = File::open(filename).expect("Couldn't open file");
-        let buf = BufReader::new(file);
-        buf.lines()
-            .map(|line| line.expect("Could not parse line"))
-            .collect()
-    }
-#+END_EXAMPLE
+#+BEGIN_SRC rust
+fn file_to_lines<P>(filename: P) -> Vec<String>
+    where
+        P: AsRef<Path>,
+{
+    let file = File::open(filename).expect("Couldn't open file");
+    let buf = BufReader::new(file);
+    buf.lines()
+        .map(|line| line.expect("Could not parse line"))
+        .collect()
+}
+#+END_SRC
 
 I won't spend too much time on this, but if you're wondering what that
 =AsRef<Path>= thing is, this is a good explanation: it's a convenient
@@ -116,21 +118,26 @@ file or map its contents into Strings, we may as well give up.
 
 The First Attempt
 
-#+BEGIN_EXAMPLE
-    fn generate_pattern(hs: &str) -> Vec<u8> {
-        let mut stack = String::with_capacity(hs.len()).to_owned();
-        let mut pattern = Vec::with_capacity(hs.len());
-        for character in hs.chars() {
-            if let Some(needle) = stack.find(character) {
-                pattern.push(needle as u8)
-            } else {
-                stack.push_str(&character.to_string());
-                pattern.push((stack.len() - 1) as u8)
-            }
+#+BEGIN_SRC rust
+fn generate_pattern(hs: &str) -> Vec<u8> {
+    let mut stack = String::with_capacity(hs.len()).to_owned();
+    let mut pattern = Vec::with_capacity(hs.len());
+    for character in hs.chars() {
+        if let Some(needle) = stack.find(character) {
+            // i've seen this character already, so i push its index (as u8).
+            pattern.push(needle as u8)
+        } else {
+            // this is a new character, so i push it into the stack (to get the
+            // future references...
+            stack.push_str(&character.to_string());
+            // and then i push it into the patter with its new index that is 
+            // actually the greatest value in the stack (the length - 1).
+            pattern.push((stack.len() - 1) as u8)
         }
-        pattern
     }
-#+END_EXAMPLE
+    pattern
+}
+#+END_SRC
 
 #+BEGIN_EXAMPLE
     let a = "HELLOWORLD";
@@ -156,26 +163,56 @@ Assuming the measurement noise on my ancient laptop is constant, that's
 almost 0.0013 ms for the string GRUNDRISSE. Give me strength. The Second
 Attempt Because the input was uppercase ASCII, I realised that I could
 use bytes, which can be translated into base-10 integers very quickly:
-fn generate\_pattern(haystack: &str) -> Vec { let mut stack: Vec<&u8> =
-Vec::with\_capacity(haystack.len()); let mut pattern =
-Vec::with\_capacity(haystack.len()); for b in haystack.as\_bytes() { if
-let Some(n) = stack.iter().position(|&elem| elem == b) { pattern.push(n)
-} else { stack.push(byte); pattern.push(stack.len() - 1); } } pattern }
+
+#+begin_src rust
+fn generate_pattern(haystack: &str) -> Vec<usize> {
+    let mut stack: Vec<&u8> = Vec::with_capacity(haystack.len());
+    let mut pattern = Vec::with_capacity(haystack.len());
+    for b in haystack.as_bytes() {
+        if let Some(n) = stack.iter().position(|&elem| elem == b) {
+            pattern.push(n)
+        } else {
+            stack.push(byte);
+            pattern.push(stack.len() - 1);
+        }
+    }
+    pattern
+}
+#+end_src
+
 I was now using a Vec as my stack, and using the position method on an
 iterator over it to check whether I'd "seen" a byte, allowing me to
 avoid all the String overhead. What about the benchmark? 130 ns/iter
 (+/- 52) An order of magnitude speedup in what is probably the hottest
 code in the program. This was better. But the usize types continued to
 bother me. This is all ASCII, so I should be able to use u8 everywhere.
-The Third Attempt In despair, I turned to IRC. A couple of people had
-some interesting suggestions, and we eventually settled on: fn
-generate\_pattern(haystack: &str) -> Vec { let mut total = 0u8; let mut
-stack = [0u8; 128]; let mut pattern =
-Vec::with\_capacity(haystack.len()); for &byte in haystack.as\_bytes() {
-if byte as usize > 127 { println!("Got a non-uppercase ASCII
-character!"); exit(1) } let mut needle = stack[byte as usize]; if needle
-== 0 { total += 1; stack[byte as usize] = total; needle = total; }
-pattern.push(needle - 1) } pattern } We started off with an array
+
+The Third Attempt 
+
+In despair, I turned to IRC. A couple of people had
+some interesting suggestions, and we eventually settled on:
+
+fn generate_pattern(haystack: &str) -> Vec<u8> {
+    let mut total = 0u8;
+    let mut stack = [0u8; 128];
+    let mut pattern = Vec::with_capacity(haystack.len());
+    for &byte in haystack.as_bytes() {
+        if byte as usize > 127 {
+            println!("Got a non-uppercase ASCII character!");
+            exit(1)
+        }
+        let mut needle = stack[byte as usize];
+        if needle == 0 {
+            total += 1;
+            stack[byte as usize] = total;
+            needle = total;
+        }
+        pattern.push(needle - 1)
+    }
+    pattern
+}
+
+We started off with an array
 representing ASCII characters, all initialised to 0. If we saw a "new"
 byte, we bumped total by 1, and set that byte's entry to total's current
 value, before pushing it onto the pattern. Otherwise, it was an existing
@@ -193,13 +230,28 @@ error-handling. A more sophisticated approach might use get\_mut()
 instead of indexing into the array, as it would return None (meaning a
 byte outside the ASCII uppercase range was encountered), and since
 Option can trivially be mapped to Result you could be even more flexible
-about handling unexpected input. Frequency Counting Things became
+about handling unexpected input. 
+
+Frequency Counting 
+
+Things became
 slightly more complicated at this point (but not that complicated, don't
-worry): pub fn count\_frequency(patterns: &[Vec]) -> u32 { let mut freq:
-HashMap<&[u8], u32> = HashMap::with\_capacity(patterns.len()); patterns
-.iter() .for\_each(|pattern| *freq.entry(pattern).or\_insert(0) += 1);
-freq .par\_iter() .filter(|&(\_, &value)| value > 1) .fold(|| 0, |accum,
-entry| accum + entry.1) .sum() } The function accepts a slice of the
+worry): 
+
+pub fn count_frequency(patterns: &[Vec<u8>]) -> u32 {
+    let mut freq: HashMap<&[u8], u32> =
+        HashMap::with_capacity(patterns.len());
+    patterns
+        .iter()
+        .for_each(|pattern| *freq.entry(pattern).or_insert(0) += 1);
+    freq
+        .par_iter()
+        .filter(|&(_, &value)| value > 1)
+        .fold(|| 0, |accum, entry| accum + entry.1)
+        .sum()
+}
+
+The function accepts a slice of the
 patterns, in case I wanted to use them for something afterwards, and
 then instantiates a new HashMap which has the same capacity as the
 slice, to avoid re-allocating. Next, I iterated over the slice, adding
@@ -254,16 +306,42 @@ This image is huge While I was using Python, I took the opportunity to
 write my comparison program: #!/usr/bin/env python # coding: utf-8 from
 sys import exit from collections import Counter
 
-def generate\_patterns(haystack): """ Generate tuples of integers from
-ASCII uppercase strings """ total = 0 # we begin having seen no bytes
-stack = [0] * 128 pattern = [] for char in haystack: byte = ord(char) if
-byte > 127: print("Found a non-uppercase ASCII character!") exit(1)
-else: needle = stack[byte] if needle == 0: total += 1 stack[byte] =
-total needle = total pattern.append(needle - 1) # we need tuples because
-lists aren't hashable return tuple(pattern) if *name* == "*main*": with
-open("words.txt", 'r') as f: cts = Counter((generate\_patterns(line) for
-line in f)) friendly = sum( {ptn: ct for ptn, ct in cts.items() if ct >
-1}.values() ) print("Number of friendly strings: %s" % friendly) Python
+#!/usr/bin/env python
+# coding: utf-8
+from sys import exit
+from collections import Counter
+
+#+begin_src python
+def generate_patterns(haystack):
+    """ Generate tuples of integers from ASCII uppercase strings """
+    total = 0
+    # we begin having seen no bytes
+    stack = [0] * 128
+    pattern = []
+    for char in haystack:
+        byte = ord(char)
+        if byte > 127:
+            print("Found a non-uppercase ASCII character!")
+            exit(1)
+        else:
+            needle = stack[byte]
+            if needle == 0:
+                total += 1
+                stack[byte] = total
+                needle = total
+        pattern.append(needle - 1)
+    # we need tuples because lists aren't hashable
+    return tuple(pattern)
+if __name__ == "__main__":
+    with open("words.txt", 'r') as f:
+        cts = Counter((generate_patterns(line) for line in f))
+        friendly = sum(
+            {ptn: ct for ptn, ct in cts.items() if ct > 1}.values()
+        )
+    print("Number of friendly strings: %s" % friendly)
+#+end_src 
+
+Python
 has several features that make the program trivial to write: A context
 manager closes the file when we finish reading from it We can iterate
 over one line at a time, generating its pattern Generators mean we don't

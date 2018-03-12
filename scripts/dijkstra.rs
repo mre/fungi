@@ -218,13 +218,13 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
         // For each node we can reach, see if we can find a way with
         // a lower cost going through this node
         println!(
-            " from position {} we have {} edges",
+            "   from position {} we have {} edges",
             position,
             &adj_list[position].len()
         );
         for edge in &adj_list[position] {
             println!(
-                " - considering edge: cost {} to go to: {}",
+                "   - considering edge: cost {} to go to: {}",
                 edge.cost, edge.node
             );
             let next = State {
@@ -232,26 +232,26 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
                 position: edge.node,
             };
             println!(
-                " - next possible state, cost: {}, node: {}",
-                edge.cost, edge.node
+                "   - next possible state, cost: {}, node: {}",
+                next.cost, edge.node
             );
 
             // If so, add it to the frontier and continue
             println!(
-                "   checking if is worth reaching \
+                "     checking if is worth reaching \
                  the node {} with the new cost (was {})",
                 next.position, cost
             );
             if next.cost < dist[next.position] {
                 println!(
-                    "   better cost found ({}) to go to {}: [pushed to heap]",
+                    "     better cost found ({}) to go to {}: [pushed to heap]",
                     next.cost, next.position
                 );
                 heap.push(next);
                 // Relaxation, we have now found a better way
                 dist[next.position] = next.cost;
             } else {
-                println!("   nope, ignoring this new state [discard]");
+                println!("     nope, ignoring this new state [discard]");
             }
         }
     }

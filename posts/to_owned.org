@@ -1,0 +1,43 @@
+* Trait std::borrow::ToOwned
+
+#+begin_src rust
+pub trait ToOwned {
+    type Owned: Borrow<Self>;
+    fn to_owned(&self) -> Self::Owned;
+
+    fn clone_into(&self, target: &mut Self::Owned) { ... }
+}
+#+end_src
+
+A generalization of Clone to borrowed data.
+
+Some types make it possible to go from borrowed to owned, usually by
+implementing the =Clone= trait. But =Clone= works only for going from =&T= to
+=T=. The =ToOwned= trait generalizes =Clone= to construct owned data from any
+borrow of a given type.
+
+** Associated Types
+
+type Owned: Borrow<Self>
+
+Required Methods
+
+#+begin_src rust
+fn to_owned(&self) -> Self::Owned
+#+end_src 
+
+Creates owned data from borrowed data, usually by cloning.
+
+Examples
+
+Basic usage:
+
+#+begin_src rust
+let s: &str = "a";
+let ss: String = s.to_owned();
+
+let v: &[i32] = &[1, 2];
+let vv: Vec<i32> = v.to_owned();
+#+end_src
+
+https://doc.rust-lang.org/std/borrow/trait.ToOwned.html

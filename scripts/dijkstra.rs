@@ -236,12 +236,20 @@ fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option
                 next.cost, edge.node
             );
 
-            // If so, add it to the frontier and continue
+            // If so, add it to the frontier and continue.
             println!(
                 "     checking if is worth reaching \
                  the node {} with the new cost (was {})",
-                next.position, cost
+                next.position, dist[next.position]
             );
+            // This is where the decision is taken, where we decide what can be
+            // a possible state, considering the new state that we created from
+            // the edge and what the "map of distances" (in our case a vector)
+            // can tell us about this cost. The two possible braches are:
+            // we do pick this new state as a viable option and we put it into
+            // our heap (that will decide the priority for us (min-heap)), or
+            // reaching this position is not the best option at that cost and
+            // the state is discarded;
             if next.cost < dist[next.position] {
                 println!(
                     "     better cost found ({}) to go to {}: [pushed to heap]",

@@ -6,8 +6,11 @@ authors = ["Edoardo Rossi <edd.rossi@gmail.com>"]
 [dependencies]
 # https://github.com/chronotope/chrono
 chrono = "0.4"
+# https://github.com/TeXitoi/structopt
+structopt = "0.2"
 
 # https://doc.rust-lang.org/cargo/reference/manifest.html#configuring-a-target
 [[bin]]
 name = "timez"
 path = "bin/timez.rs"
+

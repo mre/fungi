@@ -1,111 +1,219 @@
-Getting started with Rust: Reference and Lifetime Mar 05, 2018 - Reading
-time: 8 minutes.
+* COMMENT Rust: Reference and Lifetime 
 
-Hello everyone! You were waiting for it, and now you are going to get
-it! Ladies and gentlemen, today we are going to talk about reference and
-lifetime! Before anything, I would like to point out that my knowledge
-of lifetime is pretty much incomplete. Yet, I think I know enough to
-give you a graps on it. "Ok, so ... reference?" Yep. So what is a
-reference? For the time being, I will use a book metaphor. Lets say that
-I got a book. struct Book { name: &str,\\
-}
+_Mar 05, 2018_
 
-fn main() { let book = Book { name: "Clean code" }; } Now let say that I
-pass it to you so that you can read and write in it. struct Book { name:
-&str,\\
-}
+#+begin_src rust
+  struct Book {
+      name: &str,
+  }
 
-fn pass\_to\_reader(book: Book) { //read book //write in book }
+  fn main() {
+      let book = Book { name: "Clean code" };
+  }
+#+end_src
 
-fn main() { let book = Book { name: "Clean code" };
-pass\_to\_reader(book); } Now, you got the ownership of my book. Put in
-other words, I can't interact with the book if you have it in your hand.
-I can't read, neither I can writte. struct Book { name: &str,\\
-}
+Now let say that I pass it to you so that you can read and write in it. 
 
-fn pass\_to\_reader(book: Book) { //read book //write in book }
+#+begin_src rust
+  struct Book {
+      name: &str,
+  }
 
-fn main() { let mut book = Book { name: "Clean code" };
-pass\_to\_reader(book); book.name = "The Tomb, a Lovecraft story";
-//this will fail as I do not have the book } But you can return the book
-pretty easily: struct Book { name: &str,\\
-}
+  fn pass_to_reader(book: Book) {
+      // read book
+      // write in book
+  }
 
-fn pass\_to\_reader(book: Book) -> Book { //read book //write in book
-book //the book is returned here. }
+  fn main() {
+      let book = Book { name: "Clean code" };
+      pass_to_reader(book);
+  }
+#+end_src
 
-fn main() { let mut book = Book { name: "Clean code" }; let mut book =
-pass\_to\_reader(book); // shadowing, lets keep that for another post,
-for now it just works book.name = "The Tomb, a Lovecraft story"; //this
-will work as the book as been returned. } This is the notion of
-ownership. To put it simply, it define who is responsible of what. In
-this example, the book is first passed to the function pass\_to\_reader
-which gain ownership of the book. At the end of the function, we return
-the book so that the main function regain ownership of it. Of course,
-this limit the interaction with the book. For exemple, what about
-several readers at the same time? "Ah, now you will finally speak about
-reference?" Yes, but to the ownership was a necessary step to understand
-the reference system. So, what is a refence? It is like if I was keeping
-the book in my hand, opened, so that you can read (or write) in it. In
-short, I keep the ownership of the book, but I let you read it. To
-express this, we will use the symbol &. struct Book { name: &str,\\
-}
+Now, you got the ownership of my book. Put in other words, I can't
+interact with the book if you have it in your hand.  I can't read,
+neither I can write.
 
-fn pass\_to\_reader(book: &Book) { //read book }
+#+begin_src rust
+  struct Book {
+      name: &str,
+  }
 
-fn main() { let mut book = Book { name: "Clean code" };
-pass\_to\_reader(&book); book.name = "The Tomb, a Lovecraft story";
-//this will work as main has kept the ownership of the book. } As you
-may have noticed, you can read but you can't write anymore. Lets fix
-that! struct Book { name: &str,\\
-}
+  fn pass_to_reader(book: Book) {
+      // read book
+      // write in book
+  }
 
-fn pass\_to\_reader(book: &mut Book) { //read book //write book }
+  fn main() {
+      let mut book = Book { name: "Clean code" };
+      pass_to_reader(book);
+      book.name = "The Tomb, a Lovecraft story";
+      // this will fail as I do not have the book
+  }
+#+end_src
 
-fn main() { let mut book = Book { name: "Clean code" };
-pass\_to\_reader(&mut book); book.name = "The Tomb, a Lovecraft story";
-//this will work as main has kept the ownership of the book. } Ok now,
-the reference is mutable, so you can write in the book. The mutable
-reference is like if, while holding the book, I gave you a pen to write
-in it. This system wome with several limitations. First the mutable
-reference can only exist on a mutable binding. Second, you can have only
-one mutable reference on a binding, this include immutable reference.
-This system of reference is called the borrowing as in "you borrow the
+But you can return the book pretty easily: 
+
+#+begin_src rust
+  struct Book {
+      name: &str,
+  }
+
+  fn pass_to_reader(book: Book) -> Book {
+      // read book
+      // write in book
+      book // the book is returned here.
+  }
+
+  fn main() {
+      let mut book = Book { name: "Clean code" };
+      // shadowing, lets keep that for another post, for now it just works
+      let mut book = pass_to_reader(book);
+      book.name = "The Tomb, a Lovecraft story";
+      // this will work as the book as been returned.
+  }
+#+end_src
+
+This is the notion of ownership. To put it simply, it define who is
+responsible of what. In this example, the book is first passed to the
+function =pass_to_reader= which gain ownership of the book. At the end of
+the function, we return the book so that the main function regain
+ownership of it. Of course, this limit the interaction with the
+book. For exemple, what about several readers at the same time? "Ah, now
+you will finally speak about reference?" Yes, but to the ownership was a
+necessary step to understand the reference system. So, what is a
+refence? It is like if I was keeping the book in my hand, opened, so
+that you can read (or write) in it. In short, I keep the ownership of
+the book, but I let you read it. To express this, we will use the symbol
+=&=.
+
+#+begin_src rust
+  struct Book {
+      name: &str,
+  }
+
+  fn pass_to_reader(book: &Book) {
+      // read book
+  }
+
+  fn main() {
+      let mut book = Book { name: "Clean code" };
+      pass_to_reader(&book);
+      book.name = "The Tomb, a Lovecraft story";
+      //this will work as main has kept the ownership of the book.
+  }
+
+#+end_src
+
+As youmay have noticed, you can read but you can't write anymore. Lets fix
+that! 
+
+#+begin_src rust
+  struct Book {
+      name: &str,
+  }
+
+  fn pass_to_reader(book: &mut Book) {
+      // read book
+      // write book
+  }
+
+  fn main() {
+      let mut book = Book { name: "Clean code" };
+      pass_to_reader(&mut book);
+      book.name = "The Tomb, a Lovecraft story";
+      // this will work as main has kept the ownership of the book.
+  }
+
+#+end_src
+
+Ok now, the reference is mutable, so you can write in the book. The
+mutable reference is like if, while holding the book, I gave you a pen
+to write in it. This system wome with several limitations. First the
+mutable reference can only exist on a mutable binding. Second, you can
+have only one mutable reference on a binding, this include immutable
+reference.
+
+This sysftem of reference is called the =borrowing= as in "you borrow the
 book". "Ok, and the lifetime in all that?" Lifetime is the third pillar
 of this system. It assert that one borrow cannot outlive the binding it
 is borrowed from. For example, let say that you borrow a book, which is
-compose of 100 pages. struct Page(&str); struct Book { name: &str,\\
-pages: [Pages], }
+compose of 100 pages. 
 
-fn pass\_to\_reader(book: &Book) -> &Page { //read book //return ref on
-a specific page &book.pages[50] }
+#+begin_src rust
+  struct Page(&str);
+  struct Book {
+      name: &str,
+      pages: [Page],
+  }
 
-fn main() { let mut pages = [Page("1"), ..., Page("100")]; // I ellisped
-the page 2 to 99... I'm not gonna write it all let mut book = Book {
-name: "Clean code", pages: pages}; let page = pass\_to\_reader(&book);
-book.name = "The Tomb, a Lovecraft story"; //this will work as main has
-kept the ownership of the book. println!("{}", page.0); } The problem
-here is that a page depends on the book. Therefore, the page cannot
-outlive the book. No book, no pages. The same apply to references: you
-can't have a reference outliving the book existance. So, you must
-express the lifetime of the page according to the book's one. struct
-Page(&str); struct Book { name: &str,\\
-pages: [Pages], }
+  fn pass_to_reader(book: &Book) -> &Page {
+      // read book
+      // return ref on a specific page
+      &book.pages[50]
+  }
 
-fn pass\_to\_reader(book: &'book Book) -> &'book Page { // we introduce
-the lifetime 'book here //read book //return ref on a specific page
-&book.pages[50] }
+  fn main() {
+      let mut pages = [
+          Page("1"), // ...,
+          Page("100"),
+      ];
+      // I ellisped the page 2 to 99... I'm not gonna write it all
+      let mut book = Book {
+          name: "Clean code",
+          pages: pages,
+      };
+      let page = pass_to_reader(&book);
+      book.name = "The Tomb, a Lovecraft story";
+      // this will work as main has kept the ownership of the book.
+      println!("{}", page.0);
+  }
+#+end_src
 
-fn main() { let mut pages = [Page("1"), ..., Page("100")]; // I ellisped
-the page 2 to 99... I'm not gonna write it all let mut book = Book {
-name: "Clean code", pages: pages}; let page = pass\_to\_reader(&book);
-book.name = "The Tomb, a Lovecraft story"; //this will work as main has
-kept the ownership of the book. println!("{}", page.0); } To express the
-lifetime here, we use the notation ' followed by the name of the
-lifetime. I may express here a crucial point, LIFETIMES ARE HARD TO DEAL
-WITH, so try to not use them to often. They are a powerful tool, and
-great power implies great responsabilities. That's all for today, but be
-aware we will come back to this and dig deeper into it. See you soon for
-another post about the wonderful world of Rust. -- Mathieu
+The problem here is that a page depends on the book. Therefore, the page
+cannot outlive the book. No book, no pages. The same apply to
+references: you can't have a reference outliving the book existance. So,
+you must express the lifetime of the page according to the book's
+one. 
+
+#+begin_src rust
+  struct Page(&str);
+  struct Book {
+      name: &str,
+      pages: [Pages],
+  }
+
+  fn pass_to_reader(book: &'book Book) -> &'book Page {
+      // we introducethe lifetime 'book here
+      // read book
+      // return ref on a specific page
+      &book.pages[50]
+  }
+
+  fn main() {
+      let mut pages = [
+          Page("1"), // ...,
+          Page("100"),
+      ];
+
+      // I ellisped the page 2 to 99... I'm not gonna write it all
+      let mut book = Book {
+          name: "Clean code",
+          pages: pages,
+      };
+      let page = pass_to_reader(&book);
+      book.name = "The Tomb, a Lovecraft story";
+
+      // this will work as main has kept the ownership of the book.
+      println!("{}", page.0);
+  }
+#+end_src
+
+To express the lifetime here, we use the notation ' followed by the name
+of the lifetime. I may express here a crucial point, LIFETIMES ARE HARD
+TO DEAL WITH, so try to not use them to often. They are a powerful tool,
+and great power implies great responsabilities.
+
+[...]
 
 https://www.mathieu-nivoliez.com/posts/2018-03-05-getting-started-with-rust-reference-and-lifetime.html

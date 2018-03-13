@@ -205,6 +205,7 @@ Searches for an element in an iterator, returning its index.
 In despair, I turned to IRC. A couple of people had
 some interesting suggestions, and we eventually settled on:
 
+#+begin_src rust
 fn generate_pattern(haystack: &str) -> Vec<u8> {
     let mut total = 0u8;
     let mut stack = [0u8; 128];
@@ -224,33 +225,36 @@ fn generate_pattern(haystack: &str) -> Vec<u8> {
     }
     pattern
 }
+#+end_src
 
-We started off with an array
-representing ASCII characters, all initialised to 0. If we saw a "new"
-byte, we bumped total by 1, and set that byte's entry to total's current
-value, before pushing it onto the pattern. Otherwise, it was an existing
-entry, and we simply pushed its value onto the pattern. But was it
-faster? 54 ns/iter (+/- 47) Good enough. If you really want to go down
-the rabbit-hole, this StackOverflow thread is probably a good place to
-start --- a cursory glance looks like 54 ns is good performance for the
-string above.
+We started off with an array representing ASCII characters, all
+initialised to 0. If we saw a "new" byte, we bumped total by 1, and set
+that byte's entry to total's current value, before pushing it onto the
+pattern. Otherwise, it was an existing entry, and we simply pushed its
+value onto the pattern. But was it Faster?
 
-- [[https://stackoverflow.com/questions/34365746/whats-the-fastest-way-to-convert-hex-to-integer-in-c][thread]]
+54 ns/iter (+/- 47) 
+
+Good enough. If you really want to go down the rabbit-hole, this
+StackOverflow thread is probably a good place to start --- a cursory
+glance looks like 54 ns is good performance for the string above.
+
+- [[https://stackoverflow.com/questions/34365746/whats-the-fastest-way-to-convert-hex-to-integer-in-c][thread - fastest way to convert hex to integers]]
 
 A final note: by checking for byte values greater than 127, gracefully
 exiting if we encounter one, the function performs some rudimentary
-error-handling. A more sophisticated approach might use get\_mut()
+error-handling. A more sophisticated approach might use =get_mut()=
 instead of indexing into the array, as it would return None (meaning a
 byte outside the ASCII uppercase range was encountered), and since
 Option can trivially be mapped to Result you could be even more flexible
 about handling unexpected input. 
 
-Frequency Counting 
+** Frequency Counting 
 
-Things became
-slightly more complicated at this point (but not that complicated, don't
+Things became more complicated at this point (but not that complicated, don't
 worry): 
 
+#+begin_src rust
 pub fn count_frequency(patterns: &[Vec<u8>]) -> u32 {
     let mut freq: HashMap<&[u8], u32> =
         HashMap::with_capacity(patterns.len());
@@ -263,35 +267,42 @@ pub fn count_frequency(patterns: &[Vec<u8>]) -> u32 {
         .fold(|| 0, |accum, entry| accum + entry.1)
         .sum()
 }
+#+end_src
 
-The function accepts a slice of the
-patterns, in case I wanted to use them for something afterwards, and
-then instantiates a new HashMap which has the same capacity as the
-slice, to avoid re-allocating. Next, I iterated over the slice, adding
-each pattern to the HashMap using its Entry API. This is a fast, compact
-way of updating values: if a pattern (key) exists, bump its value by 1.
-Otherwise, insert it as a new key. This is also one part of the program
-that couldn't be trivially parallelised: because the iterator needed
-mutable access to every key (I didn't know which one, if any, I'd need
-to update), it had to iterate sequentially --- even if I hadn't realised
-this, the compiler would have helped me out by refusing to mutably
-borrow freq in more than one place. Once I'd built the HashMap (which is
-in fact a frequency table), I needed to filter, then aggregate the
-results: filter its values, retaining only counts greater than 1 use a
-fold to accumulate the remaining values sum the result of the fold,
-giving me the final count. In theory, the final step shouldn't have been
-necessary, because fold should accumulate the values into a single
-result, but Rayon's fold is slightly different: it returns a Struct
-containing intermediate sums of the input sequence, which have been
-calculated in parallel. The number of these summed items and their
-sequence is non-deterministic, requiring us to specify a final sum(), in
-order to produce the count. The benchmark showed ~15 ms. I had no idea
-whether that was slow, but I did know that Rust's default SipHash
-algorithm isn't the fastest, because it's also intended to be robust
-against DoS attacks. In this case, that wasn't a concern, so I swapped
-in the HashMap from the Fnv crate. The Fowler-Noll-Vo algorithm yields
-better hashing performance for small integer keys. And the benchmark?
-10,001 ns/iter (+/- 500) I was now ready to actually run the program.
+The function accepts a slice of the patterns, in case I wanted to use
+them for something afterwards, and then instantiates a new HashMap which
+has the same capacity as the slice, to avoid re-allocating.
+
+Next, I iterated over the slice, adding each pattern to the HashMap
+using its Entry API. This is a fast, compact way of updating values:
+
+if a pattern (key) exists, bump its value by 1. Otherwise, insert it as
+a new key.
+
+This is also one part of the program that couldn't be trivially
+parallelised: because the iterator needed mutable access to every key (I
+didn't know which one, if any, I'd need to update), it had to iterate
+sequentially --- even if I hadn't realised this, the compiler would have
+helped me out by refusing to mutably borrow freq in more than one place.
+
+Once I'd built the HashMap (which is in fact a frequency table), I
+needed to filter, then aggregate the results: filter its values,
+retaining only counts greater than 1 use a fold to accumulate the
+remaining values sum the result of the fold, giving me the final count.
+
+In theory, the final step shouldn't have been necessary, because fold
+should accumulate the values into a single result, but Rayon's fold is
+slightly different: it returns a Struct containing intermediate sums of
+the input sequence, which have been calculated in parallel. The number
+of these summed items and their sequence is non-deterministic, requiring
+us to specify a final sum(), in order to produce the count. The
+benchmark showed ~15 ms. I had no idea whether that was slow, but I did
+know that Rust's default SipHash algorithm isn't the fastest, because
+it's also intended to be robust against DoS attacks. In this case, that
+wasn't a concern, so I swapped in the HashMap from the Fnv crate. The
+Fowler-Noll-Vo algorithm yields better hashing performance for small
+integer keys. And the benchmark?  10,001 ns/iter (+/- 500) I was now
+ready to actually run the program.
 
 - [[https://docs.rs/rayon/1.0.0/rayon/iter/trait.ParallelIterator.html#method.fold][fold]]
 - [[https://crates.io/crates/fnv][fnv]]
@@ -316,15 +327,15 @@ Jupyter notebook, pulled the results into a Pandas DataFrame, fitted a
 line using Statsmodels, and graphed the results using Matplotlib:
 
 This image is huge While I was using Python, I took the opportunity to
-write my comparison program: #!/usr/bin/env python # coding: utf-8 from
-sys import exit from collections import Counter
-
-#!/usr/bin/env python
-# coding: utf-8
-from sys import exit
-from collections import Counter
+write my comparison program: 
 
 #+begin_src python
+#!/usr/bin/env python 
+# coding: utf-8 
+
+from sys import exit 
+from collections import Counter
+
 def generate_patterns(haystack):
     """ Generate tuples of integers from ASCII uppercase strings """
     total = 0
@@ -354,8 +365,7 @@ if __name__ == "__main__":
     print("Number of friendly strings: %s" % friendly)
 #+end_src 
 
-Python
-has several features that make the program trivial to write: A context
+Python has several features that make the program trivial to write: A context
 manager closes the file when we finish reading from it We can iterate
 over one line at a time, generating its pattern Generators mean we don't
 have to worry about intermediate allocations The built-in Collections

@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::sync::mpsc;
 use std::time::Duration;
+use std::fmt;
 // use std::sync::mpsc::channel;
 
 #[derive(Debug)]
@@ -11,19 +12,76 @@ struct Transaction {
     txid: String,
 }
 
+impl fmt::Display for Transaction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Transaction\n - amount: {}\n - timestamp: {}\n - txID: {:?}",
+            self.amount, self.timestamp, self.txid
+        )
+    }
+}
+
+// Implementing display for:
+// std::sync::Mutex<std::vec::Vec<Transaction>>
+
+struct MVT<'a> (&'a Mutex<Vec<Transaction>>);
+
+trait MVTDisplay {
+    fn custom_display(&self) -> MVT;
+}
+
+impl MVTDisplay for Mutex<Vec<Transaction>> {
+    fn custom_display(&self) -> MVT {
+        MVT(self)
+    }
+}
+
+// https://doc.rust-lang.org/std/sync/struct.Mutex.html
+// use std::sync::{Arc, Mutex};
+// use std::thread;
+// let mutex = Arc::new(Mutex::new(0));
+// let c_mutex = mutex.clone();
+// thread::spawn(move || {
+//     let mut lock = c_mutex.try_lock();
+//     if let Ok(ref mut mutex) = lock {
+//         **mutex = 10;
+//     } else {
+//         println!("try_lock failed");
+//     }
+// }).join().expect("thread::spawn failed");
+// assert_eq!(*mutex.lock().unwrap(), 10);
+
+impl<'a> fmt::Display for MVT<'a> {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "MVTDisplay")
+    }
+}
+
 #[derive(Debug)]
 struct AccountMutex {
-    account_number: String,
+    acc_number: String,
     transactions: Mutex<Vec<Transaction>>,
-    acct_type: String,
+    acc_type: String,
+}
+
+impl fmt::Display for AccountMutex {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let trsxs: &Mutex<Vec<Transaction>> = &self.transactions;
+        write!(
+            f,
+            "Account (mutex implementation)\n - number: {}\n - type: {}\n - transactions: {}",
+            self.acc_number, self.acc_type, trsxs.custom_display()
+        )
+    }
 }
 
 impl AccountMutex {
     pub fn new(s: String) -> AccountMutex {
-        AccountMutex{
-            account_number: s,
+        AccountMutex {
+            acc_number: s,
             transactions: Mutex::new(vec![]),
-            acct_type: "mutexAccount".to_owned(),
+            acc_type: "mutexAccount".to_owned(),
         }
     }
 }
@@ -73,6 +131,7 @@ struct AccountChannel {
 
 fn mutex() {
     let my_savings = Arc::new(AccountMutex::new("0001".to_owned()));
+    // here we are cloning the Arc, not the AccountMutex.
     let feed_account = my_savings.clone();
     let mobile_account = my_savings.clone();
 
@@ -112,6 +171,8 @@ fn mutex() {
 
     file_feed.join().unwrap();
     mobile_feed.join().unwrap();
+
+    println!("mutating from bg threads:\n\n{}", my_savings);
 }
 
 fn channel() {
@@ -153,6 +214,9 @@ fn channel() {
     }
 }
 
+// rustc ./scripts/mutable_structs.rs -o target/mutable_structs
 fn main() {
-    println!("running some code")
+    println!("* mutable structures in shared context");
+    println!("** mutex access to account");
+    mutex();
 }

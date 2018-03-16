@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::sync::mpsc;
+use std::time::Duration;
 // use std::sync::mpsc::channel;
 
 #[derive(Debug)]
@@ -67,8 +68,11 @@ struct AccountChannel {
 // value produced by the child thread, or Err of the value given to a
 // call to panic! if the child panicked.
 
+// Struct std::time::Duration
+// https://doc.rust-lang.org/std/time/struct.Duration.html
+
 fn mutex() {
-    let my_savings = Arc::new(AccountMutex::new("0001"));
+    let my_savings = Arc::new(AccountMutex::new("0001".to_owned()));
     let feed_account = my_savings.clone();
     let mobile_account = my_savings.clone();
 
@@ -138,7 +142,7 @@ fn channel() {
     file_feed2.join().unwrap();
     mobile_feed2.join().unwrap();
 
-    let mut tl_savings = Account2 {
+    let mut tl_savings = AccountChannel {
         acct_type: "Savings".to_owned(),
         account_number: "0001".to_owned(),
         transactions: Vec::new(),

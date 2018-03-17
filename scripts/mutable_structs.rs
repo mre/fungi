@@ -52,9 +52,25 @@ impl MVTDisplay for Mutex<Vec<Transaction>> {
 // }).join().expect("thread::spawn failed");
 // assert_eq!(*mutex.lock().unwrap(), 10);
 
+// Struct std::sync::MutexGuard
+// https://doc.rust-lang.org/std/sync/struct.MutexGuard.html
+//
+// pub struct MutexGuard<'a, T: ?Sized + 'a> { /* fields omitted */ }
+//
+// An RAII implementation of a "scoped lock" of a mutex. When this
+// structure is dropped (falls out of scope), the lock will be unlocked.
+// The data protected by the mutex can be accessed through this guard
+// via its Deref and DerefMut implementations.  This structure is
+// created by the lock and try_lock methods on Mutex.
+
 impl<'a> fmt::Display for MVT<'a> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "MVTDisplay")
+        // guard: std::sync::MutexGuard<'_, std::vec::Vec<Transactions: Mutex<Vec<Transaction>>
+        // let guard = self.0.lock().unwrap();
+        // https://doc.rust-lang.org/std/macro.format.html
+        // let formatted = format!("{:?}", guard);
+        // write!(formatter, "{}", formatted)
+        write!(formatter, "{:?}", self.0)
     }
 }
 

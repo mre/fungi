@@ -1,0 +1,12 @@
+[package]
+name = "hyperserver"
+version = "0.1.0"
+authors = ["Edoardo Rossi <edd.rossi@gmail.com>"]
+
+[dependencies]
+# https://github.com/rust-lang-nursery/futures-rs
+futures = "0.1.14"
+# https://github.com/hyperium/hyper
+hyper = "0.11.2"
+# https://github.com/seanmonstar/pretty-env-logger
+pretty_env_logger = "0.2.2"

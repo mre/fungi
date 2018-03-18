@@ -140,17 +140,13 @@ impl VTDisplay for Vec<Transaction> {
     }
 }
 
-impl<'a>  fmt::Display for VTDisplay<'a> {
+impl<'a> fmt::Display for VT<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let ptrx: String = "".to_owned();
-        for t in self.iter() {
-            ptrx.push_str(&format!("{}", t))
+        let mut ptrx: String = "".to_owned();
+        for t in self.0.iter() {
+            ptrx.push_str(&format!(" - {}\n", t))
         }
-        write!(
-            f,
-            "Account (channel implementation)\n + number: {}\n + type: {}\n + transactions: {}",
-            self.acc_number, self.acc_type, ptrx,
-        )
+        write!(f, "{}", ptrx)
     }
 }
 
@@ -159,7 +155,9 @@ impl fmt::Display for AccountChannel {
         write!(
             f,
             "Account (channel implementation)\n + number: {}\n + type: {}\n + transactions: {}",
-            self.acc_number, self.acc_type, self.transactions.custom_display(),
+            self.acc_number,
+            self.acc_type,
+            self.transactions.custom_display(),
         )
     }
 }
@@ -275,8 +273,8 @@ fn channel() {
     mobile_feed2.join().unwrap();
 
     let mut tl_savings = AccountChannel {
-        acct_type: "Savings".to_owned(),
-        account_number: "0001".to_owned(),
+        acc_type: "Savings".to_owned(),
+        acc_number: "0001".to_owned(),
         transactions: Vec::new(),
     };
 
@@ -284,7 +282,7 @@ fn channel() {
         tl_savings.transactions.push(transaction);
     }
 
-    println!("transactions registered:\n\n{:?}", tl_savings);
+    println!("transactions registered:\n\n{}", tl_savings);
 }
 
 // rustc ./scripts/mutable_structs.rs -o target/mutable_structs

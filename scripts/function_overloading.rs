@@ -1,7 +1,5 @@
 // http://casualhacks.net/blog/2018-03-10/exploring-function-overloading/
 
-// The trait which defines the custom interface
-// Notice how the subject and argument are 'swapped'
 trait CustomFoo {
     fn custom_foo(self, this: &Foo);
 }
@@ -29,6 +27,12 @@ struct Foo(bool);
 impl Foo {
     // Make the function generic over the argument
     // Straight up dispatch into the trait for the custom implementation
+    //
+    // The trait which defines the custom interface
+    // Notice how the subject and argument are 'swapped'
+    //
+    // What we can see here is a "relation/mapping" between this `&self` and
+    // the `this: &Foo` in the signature of `CustomFoo.custom_foo`.
     fn foo<T: CustomFoo>(&self, arg: T) {
         arg.custom_foo(self);
     }

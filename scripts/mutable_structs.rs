@@ -25,7 +25,7 @@ impl fmt::Display for Transaction {
 // Implementing display for:
 // std::sync::Mutex<std::vec::Vec<Transaction>>
 
-struct MVT<'a> (&'a Mutex<Vec<Transaction>>);
+struct MVT<'a>(&'a Mutex<Vec<Transaction>>);
 
 trait MVTDisplay {
     fn custom_display(&self) -> MVT;
@@ -70,7 +70,24 @@ impl<'a> fmt::Display for MVT<'a> {
         // https://doc.rust-lang.org/std/macro.format.html
         // let formatted = format!("{:?}", guard);
         // write!(formatter, "{}", formatted)
-        write!(formatter, "{:?}", self.0)
+        // std::sync::Mutex<std::vec::Vec<Transaction>>
+        let mt: &std::sync::Mutex<std::vec::Vec<Transaction>> = self.0;
+
+        let trxs_prnt = match mt.lock() {
+            Ok(guard) => {
+                // let mut trxs_printable: String = "{} transactions registered:".to_owned();
+                let mut trxs_printable: String = "".to_owned();
+                trxs_printable.push_str(&format!("{} transactions registered:", guard.len()));
+                for x in guard.iter() {
+                    let trx = format!("\n - {}", x);
+                    trxs_printable.push_str(&trx);
+                };
+                trxs_printable
+            },
+            // Err(poisoned) => poisoned.into_inner(),
+            Err(_) => "cannot read the transactions now".to_owned(),
+        };
+        write!(formatter, "{}", trxs_prnt)
     }
 }
 
@@ -86,8 +103,10 @@ impl fmt::Display for AccountMutex {
         let trsxs: &Mutex<Vec<Transaction>> = &self.transactions;
         write!(
             f,
-            "Account (mutex implementation)\n - number: {}\n - type: {}\n - transactions: {}",
-            self.acc_number, self.acc_type, trsxs.custom_display()
+            "Account (mutex implementation)\n + number: {}\n + type: {}\n + transactions: {}",
+            self.acc_number,
+            self.acc_type,
+            trsxs.custom_display()
         )
     }
 }

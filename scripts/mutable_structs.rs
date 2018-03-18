@@ -81,9 +81,9 @@ impl<'a> fmt::Display for MVT<'a> {
                 for x in guard.iter() {
                     let trx = format!("\n - {}", x);
                     trxs_printable.push_str(&trx);
-                };
+                }
                 trxs_printable
-            },
+            }
             // Err(poisoned) => poisoned.into_inner(),
             Err(_) => "cannot read the transactions now".to_owned(),
         };
@@ -123,9 +123,45 @@ impl AccountMutex {
 
 #[derive(Debug)]
 struct AccountChannel {
-    account_number: String,
+    acc_number: String,
     transactions: Vec<Transaction>,
-    acct_type: String,
+    acc_type: String,
+}
+
+struct VT<'a>(&'a Vec<Transaction>);
+
+trait VTDisplay {
+    fn custom_display(&self) -> VT;
+}
+
+impl VTDisplay for Vec<Transaction> {
+    fn custom_display(&self) -> VT {
+        VT(self)
+    }
+}
+
+impl<'a>  fmt::Display for VTDisplay<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let ptrx: String = "".to_owned();
+        for t in self.iter() {
+            ptrx.push_str(&format!("{}", t))
+        }
+        write!(
+            f,
+            "Account (channel implementation)\n + number: {}\n + type: {}\n + transactions: {}",
+            self.acc_number, self.acc_type, ptrx,
+        )
+    }
+}
+
+impl fmt::Display for AccountChannel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Account (channel implementation)\n + number: {}\n + type: {}\n + transactions: {}",
+            self.acc_number, self.acc_type, self.transactions.custom_display(),
+        )
+    }
 }
 
 // Using Threads to Run Code Simultaneously
@@ -247,6 +283,8 @@ fn channel() {
     for transaction in rx {
         tl_savings.transactions.push(transaction);
     }
+
+    println!("transactions registered:\n\n{:?}", tl_savings);
 }
 
 // rustc ./scripts/mutable_structs.rs -o target/mutable_structs
@@ -254,4 +292,6 @@ fn main() {
     println!("* mutable structures in shared context");
     println!("** mutex access to account");
     mutex();
+    println!("** channeled access to account");
+    channel();
 }

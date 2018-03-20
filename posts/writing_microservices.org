@@ -338,158 +338,224 @@ we'll be re-using that later on:
       debug!("{:?}", response);
       futures::future::ok(response)
   }
-
 #+end_src
 
-The response construction is
-quite similar to the previous function, however this time we have to set
-the HTTP status of the response to StatusCode::InternalServerError
-(status 500). The default is OK (200), so we didn't have to set the
-status earlier.
+The response construction is quite similar to the previous function,
+however this time we have to set the HTTP status of the response to
+=StatusCode::InternalServerError= (status 500). The default is =OK= (200),
+so we didn't have to set the status earlier.
 
-Accepting GET Requests
+** Accepting GET Requests
 
-Next, let's move on to GET requests, which will be sent to our server to
+Next, let's move on to =GET= requests, which will be sent to our server to
 fetch messages. The request is allowed to have two query arguments,
-before and after, both timestamps to constrain the messages fetched
-according to their timestamp, and both optional. If neither before nor
-after are present, we will return only the last message.
+=before= and =after=, both =timestamps= to constrain the messages fetched
+according to their =timestamp=, and both optional. If neither =before= nor
+=after= are present, we will return only the last message.
 
-Below is the code for the match arm handling GET requests. It's slightly
+Below is the code for the match arm handling =GET= requests. It's slightly
 more logic than before:
 
-(&Get, "/") => { let time_range = match request.query() { Some(query)
-=> parse_query(query), None => Ok(TimeRange { before: None, after:
-None, }), }; let response = match time_range { Ok(time_range) =>
-make_get_response(query_db(time_range)), Err(error) =>
-make_error_response(&error), }; Box::new(response) } By calling
-request.query(), we get an Option<&str>, since a URI may not have a
-query string at all. If it is present, we call parse_query, which
+#+begin_src rust
+  (&Get, "/") => { 
+      let time_range = match request.query() { 
+          Some(query) => parse_query(query), 
+          None => Ok(TimeRange { 
+              before: None, 
+              after:  None, 
+          }), 
+      }; 
+      let response = match time_range { 
+           Ok(time_range) => make_get_response(query_db(time_range)), 
+           Err(error) => make_error_response(&error), 
+      }; 
+      Box::new(response) 
+  }
+#+end_src
+
+By calling =request.query()=, we get an =Option<&str>=, since a URI may not
+have a query string at all. If it is present, we call =parse_query=, which
 parses the query arguments and returns a TimeRange struct, defined as
 
-struct TimeRange { before: Option, after: Option, } Since both before
-and after arguments are optional, we make both Options in the TimeRange
-struct. Further, the timestamps may be invalid (e.g. not numeric), so we
-have to deal with the case where parsing their values fails. In such a
-case, parse_query will return an error message, which we can forward to
-the make_error_response function we wrote earlier. Otherwise, we can
-go on to call query_db, which will fetch the messages for us, and
-make_get_response, which creates an appropriate Response object to
-return back to the client.
+#+begin_src rust
+  struct TimeRange {
+      before: Option,
+      after: Option,
+  }
+#+end_src
 
-To parse the query string, we again use the url::form_urlencoded
+Since both =before= and =after= arguments are optional, we make both =Options=
+in the =TimeRange= struct. Further, the timestamps may be invalid
+(e.g. not numeric), so we have to deal with the case where parsing their
+values fails. In such a case, =parse_query= will return an error message,
+which we can forward to the =make_error_response= function we wrote
+earlier. Otherwise, we can go on to call =query_db=, which will fetch the
+messages for us, and =make_get_response=, which creates an appropriate
+=Response= object to return back to the client.
+
+To parse the query string, we again use the =url::form_urlencoded=
 function from earlier, since the syntax is still key=value&key=value. We
-then try to fetch the before and after values and convert them to
+then try to fetch the =before= and =after= values and convert them to
 integers (timestamps):
 
-fn parse_query(query: &str) -> Result<TimeRange, String> { let args =
-url::form_urlencoded::parse(&query.as_bytes()) .into_owned()
-.collect::<HashMap<String, String>>();
+#+begin_src rust
+  fn parse_query(query: &str) -> Result<TimeRange, String> {
+      let args = url::form_urlencoded::parse(&query.as_bytes())
+          .into_owned()
+          .collect::<HashMap<String, String>>();
 
-#+BEGIN_EXAMPLE
-    let before = args.get("before").map(|value| value.parse::<i64>());
-    if let Some(ref result) = before {
-        if let Err(ref error) = *result {
-            return Err(format!("Error parsing 'before': {}", error));
-        }
-    }
+      let before = args.get("before").map(|value| value.parse::<i64>());
+      if let Some(ref result) = before {
+          if let Err(ref error) = *result {
+              return Err(format!("Error parsing 'before': {}", error));
+          }
+      }
 
-    let after = args.get("after").map(|value| value.parse::<i64>());
-    if let Some(ref result) = after {
-        if let Err(ref error) = *result {
-            return Err(format!("Error parsing 'after': {}", error));
-        }
-    }
+      let after = args.get("after").map(|value| value.parse::<i64>());
+      if let Some(ref result) = after {
+          if let Err(ref error) = *result {
+              return Err(format!("Error parsing 'after': {}", error));
+          }
+      }
 
-    Ok(TimeRange {
-        before: before.map(|b| b.unwrap()),
-        after: after.map(|a| a.unwrap()),
-    })
-#+END_EXAMPLE
+      Ok(TimeRange {
+          before: before.map(|b| b.unwrap()),
+          after: after.map(|a| a.unwrap()),
+      })
+  }
+#+end_src
 
-} The code for this is unfortunately slightly clunky and repetitive, but
+The code for this is unfortunately slightly clunky and repetitive, but
 is hard to make much nicer in this case without added complexity.
-Essentially, we try to get the before and after fields from the form,
-and if they are there, we attempt to parse them as i64. One thing I
-would have wished for here is to be able to combine multiple if let
+Essentially, we try to get the =before= and =after= fields from the form,
+and if they are there, we attempt to parse them as =i64=. One thing I
+would have wished for here is to be able to combine multiple =if let=
 statements, so we could write:
 
-if let Some(ref result) = before && let Err(ref error) = *result {
-return Err(format!("Error parsing 'before': {}", error)); } However,
-this is not currently possible in Rust (you can have multiple values in
-if let statements by packing them in tuples, but not if the values
-depend on each other, like here).
+#+begin_src rust
+  if let Some(ref result) = before && let Err(ref error) = *result {
+      return Err(format!("Error parsing 'before': {}", error)); 
+  }
+#+end_src 
 
-Skipping over query_db for now, make_get_response looks fairly
+However, this is not currently possible in Rust (you can have multiple
+values in if let statements by packing them in tuples, but not if the
+values depend on each other, like here).
+
+Skipping over =query_db= for now, =make_get_response= looks fairly
 simple:
 
-fn make_get_response( messages: Option<Vec>, ) ->
-FutureResult<hyper::Response, hyper::Error> { let response = match
-messages { Some(messages) => { let body = render_page(messages);
-Response::new() .with_header(ContentLength(body.len() as u64))
-.with_body(body) } None =>
-Response::new().with_status(StatusCode::InternalServerError), };
-debug!("{:?}", response); futures::future::ok(response) } If the
-messages option contains a value, we can pass the messages on to
-render_page, which will return an HTML page that forms the body of our
-response, showing the messages in a simple HTML list. If the option is
-empty, an error occurred in query_db, which we'll log but not expose to
-the user, so we just return a response with status code 500. I'll cover
-the implementation of render_page in the section on templating.
+#+begin_src rust
+  fn make_get_response(messages: Option<Vec>) -> FutureResult<hyper::Response, hyper::Error> {
+      let response = match messages {
+          Some(messages) => {
+              let body = render_page(messages);
+              Response::new()
+                  .with_header(ContentLength(body.len() as u64))
+                  .with_body(body)
+          }
+          None => Response::new().with_status(StatusCode::InternalServerError),
+      };
+      debug!("{:?}", response);
+      futures::future::ok(response)
+  }
+#+end_src
 
-Connecting to a Database
+If the messages option contains a value, we can pass the messages on to
+=render_page=, which will return an HTML page that forms the body of our
+response, showing the messages in a simple HTML list. If the option is
+empty, an error occurred in =query_db=, which we'll log but not expose to
+the user, so we just return a =response= with status code 500. I'll cover
+the implementation of =render_page= in the section on templating.
+
+** Connecting to a Database
 
 Now that we have paths for both writing and reading in our service, we
 need to tie the ends together with a database to write to and read from.
 Rust has a very nice and popular object relational model (ORM) library
-called diesel, which is very fun and intuitive to work with. Add it to
-your Cargo.toml and enable the postgres feature, since we'll be using
+called =diesel=, which is very fun and intuitive to work with. Add it to
+your =Cargo.toml= and enable the =postgres= feature, since we'll be using
 Postgres for this tutorial:
 
-diesel = { version = "1.0.0", features = ["postgres"] } Please make sure
-you have Postgres installed on your machine and are able to log in with
-psql (as a basic sanity check). Diesel also supports other DBMSs like
-MySQL, in case you want to try those out after this tutorial.
+#+begin_example
+diesel = { version = "1.0.0", features = ["postgres"] } 
+#+end_example
+
+Please make sure you have Postgres installed on your machine and are
+able to log in with psql (as a basic sanity check). Diesel also supports
+other DBMSs like MySQL, in case you want to try those out after this
+tutorial.
 
 Let's begin by creating a database schema for our application. We'll
 drop it in schemas/messages.sql:
 
-CREATE TABLE messages ( id SERIAL PRIMARY KEY, username VARCHAR(128) NOT
-NULL, message TEXT NOT NULL, timestamp BIGINT NOT NULL DEFAULT
-EXTRACT('epoch' FROM CURRENT_TIMESTAMP) ) Each row in our table stores
-a message, represented by a monotonically incrementing ID, the username
-of the author, the message text and finally a timestamp. The default
-value of the timestamp specified above will insert the current seconds
-since the epoch for every new entry. Since the id column is also
-auto-incrementing, we'll ultimately only have to insert the username and
-message for each new row.
+#+begin_src sql
+CREATE TABLE messages (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(128) NOT NULL, 
+  message TEXT NOT NULL, 
+  timestamp BIGINT NOT NULL DEFAULT EXTRACT('epoch' FROM CURRENT_TIMESTAMP) 
+) 
+#+end_src
+
+Each row in our table stores a message, represented by a monotonically
+incrementing ID, the username of the author, the message text and
+finally a timestamp. The default value of the timestamp specified above
+will insert the current seconds since the epoch for every new
+entry. Since the id column is also auto-incrementing, we'll ultimately
+only have to insert the username and message for each new row.
 
 We now have to integrate this table with Diesel. For this, you'll need
-to install the Diesel CLI with cargo install diesel_cli. Then, you can
+to install the Diesel CLI with =cargo install diesel_cli=. Then, you can
 run the following command:
 
-$ export DATABASE_URL=postgres://:@localhost $ diesel print-schema |
-tee src/schema.rs table! { messages (id) { id -> Int4, username ->
-Varchar, message -> Text, timestamp -> Int8, } } where : are your
-database's username and password. If your database doesn't have a
-password, the user will suffice. The latter command shows us the
-representation of our database in Rust, which we also store in
-src/schema.rs. The table! macro comes from Diesel. Besides the schema,
-Diesel also requires us to write a model. This we have to write
-ourselves, in src/models.rs:
+#+begin_example
+$ export DATABASE_URL=postgres://:@localhost 
+$ diesel print-schema | tee src/schema.rs 
+table! {
+    messages (id) {
+        id -> Int4,
+        username -> Varchar,
+        message -> Text,
+        timestamp -> Int8,
+    }
+}
+#+end_example
 
-#[derive(Queryable, Serialize, Debug)] pub struct Message { pub id: i32,
-pub username: String, pub message: String, pub timestamp: i64, } This
-model is the Rust struct we interact with in our code. To do so, we need
-to add a few declarations to our main module:
+where =<user>:<password>= are your database's username and password. If
+your database doesn't have a password, the user will suffice. The latter
+command shows us the representation of our database in Rust, which we
+also store in src/schema.rs. The table! macro comes from Diesel. Besides
+the schema, Diesel also requires us to write a model. This we have to
+write ourselves, in src/models.rs:
 
-#[macro_use] extern crate serde_derive; #[macro_use] extern crate
-diesel;
+#+begin_src rust
+#[derive(Queryable, Serialize, Debug)]
+pub struct Message {
+    pub id: i32,
+    pub username: String,
+    pub message: String,
+    pub timestamp: i64,
+}
+#+end_src
 
-mod schema; mod models; At this point, we are ready to fill in the
-functions write_to_db and query_db that we left out earlier.
+This model is the Rust struct we interact with in our code. To do so, we
+need to add a few declarations to our main module:
 
-Writing to the Database
+#+begin_src rust
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate diesel;
+
+mod schema;
+mod models;
+#+end_src
+
+At this point, we are ready to fill in the functions =write_to_db= and
+=query_db= that we left out earlier.
+
+** Writing to the Database
 
 We'll begin with write_to_db, which should simply write an entry into
 the database and return its creation timestamp:

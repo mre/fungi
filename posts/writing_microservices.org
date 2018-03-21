@@ -4,6 +4,7 @@
   :END:
 
 Jan 20, 2018 Peter Goldsborough
+http://www.goldsborough.me/rust/web/tutorial/2018/01/20/17-01-11-writing_a_microservice_in_rust/
 
 Let me begin this article on Writing a Microservice in Rust by talking
 about C++. I've been a reasonably active member of the C++ community for

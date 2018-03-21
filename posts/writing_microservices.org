@@ -759,7 +759,7 @@ like > or = are methods on the model structs, like =.gt()= or =.eq()=.
 ** Rendering HTML Templates
 
 We're very close! All that's left at this point is to write
-render_page, which we left out earlier. For this, we'll want to use a
+=render_page=, which we left out earlier. For this, we'll want to use a
 templating library. Templating, in the context of web servers, is the
 general concept of creating an HTML page with dynamic data and control
 flow. Popular templating libraries in other languages are Handlebars in
@@ -771,111 +771,86 @@ like Jinja is in Python. This makes picking one of the hard, since you
 never know if it will turn into abandonware 6 months down the road.
 
 Nevertheless, for this tutorial, we'll use a templating library called
-maud. Albeit not be the most scalable option for a real-world
-application, maud is interesting and clever, allowing us to write HTML
+=maud=. Albeit not be the most scalable option for a real-world
+application, =maud= is interesting and clever, allowing us to write HTML
 templates directly in Rust, using natural control flow. If anything,
-maud shows off the power of Rust macros. That said, maud will require a
-nightly build of Rust to enable the procedural macro feature, which is
+=maud= shows off the power of Rust macros. That said, =maud= will require a
+nightly build of Rust to enable the /procedural macro/ feature, which is
 close to being stable, it seems.
 
-First, add maud to your Cargo.toml:
+First, add =maud= to your =Cargo.toml=:
 
-[dependencies] maud = "0.17.2" Then, add the following declarations to
-the top of your main.rs:
+#+begin_src rust
+[dependencies] 
+maud = "0.17.2" 
+#+end_src
 
-#[feature(proc_macro)] extern crate maud; Now, we can write
-render_page:
+Then, add the following declarations to the top of your =main.rs=:
 
-fn render_page(messages: Vec) -> String { (html! { head { title
-"microservice" style "body { font-family: monospace }" } body { ul {
-@for message in &messages { li { (message.username) " ("
-(message.timestamp) "):" (message.message) } } } } }).into_string() }
+#+begin_src rust
+#[feature(proc_macro)] extern crate maud; 
+#+end_src
+
+Now, we can write =render_page=:
+
+#+begin_src rust
+fn render_page(messages: Vec<Message>) -> String {
+    (html! {
+        head {
+            title "microservice"
+            style "body { font-family: monospace }"
+        }
+        body {
+            ul {
+                @for message in &messages {
+                    li {
+                        (message.username) " (" (message.timestamp) "): " (message.message)
+                    }
+                }
+            }
+        }
+    }).into_string()
+}
+#+end_src
+
 mind = blown? Yes, somewhat. Just let that sink in for a bit. Breathe in
 deeply. Exhale. You're writing an HTML page using a Rust macro. Damn.
 
 And that's it! Our microservice is complete. And micro it is. Let's run
 it:
 
-$ DATABASE_URL="postgresql://goldsborough@localhost"
-RUST_LOG="microservice=debug" cargo run Compiling microservice v0.1.0
-(file:///Users/goldsborough/Documents/Rust/microservice) Finished dev
-[unoptimized + debuginfo] target(s) in 12.30 secs Running
-=target/debug/microservice= INFO 2018-01-22T01:22:16Z: microservice:
-Running microservice at 127.0.0.1:8080 and then in another terminal:
+#+begin_example
+$ DATABASE_URL="postgresql://goldsborough@localhost" RUST_LOG="microservice=debug" cargo run
+Compiling microservice v0.1.0 (file:///Users/goldsborough/Documents/Rust/microservice)
+ Finished dev [unoptimized + debuginfo] target(s) in 12.30 secs
+  Running `target/debug/microservice`
+INFO 2018-01-22T01:22:16Z: microservice: Running microservice at 127.0.0.1:8080
+#+end_example
 
+and then in another terminal:
+
+#+begin_example
 $ curl -X POST -d 'username=peter&message=hi' 'localhost:8080'
-{"timestamp":1516584255} $ curl -X POST -d 'username=mike&message=hi2'
-'localhost:8080' {"timestamp":1516584282} In the first, you should see
-the debug logs:
+{"timestamp":1516584255} 
+$ curl -X POST -d 'username=mike&message=hi2' 'localhost:8080' 
+{"timestamp":1516584282} 
+#+end_example
 
-... DEBUG 2018-01-22T01:24:14Z: microservice: Request { method: Post,
-uri: "/", version: Http11, remote_addr: Some(V4(127.0.0.1:64869)),
-headers: {"Host": "localhost:8080", "User-Agent": "curl/7.54.0",
-"Accept": "///", "Content-Length": "25", "Content-Type":
-"application/x-www-form-urlencoded"} } DEBUG 2018-01-22T01:24:14Z:
-microservice: Response { status: Ok, version: Http11, headers:
-{"Content-Length": "24", "Content-Type": "application/json"} } ... Now,
-let's GET some messages:
+In the first, you should see the debug logs:
 
+#+begin_src
+...
+DEBUG 2018-01-22T01:24:14Z: microservice: Request { method: Post, uri: "/", version: Http11, remote_addr: Some(V4(127.0.0.1:64869)), headers: {"Host": "localhost:8080", "User-Agent": "curl/7.54.0", "Accept": "*/*", "Content-Length": "25", "Content-Type": "application/x-www-form-urlencoded"} }
+DEBUG 2018-01-22T01:24:14Z: microservice: Response { status: Ok, version: Http11, headers: {"Content-Length": "24", "Content-Type": "application/json"} }
+...
+#+end_src
+
+Now, let's GET some messages:
+
+#+begin_example
 $ curl 'localhost:8080'
-
-#+BEGIN_HTML
-  <head>
-#+END_HTML
-
-#+BEGIN_HTML
-  <title>
-#+END_HTML
-
-microservice
-
-#+BEGIN_HTML
-  </title>
-#+END_HTML
-
-#+BEGIN_HTML
-  <style>body { font-family: monospace }</style>
-#+END_HTML
-
-#+BEGIN_HTML
-  </head>
-#+END_HTML
-
-#+BEGIN_HTML
-  <body>
-#+END_HTML
-
-#+BEGIN_HTML
-  <ul>
-#+END_HTML
-
-#+BEGIN_HTML
-  <li>
-#+END_HTML
-
-peter (1516584255): hi
-
-#+BEGIN_HTML
-  </li>
-#+END_HTML
-
-#+BEGIN_HTML
-  <li>
-#+END_HTML
-
-mike (1516584282): hi2
-
-#+BEGIN_HTML
-  </li>
-#+END_HTML
-
-#+BEGIN_HTML
-  </ul>
-#+END_HTML
-
-#+BEGIN_HTML
-  </body>
-#+END_HTML
+<head><title>microservice</title><style>body { font-family: monospace }</style></head><body><ul><li>peter (1516584255): hi</li><li>mike (1516584282): hi2</li></ul></body>
+#+end_example
 
 or, if you navigate your web browser to http://localhost:8080:
 
@@ -884,66 +859,97 @@ screenshot
 You can also try adding ?after=&before= to the query URL and verify that
 you only get messages in the specified time range.
 
-Packaging with Docker
+** Packaging with Docker
 
 I'll talk very briefly about how to package this application in a Docker
 container. This doesn't have anything to do with Rust per-se, but it's
 useful to know about relevant Docker containers to base yours on.
 
 There are two official Docker images maintained by the Rust developers:
-one for stable and one for nightly Rust. The stable Rust image is simply
-rust and the nightly one is rust-lang/rust:nightly. Basing our container
+one for =stable= and one for =nightly= Rust. The stable Rust image is simply
+rust and the nightly one is =rust-lang/rust:nightly=. Basing our container
 on one of these is very simple. We'll want to base ours on the nightly
 image. Make the content of your Dockerfile look like this:
 
-FROM rustlang/rust:nightly MAINTAINER [[mailto:your@email][your@email]]
+#+begin_src dockerfile
+FROM rustlang/rust:nightly 
+MAINTAINER [[mailto:your@email][your@email]]
 
-WORKDIR /var/www/microservice/ COPY . .
+WORKDIR /var/www/microservice/ 
+COPY . .
 
-RUN rustc --version RUN cargo install
+RUN rustc --version 
+RUN cargo install
 
-CMD ["microservice"] We'll run the Postgres database in a separate
-Docker container, as is typical of a microservice architecture. Make
-this Dockerfile-db:
+CMD ["microservice"] 
+#+end_src
 
-FROM postgres MAINTAINER [[mailto:your@email][your@email]]
+We'll run the Postgres database in a separate Docker container, as is
+typical of a microservice architecture. Make this Dockerfile-db:
 
-* Create the table on start-up
-  :PROPERTIES:
-  :CUSTOM_ID: create-the-table-on-start-up
-  :END:
+#+begin_src dockerfile
+FROM postgres 
+MAINTAINER [[mailto:your@email][your@email]]
 
-ADD schemas/messages.sql /docker-entrypoint-initdb.d/ And tie things
-together with a docker-compose.yaml:
+# Create the table on start-up
 
-version: '2' services: server: build: context: . dockerfile:
-docker/Dockerfile networks: - network ports: - "8080:80" environment:
-DATABASE_URL: postgresql://postgres:secret@db:5432 RUST_BACKTRACE: 1
-RUST_LOG: microservice=debug db: build: context: . dockerfile:
-docker/Dockerfile-db restart: always networks: - network environment:
-POSTGRES_PASSWORD: secret
+ADD schemas/messages.sql /docker-entrypoint-initdb.d/ 
+#+end_src
 
-networks: network: This file is a bit more involved, but once it's
-written, the rest is a breeze. Note that I place both Dockerfiles into a
-docker/ folder. Now, simply run docker-compose up:
+And tie things together with a =docker-compose.yaml=:
 
-$ docker-compose up Recreating microservice_db_1 ... Recreating
-microservice_server_1 ... done Attaching to microservice_db_1,
-microservice_server_1 server_1 | INFO 2018-01-22T01:38:57Z:
-microservice: Running microservice at 127.0.0.1:8080 db_1 | 2018-01-22
-01:38:57.886 UTC [1] LOG: listening on IPv4 address "0.0.0.0", port 5432
-db_1 | 2018-01-22 01:38:57.886 UTC [1] LOG: listening on IPv6 address
-"::", port 5432 db_1 | 2018-01-22 01:38:57.891 UTC [1] LOG: listening
-on Unix socket "/var/run/postgresql/.s.PGSQL.5432" db_1 | 2018-01-22
-01:38:57.917 UTC [20] LOG: database system was shut down at 2018-01-22
-00:10:07 UTC db_1 | 2018-01-22 01:38:57.939 UTC [1] LOG: database
-system is ready to accept connections This will look different for you
-the first time you run it, of course. Anyway, that's all there is to it.
-You could now push this into a GitHub repo, drop it on a (free) AWS or
-Google Cloud instance, and access your service from the outside world.
-Wooh!
+#+begin_src yaml
+version: '2'
+services:
+  server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    networks:
+      - network
+    ports:
+       - "8080:80"
+    environment:
+      DATABASE_URL: postgresql://postgres:secret@db:5432
+      RUST_BACKTRACE: 1
+      RUST_LOG: microservice=debug
+  db:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile-db
+    restart: always
+    networks:
+      - network
+    environment:
+      POSTGRES_PASSWORD: secret
 
-Epilogue
+networks:
+  network:
+#+end_src
+
+This file is a bit more involved, but once it's written, the rest is a
+breeze. Note that I place both Dockerfiles into a docker/ folder. Now,
+simply run =docker-compose up=:
+
+#+begin_example
+$ docker-compose up
+Recreating microservice_db_1 ...
+Recreating microservice_server_1 ... done
+Attaching to microservice_db_1, microservice_server_1
+server_1  |  INFO 2018-01-22T01:38:57Z: microservice: Running microservice at 127.0.0.1:8080
+db_1      | 2018-01-22 01:38:57.886 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+db_1      | 2018-01-22 01:38:57.886 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+db_1      | 2018-01-22 01:38:57.891 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+db_1      | 2018-01-22 01:38:57.917 UTC [20] LOG:  database system was shut down at 2018-01-22 00:10:07 UTC
+db_1      | 2018-01-22 01:38:57.939 UTC [1] LOG:  database system is ready to accept connections
+#+end_example
+
+This will look different for you the first time you run it, of
+course. Anyway, that's all there is to it.  You could now push this into
+a GitHub repo, drop it on a (free) AWS or Google Cloud instance, and
+access your service from the outside world. Wooh!
+
+** Epilogue
 
 Pieced together, the above snippets of code make up around 270 lines
 necessary to create our full-fledged microservice in Rust. I'm not
@@ -954,162 +960,38 @@ Nevertheless, I believe taking this route and going slightly lower level
 with Hyper gave you some nice insights into how you can leverage Rust to
 write a safe and performant webservice.
 
-I wrote this blog post to share the knowledge I picked up while learning
-about Rust and applying my knowledge to a small url-shortening
-webservice that I use to shorten URLs for my blog (which, if you take a
-look at your browser's URL bar, are quite long). Coming out of this, I
-feel like I now have a solid appreciation for the features Rust brings
-along, and where it is more expressive and safe or less expressive (but
-not less safe) to work with compared to modern C++.
+[...]
 
-I feel like it may take another few years for Rust's ecosystem to
-stabilize and go-to, stable and well-maintained packages to establish
-themselves for the majority of tasks. Nevertheless, the prospects are
-promising. Facebook is already investigating the use of Rust for a new
-Mercurial server which would host its codebase. And more and more people
-are looking at Rust as an interesting option for embedded programming.
-I'll be watching the development of the language closely, meaning I
-subscribed to the r/Rust subreddit.
-
-Peter Goldsborough Fix the World
-
-Related Posts
-
-A Promenade of PyTorch A brief discussion of a research-first deep
-learning framework
-
-Convolutions with cuDNN Implementing computer vision's most crucial
-operation with NVIDIA's cuDNN library
-
-Exploring K-Means in Python, C++ and CUDA Implementations of K-Means in
-three different environments
-
-My Facebook Internship Living the wonders of the Facelife
-
-A Sweeping Tour of TensorFlow A ten minute read to get you up to scratch
-on the TensorFlow API
-
-A Mathematical Thought on Learning What differentiates a strong learner
-from a weak learner?
-
-Emitting Diagnostics in Clang I explain thow to plug into the available
-infrastructure for diagnostics and fixit hints for custom clang tools.
-
-My Google Internship Thoughts on my experiences, insights, hardships and
-successes at Google.
-
-Disassembling Python Bytecode Insight into Python bytecode disassembly
-with the dis module.
-
-The LD_PRELOAD trick Using LD_PRELOAD and the dynamic linker for
-hidden code injection.
-
-[Log] {index: 0, text: "Writing a Microservice in Rust -- Peter
-Goldsborough", link:
-"http://www.goldsborough.me/rust/web/tutorial/2018/01/20/17-01-11-writing_a_microservice_in_rust/"}
-[Log] {index: 1, text: "About", link:
-"http://www.goldsborough.me/about/"} [Log] {index: 2, text: "Contact",
-link: "http://www.goldsborough.me/contact/"} [Log] {index: 3, text:
-"CV", link: "http://www.goldsborough.me/cv/"} [Log] {index: 4, text:
-"contributing talks", link:
-"https://www.youtube.com/watch?v=E6i8jmiy8MY"} [Log] {index: 5, text:
-"large body of knowledge", link:
-"http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/n4659.pdf"}
-[Log] {index: 6, text: "Go", link: "https://golang.org/"} [Log] {index:
-7, text: "Rust", link: "https://www.rust-lang.org/en-US/"} [Log] {index:
-8, text: "Crystal", link: "https://crystal-lang.org/"} [Log] {index: 9,
-text: "Rob Pike found himself", link:
-"https://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html"}
-[Log] {index: 10, text: "URL↵shortener", link:
-"https://github.com/goldsborough/psag.cc"} [Log] {index: 11, text: "on
-GitHub", link: "http://github.com/goldsborough/microservice-rs"} [Log]
-{index: 12, text: "Flask", link: "http://flask.pocoo.org/"} [Log]
-{index: 13, text: "Django", link: "https://www.djangoproject.com/"}
-[Log] {index: 14, text: "hyper", link: "https://hyper.rs/"} [Log]
-{index: 15, text: "tokio", link: "https://tokio.rs/"} [Log] {index: 16,
-text: "futures", link: "https://github.com/alexcrichton/futures-rs"}
-[Log] {index: 17, text: "log", link: "https://docs.rs/log/0.4.1/log/"}
-[Log] {index: 18, text: "env-logger", link:
-"https://docs.rs/crate/env_logger/0.5.2"} [Log] {index: 19, text:
-"diesel", link: "http://diesel.rs/"} [Log] {index: 20, text: "Postgres",
-link: "https://postgresql.org/"} [Log] {index: 21, text: "r2d2", link:
-"https://github.com/diesel-rs/r2d2-diesel"} [Log] {index: 22, text:
-"Handlebars", link: "http://handlebarsjs.com/"} [Log] {index: 23, text:
-"Jinja", link: "http://jinja.pocoo.org/"} [Log] {index: 24, text: "Rust
-port↵of Handlebars", link: "https://github.com/sunng87/handlebars-rust"}
-[Log] {index: 25, text: "url-shortening project", link:
-"http://github.com/goldsborough/psag.cc"} [Log] {index: 26, text:
-"not↵fantastic", link: "http://www.arewewebyet.org/topics/templating/"}
-[Log] {index: 27, text: "maud", link: "http://maud.lambda.xyz/"} [Log]
-{index: 28, text: "close to being stable,↵it seems", link:
-"https://github.com/rust-lang/rust/issues/38356"} [Log] {index: 29,
-text: "rust", link: “https://hub.docker.com/_/rust/"} [Log] {index: 30,
-text:"rust-lang/rust:nightly",
-link:"https://hub.docker.com/r/rustlang/rust/"} [Log] {index: 31,
-text:"docker-compose.yaml", link:"https://docs.docker.com/compose/"}
-[Log] {index: 32, text:"AWS", link:"https://aws.amazon.com/free/"} [Log]
-{index: 33, text:"Google↵Cloud", link:"https://cloud.google.com/free/"}
-[Log] {index: 34, text:"Rocket", link:"https://rocket.rs/"} [Log]
-{index: 35, text:"url-shortening webservice",
-link:"http://github.com/goldsborough/psag.cc"} [Log] {index: 36,
-text:"Mercurial server",
-link:"https://www.theregister.co.uk/2016/10/18/facebook_mercurial_devs_forget_git/"}
-[Log] {index: 37, text:"",
-link:"http://www.tumblr.com/share/link?url=http://www.go...rust/&name=Writing%20a%20Microservice%20in%20Rust"}
-[Log] {index: 38, text:"",
-link:"http://reddit.com/submit?url=http://www.goldsborou...ust/&title=Writing%20a%20Microservice%20in%20Rust"}
-[Log] {index: 39, text:"",
-link:"http://www.stumbleupon.com/submit?url=http://www.g...ust/&title=Writing%20a%20Microservice%20in%20Rust"}
-[Log] {index: 40, text:"",
-link:"https://news.ycombinator.com/submitlink?u=http://w...in_rust/&t=Writing%20a%20Microservice%20in%20Rust"}
-[Log] {index: 41, text:"",
-link:"https://facebook.com/sharer.php?u=http://www.golds...18/01/20/17-01-11-writing_a_microservice_in_rust/"}
-[Log] {index: 42, text:"",
-link:"https://twitter.com/intent/tweet?text=Writing%20a%...18/01/20/17-01-11-writing_a_microservice_in_rust/"}
-[Log] {index: 43, text:"",
-link:"https://plus.google.com/share?url=http://www.golds...18/01/20/17-01-11-writing_a_microservice_in_rust/"}
-[Log] {index: 44, text:"",
-link:"http://www.linkedin.com/shareArticle?url=http://ww...ust/&title=Writing%20a%20Microservice%20in%20Rust"}
-[Log] {index: 45, text:"↵ A Promenade of PyTorch↵ A brief discussion of
-a research-first deep learning framework↵ ",
-link:"http://www.goldsborough.me/ml/ai/python/2018/02/04/20-17-20-a_promenade_of_pytorch/"}
-[Log] {index: 46, text:"↵ Convolutions with cuDNN↵ Implementing
-comp...ucial operation with NVIDIA's cuDNN library↵ ",
-link:"http://www.goldsborough.me/cuda/ml/cudnn/c++/2017/10/01/14-37-23-convolutions_with_cudnn/"}
-[Log] {index: 47, text:"↵ Exploring K-Means in Python, C++ and CUDA↵ ...
-of K-Means in three different environments↵ ",
-link:"http://www.goldsborough.me/c++/python/cuda/2017/09...-32-46-exploring_k-means_in_python,/c++/and_cuda/"}
-[Log] {index: 48, text:"↵ My Facebook Internship↵ Living the wonders of
-the Facelife↵ ",
-link:"http://www.goldsborough.me/internship/facebook/2017/08/13/23-31-54-my_facebook_internship/"}
-[Log] {index: 49, text:"↵ A Sweeping Tour of TensorFlow↵ A ten
-minut...get you up to scratch on the TensorFlow API↵ ",
-link:"http://www.goldsborough.me/tensorflow/ml/ai/python...017/06/28/20-21-45-a_sweeping_tour_of_tensorflow/"}
-[Log] {index: 50, text:"↵ A Mathematical Thought on Learning↵ What
-d...iates a strong learner from a weak learner?↵ ",
-link:"http://www.goldsborough.me/learning/2017/04/09/23-24-16-a_mathematical_thought_on_learning/"}
-[Log] {index: 51, text:"↵ Emitting Diagnostics in Clang↵ I explain
-t...ics and fixit hints for custom clang tools.↵ ",
-link:"http://www.goldsborough.me/c++/clang/llvm/tools/20...itting_diagnostics_and_fixithints_in_clang_tools/"}
-[Log] {index: 52, text:"↵ My Google Internship↵ Thoughts on my
-exper...nsights, hardships and successes at Google.↵ ",
-link:"http://www.goldsborough.me/google/internship/2016/11/18/01-57-54-my_google_internship//"}
-[Log] {index: 53, text:"↵ Disassembling Python Bytecode↵ Insight int...n
-bytecode disassembly with the dis module.↵ ",
-link:"http://www.goldsborough.me/python/low-level/2016/10/04/00-31-30-disassembling_python_bytecode/"}
-[Log] {index: 54, text:"↵ The LD_PRELOAD trick↵ Using LD_PRELOAD
-and...e dynamic linker for hidden code injection.↵ ",
-link:"http://www.goldsborough.me/c/low-level/kernel/2016/08/29/16-48-53-the/-ld_preload-_trick/"}
-[Log] {index: 55, text:"",
-link:"https://stackoverflow.com/users/1810440"} [Log] {index: 56,
-text:"", link:"https://twitter.com/pegoldsborough"} [Log] {index: 57,
-text:"", link:"https://github.com/goldsborough"} [Log] {index: 58,
-text:"", link:"mailto:peter@goldsborough.me"} [Log] {index: 59, text:"",
-link:"https://www.linkedin.com/in/petergoldsborough"} [Log] {index: 60,
-text:"",
-link:"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=SGAMY6ME8YMSC"}
-[Log] {index: 61, text:"", link:"http://www.goldsborough.me/feed.xml"}
-[Log] {index: 62, text:"pixyll",
-link:"https://github.com/johnotander/pixyll"} [Log] {index: 63,
-text:"John Otander", link:"http://johnotander.com/"} [Log] {index: 64,
-text:"HN source", link:"https://news.ycombinator.com/item?id=16542579“}
+- 4, text: "contributing talks", link: "https://www.youtube.com/watch?v=E6i8jmiy8MY"
+- 5, text: "large body of knowledge", link: "http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/n4659.pdf"
+- 6, text: "Go", link: "https://golang.org/"
+- 7, text: "Rust", link: "https://www.rust-lang.org/en-US/"
+- 8, text: "Crystal", link: "https://crystal-lang.org/"
+- 9, text: "Rob Pike found himself", link: "https://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html"
+- 10, text: "URL shortener", link: "https://github.com/goldsborough/psag.cc"
+- 11, text: "on GitHub", link: "http://github.com/goldsborough/microservice-rs"
+- 12, text: "Flask", link: "http://flask.pocoo.org/"
+- 13, text: "Django", link: "https://www.djangoproject.com/"
+- 14, text: "hyper", link: "https://hyper.rs/"
+- 15, text: "tokio", link: "https://tokio.rs/"
+- 16, text: "futures", link: "https://github.com/alexcrichton/futures-rs"
+- 17, text: "log", link: "https://docs.rs/log/0.4.1/log/"
+- 18, text: "env-logger", link: "https://docs.rs/crate/env_logger/0.5.2"
+- 19, text: "diesel", link: "http://diesel.rs/"
+- 20, text: "Postgres", link: "https://postgresql.org/"
+- 21, text: "r2d2", link: "https://github.com/diesel-rs/r2d2-diesel"
+- 22, text: "Handlebars", link: "http://handlebarsjs.com/"
+- 23, text: "Jinja", link: "http://jinja.pocoo.org/"
+- 24, text: "Rust port↵of Handlebars", link: "https://github.com/sunng87/handlebars-rust"
+- 25, text: "url-shortening project", link: "http://github.com/goldsborough/psag.cc"
+- 26, text: "not fantastic", link: "http://www.arewewebyet.org/topics/templating/"
+- 27, text: "maud", link: "http://maud.lambda.xyz/"
+- 28, text: "close to being stable,↵it seems", link: "https://github.com/rust-lang/rust/issues/38356"
+- 29, text: "rust", link: "https://hub.docker.com/_/rust/"
+- 30, text: "rust-lang/rust:nightly", link: "https://hub.docker.com/r/rustlang/rust/"
+- 31, text: "docker-compose.yaml", link: "https://docs.docker.com/compose/"
+- 32, text: "AWS", link: "https://aws.amazon.com/free/"
+- 33, text: "Google Cloud", link: "https://cloud.google.com/free/"
+- 34, text: "Rocket", link: "https://rocket.rs/"
+- 35, text: "url-shortening webservice", link: "http://github.com/goldsborough/psag.cc"
+ 

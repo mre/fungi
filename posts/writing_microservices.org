@@ -712,30 +712,51 @@ as you need it.
 
 We can now write new messages into the database -- that's awesome. Next,
 we'll want to figure out how to read them back out by querying the
-database appropriately. Let's implement query_db:
+database appropriately. Let's implement =query_db=:
 
-fn query_db(time_range: TimeRange, db_connection: &PgConnection) ->
-Option<Vec> { use schema::messages; let TimeRange { before, after } =
-time_range; let query_result = match (before, after) { (Some(before),
-Some(after)) => { messages::table .filter(messages::timestamp.lt(before
-as i64)) .filter(messages::timestamp.gt(after as i64))
-.load::(db_connection) } (Some(before), /) => { messages::table
-.filter(messages::timestamp.lt(before as i64)) .load::(db_connection) }
-(/, Some(after)) => { messages::table
-.filter(messages::timestamp.gt(after as i64)) .load::(db_connection) }
-_ => messages::table.load::(db_connection), }; match query_result {
-Ok(result) => Some(result), Err(error) => { error!("Error querying DB:
-{}", error); None } } } The code for this is unfortunately slightly
-complex. This is because both before and after are Options, and Diesel
-does not currently provide an easy way to gradually build up a query. So
-we have to exhaustively check if before or after are Some or None and
-perform zero to two filters each time. The querying itself, however, is
-once more simple and intutitive. Since where is a keyword in Rust, the
-WHERE clause from SQL is implemented with the filter method in Diesel.
-Relational operators like > or = are methods on the model structs, like
-.gt() or .eq().
+#+begin_src rust
+fn query_db(time_range: TimeRange, db_connection: &PgConnection) -> Option<Vec<Message>> {
+    use schema::messages;
+    let TimeRange { before, after } = time_range;
+    let query_result = match (before, after) {
+        (Some(before), Some(after)) => {
+            messages::table
+                .filter(messages::timestamp.lt(before as i64))
+                .filter(messages::timestamp.gt(after as i64))
+                .load::<Message>(db_connection)
+        }
+        (Some(before), _) => {
+            messages::table
+                .filter(messages::timestamp.lt(before as i64))
+                .load::<Message>(db_connection)
+        }
+        (_, Some(after)) => {
+            messages::table
+                .filter(messages::timestamp.gt(after as i64))
+                .load::<Message>(db_connection)
+        }
+        _ => messages::table.load::<Message>(db_connection),
+    };
+    match query_result {
+        Ok(result) => Some(result),
+        Err(error) => {
+            error!("Error querying DB: {}", error);
+            None
+        }
+    }
+}
+#+end_src
 
-Rendering HTML Templates
+The code for this is unfortunately slightly complex. This is because
+both =before= and =after= are =Options=, and Diesel does not currently provide
+an easy way to gradually build up a query. So we have to exhaustively
+check if before or after are =Some= or =None= and perform zero to two
+filters each time. The querying itself, however, is once more simple and
+intutitive. Since =where= is a keyword in Rust, the =WHERE= clause from =SQL=
+is implemented with the =filter= method in Diesel. Relational operators
+like > or = are methods on the model structs, like =.gt()= or =.eq()=.
+
+** Rendering HTML Templates
 
 We're very close! All that's left at this point is to write
 render_page, which we left out earlier. For this, we'll want to use a

@@ -1,6 +1,19 @@
+use std::fs::File;
 use std::io::prelude::*;
 use std::net::TcpListener;
 use std::net::TcpStream;
+
+// HTTP request format:
+//
+// Method Request-URI HTTP-Version CRLF
+// headers CRLF
+// message-body
+//
+// HTTP response format:
+//
+// HTTP-Version Status-Code Reason-Phrase CRLF
+// headers CRLF
+// message-body
 
 fn main() {
     let r = TcpListener::bind("127.0.0.1:8080");
@@ -11,7 +24,7 @@ fn main() {
                 Ok(stream) => {
                     println!("Connection established!");
                     handle_connection(stream);
-                },
+                }
                 Err(error) => panic!("a stream was just refused: {:?}", error),
             };
         },
@@ -23,5 +36,11 @@ fn handle_connection(mut stream: TcpStream) {
     let mut buffer = [0; 512];
     stream.read(&mut buffer).unwrap();
     // The String::from_utf8_lossy function takes a &[u8] and produces a String.
-    println!("request: {}", String::from_utf8_lossy(&buffer[..]));
+    // println!("request: {}", String::from_utf8_lossy(&buffer[..]));
+    let mut file = File::open("templates/hello.html").unwrap();
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).unwrap();
+    let response = format!("HTTP/1.1 200 OK\r\n\r\n{}", contents);
+    stream.write(response.as_bytes()).unwrap();
+    stream.flush().unwrap();
 }

@@ -4,6 +4,9 @@
 //! - https://doc.rust-lang.org/book/second-edition/ch20-01-single-threaded.html
 //! - https://doc.rust-lang.org/book/second-edition/ch20-02-slow-requests.html
 
+extern crate hello;
+use hello::ThreadPool;
+
 use std::fs::File;
 use std::io::prelude::*;
 use std::net::TcpListener;

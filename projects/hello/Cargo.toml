@@ -1,7 +1,8 @@
 [package]
 name = "hello"
 version = "0.1.0"
-authors = ["Edoardo Rossi <edd.rossi@gmail.com>"]
+authors = ["Edoardo Rossi <edoardo.eddie.rossi@icloud.com>"]
 
 [dependencies]
-log = "0.4"
+log = "0.4.0"
+env_logger = "0.5.6"

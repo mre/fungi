@@ -37,6 +37,7 @@ const BASE_URL: &'static str = "127.0.0.1:8080";
 // RUST_LOG=hello cargo run
 fn main() {
     let r = TcpListener::bind(BASE_URL);
+    let pool = ThreadPool::new(4);
     env_logger::Builder::from_default_env()
         .default_format_timestamp(true)
         .init();
@@ -50,8 +51,10 @@ fn main() {
             let r_stream = stream;
             let _r_tream = match r_stream {
                 Ok(stream) => {
-                    println!("Connection established!");
-                    handle_connection(stream);
+                    pool.execute(|| {
+                        println!("Connection established!");
+                        handle_connection(stream);
+                    });
                 }
                 Err(error) => panic!("a stream was just refused: {:?}", error),
             };

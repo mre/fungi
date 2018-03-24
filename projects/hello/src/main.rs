@@ -17,6 +17,8 @@ extern crate log;
 extern crate env_logger;
 
 use log::Level;
+use std::thread;
+use std::time::Duration;
 
 // HTTP request format:
 //
@@ -38,11 +40,11 @@ fn main() {
     env_logger::Builder::from_default_env()
         .default_format_timestamp(true)
         .init();
-    
+
     if log_enabled!(Level::Info) {
         info!("server binded to {}", BASE_URL);
     }
-    
+
     let _r = match r {
         Ok(listener) => for stream in listener.incoming() {
             let r_stream = stream;
@@ -64,16 +66,20 @@ fn handle_connection(mut stream: TcpStream) {
     // The String::from_utf8_lossy function takes a &[u8] and produces a String.
     // println!("request: {}", String::from_utf8_lossy(&buffer[..]));
     let get = b"GET / HTTP/1.1\r\n";
+    let sleep = b"GET /sleep HTTP/1.1\r\n";
 
     let (status_line, filename) = if buffer.starts_with(get) {
         ("HTTP/1.1 200 OK\r\n\r\n", "templates/hello.html")
+    } else if buffer.starts_with(sleep) {
+        thread::sleep(Duration::from_secs(5));
+        ("HTTP/1.1 200 OK\r\n\r\n", "hello.html")
     } else {
         ("HTTP/1.1 404 NOT FOUND\r\n\r\n", "templates/404.html")
     };
 
     let mut file = match File::open(filename) {
         Ok(file) => file,
-        Err(error) => panic!("There was a problem opening the file: {:?}", error)
+        Err(error) => panic!("There was a problem opening the file: {:?}", error),
     };
     let mut contents = String::new();
 

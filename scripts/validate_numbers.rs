@@ -1,3 +1,6 @@
+/// Trying & failing to make a simple generic function to validate numbers
+/// https://users.rust-lang.org/t/trying-failing-to-make-a-simple-generic-function-to-validate-numbers/16387
+
 #[macro_use]
 extern crate error_chain;
 extern crate num;

@@ -1,0 +1,14 @@
+[package]
+name = "futurez"
+version = "0.1.0"
+authors = ["Edoardo Rossi <edoardo.eddie.rossi@icloud.com>"]
+
+[dependencies]
+# https://github.com/tokio-rs/website/blob/master/content/docs/getting-started/futures.md
+# https://docs.rs/futures/0.2.0-beta/futures/prelude/trait.Future.html
+# https://docs.rs/futures
+# https://github.com/rust-lang-nursery/futures-rs
+futures = "0.1.19"
+# https://doc.rust-lang.org/rand/rand/index.html
+# https://github.com/rust-lang-nursery/rand
+rand = "0.4"

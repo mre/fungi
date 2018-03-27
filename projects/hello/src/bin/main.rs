@@ -3,6 +3,8 @@
 //! - https://doc.rust-lang.org/book/second-edition/ch20-00-final-project-a-web-server.html
 //! - https://doc.rust-lang.org/book/second-edition/ch20-01-single-threaded.html
 //! - https://doc.rust-lang.org/book/second-edition/ch20-02-slow-requests.html
+//! - https://doc.rust-lang.org/book/second-edition/ch20-03-designing-the-interface.html
+//! - https://doc.rust-lang.org/book/second-edition/ch20-04-storing-threads.html
 
 extern crate hello;
 use hello::ThreadPool;

@@ -1,0 +1,593 @@
+* Abstract return types, aka `impl Trait`
+
+_11 JANUARY 2016 on Mozilla, Rust_
+
+There has been an idea around for a long time that we should allow
+functions to specify bounds on their return types, rather than give a
+concrete type. This has many benefits - better abstraction, less messy
+signatures, and so forth.
+
+A function can take an argument by value or reference by choosing
+between generics and trait objects. This leads to either static or
+dynamic dispatch, the former at the cost of monomorphising the
+function. However, this doesn't work for return types, since the callee,
+not the caller decides on the concrete type. Therefore, the function
+must return a concrete type or a trait object, there is no generic, by
+value option.
+
+This blog post by Aaron Turon and RFC PRs 105 and 1305 provide more
+background, and some design ideas.
+
+I wanted to explore some of the details, and especially how we might
+consider such types in type-theoretic terms. I'm mostly going to explore
+an approach which could be considered a compromise between the inference
+and abstract type ideas from Aaron's blog, erring more on the side of
+abstract types. I believe Aaron has been pondering a similar approach,
+but I'm not sure if we agree on the details.
+
+I thought I'd make an RFC out of this, but in the end, it doesn't seem
+different enough from existing proposals to warrant it. Still, I thought
+some of my observations might be useful.
+
+** General idea
+
+The general idea is simple: you write =impl T= as the return type for a
+function, where =T= is a trait (=impl T= is strawman syntax, but I don't
+want to get in to syntax issues here). This means that the function
+returns some implementation of =T=. The caller must treat the returned
+value as just an instance of some implicit type variable =X= where =X: T=.
+
+Although the type is only bounded, there must be just one concrete
+type. If there are data types =A= and =B=, both of which implement =T=, and
+function foo has the return type =impl T=. It is not OK for foo to return
+=A= in one branch and =B= in another, the programmer must choose one data
+type and return a value of that type in all branches.
+
+An interesting design choice is whether the programmer must declare this
+concrete type or whether it is inferred. Some kind of inference is
+preferable, since part of the motivation is dealing with types which are
+painful to write (iterators) or impossible to write (closures).
+
+To see why we must only return one type, consider the caller: 
+=let x = foo();=. The compiler must be able to reserve enough room on the stack
+for =x=, for which it needs to know at code generation time the exact size
+of the value returned from =foo=. Part of the motivation here is to avoid
+trait objects, so we want to store =x= by value, not as a pointer. If =foo=
+could return different types depending on the branch taken at runtime,
+the compiler can't know the size of =x=. (We also need to know the type to
+be able to look up methods called on =x=, so even if =A= and =B= have the same
+sizes, we can't allow =foo= to return both).
+
+** Functions vs trait methods
+
+It is worth making a distinction between using =impl Type= with functions
+and with trait methods. With trait methods there are some extra
+issues. If we declare a trait method to have =impl Type= as a return type,
+we would like each implementation to be able to return a different
+concrete type.
+
+Furthermore, in the presence of specialisation, we would like
+specialised implementations to be able to return different concrete
+types. Part of the motivation for this is to support use cases which
+could be handled by specialising associated types, however, it is not
+clear how specialising associated types should work - none of the
+options are particularly attractive (see discussion for more
+details). My favoured option is not to support it at all. So having impl
+Trait as an alternative would be useful.
+
+So, in the trait method case, although we want each function to return
+only one concrete type, we want each implementation of a method
+signature to be able to return different concrete types. That is
+selecting the concrete type happens when we implement a method, not when
+we declare it.
+
+** How to formalise
+
+In working out the details for =impl Trait= it would be useful to have an
+idea of a formal representation (a lowering into a core Rust
+language). There seem two choices: either =existential types= or
+=associated types=.
+
+The idea that we must pick a single concrete type (witness) and hide it
+with an abstract type known only by its bounds immediately suggests
+existential types. One could imagine =impl T= as something like 
+=exists<X: T>.X= (as we'll see below, this is not quite right).
+
+On the other hand, considering trait methods, there is an approach using
+associated types. This is attractive because associated types already
+exist in Rust (as opposed to existential types) and because it has the
+obviously correct behaviour when considering different impls of a trait.
+
+So a trait =Foo= with method =foo= returning =impl T= would be represented as:
+
+#+begin_src rust
+trait Foo {  
+    type X: T;
+    fn foo(&self) -> Self::X;
+}
+
+impl Foo {  
+    type X = ConcreteType;
+    fn foo(&self) -> Self::X { ... }
+}
+#+end_src
+
+However, the downside of this approach is that it does not extend to
+free functions. It also has a problem with specialisation - if we want
+to forbid specialising associated types, then we cannot return a
+different type from methods in specialised implementations.
+
+(Niko has proposed treating =impl Trait= as a group of a function and an
+associated type, where specialising one means specialising the
+other. This seems so close to re-inventing existential types to me that
+I think it is profitable to investigate a pure existential types
+approach).
+
+Therefore, let us consider an existential type-like approach. I'm not
+actually proposing adding such a type to Rust, only using it as a tool
+for understanding (and possibly implementation).
+
+RFC PR 1305 actually proposes adding something like this to Rust. Since
+the goal is different (a programming language feature rather than a tool
+for formalisation), the approaches are a bit different.
+
+** An existential type
+
+Let's start with some syntax: we'll make the universal quantification in
+function signatures explicit using =for<X: T*>.Sig=. So a function in Rust
+=fn foo<X: Clone>(x: &X)= is written =fn foo for<X: Clone>.(x: &X)=. 
+Likewise, we'll allow existential quantification using 
+=exists<X: T*>=.
+
+A function with an impl Trait return type, e.g., =fn foo() -> impl Clone=
+is written =fn foo exists<X: Clone>.() -> X=. Note that the quantification
+is outside the whole signature, not just around the return type.
+
+In a generic function we want to be able to use the function's type
+parameters in the impl Trait return type, so any universal
+quantification must come before the existential quantification. E.g., 
+=fn foo<X>() -> impl Iterator<X>= is written 
+=fn foo for<X>.exists<Y: Iterator<X>>.() -> Y=.
+
+So far, the extension to trait methods is trivial.
+
+Existential types are introduced using a pack expression and eliminated
+using an unpack expression. The syntax of these is =pack (T, e)= as
+=exists<X: B*>.U= (where =e= is the expression being packed, =T= is the
+witness type that will be hidden by =X= and =B*= are bounds on =X=) and unpack
+=e as (X, x) in e'= (where e is the expression being unpacked, =e'= is the
+scope of the unpacking, =x= is a variable with scope =e'= with type =X=(also
+with scope =e'=, and with bounds from the type of =e=)). (If you're
+interested, the type rules and semantics for existential types are
+standard and can be found online or in a textbook, I recommend TaPL by
+Pierce).
+
+I propose that packing can only take place on functions and occurs where
+the function is implemented. I.e., in a pack expression, e must always
+be an entire function.
+
+An existential function must be unpacked before it can be called. The
+scope of the unpack expression must include any uses of the value
+returned from the function. Since we do not support packing arbitrary
+expressions, the only way to take the returned value out of the scope is
+to make it into a trait object (which are, fundamentally, also
+existential types, but of a different flavour).
+
+In real Rust, packing is implicit, and the witness type of pack
+expressions and the scope of unpack expressions would be inferred by the
+compiler. We make them explicit in this formal model.
+
+For example, consider the Rust functions
+
+#+begin_example
+fn foo() -> impl Clone {  
+    Bar::new()  // : Bar, where Bar: Clone
+}
+
+fn main() {  
+    let x: impl Clone = foo();
+    ...
+    let y: &Clone = &x;
+    ...
+}
+#+end_example
+
+These would be encoded as
+
+#+begin_example
+fn foo exists<X: Clone>.() -> X =  
+    pack (Bar, fn() -> Bar { // Note hand-waving anon function syntax
+        Bar::new()
+    }) as exists<X: Clone>.Fn_4a5f() -> X;
+    // Note, using Fn_4a5f to mean an anonymous function type.
+
+fn main() {  
+    let y: &Clone = unpack foo() as (Z, z) in {
+        let x: Z  = z;
+        ...
+        &x
+    };
+    ...
+}
+#+end_example
+
+So far, this is a pretty standard use of existential types. Rust has an
+additional requirement that often complicates such formal treatments
+though - we must be able to statically know the types (and sizes) of all
+values. (Trait objects are an escape hatch here, but not relevant to
+this case).
+
+In formal terms, I believe this constraint can be thought of as: all
+unpack expressions can be eliminated after monomorphisation. I.e., we
+allow applying the pack/'unpack' reduction rule during code generation
+(after monomorphisation). After which there must be no remaining unpack
+expressions. My conjecture is that we can choose rules for the use of
+impl Trait such that this is true for any program that type checks.
+
+That reduction rule looks like
+
+#+begin_example
+unpack (pack (T, e) as exists<Y: B*>.U) as (X, x) in e'  
+---->
+[e/x, T/X]e'
+#+end_example
+
+For this to work, we must suppose that monomorphisation 'inline's the
+pack expression from an existential function. That seems like a
+reasonable counterpart to monomorphisation of universally quantified
+functions.
+
+Continuing the above example, after monomorphisation our main function
+looks like
+
+#+begin_example
+fn main() {  
+    let y: &Clone = unpack
+      (pack (Bar, foo'()) as exists<X: Clone>.Fn_4a5f() -> X)
+      as (Z, z) in {
+
+        let x: Z = z;
+        ...
+        &x
+    };
+    ...
+}
+#+end_example
+
+I'm using foo' as shorthand for the inner function in the declaration of
+foo. This is analogous to the monomophised version of a generic
+function, but in this case there is no need to actually generate
+monomorphised code, the 'generic' code is exactly what is needed.
+
+Then after applying the reduction rule:
+
+#+begin_example
+fn main() {  
+    let y: &Clone = {
+        let x: Bar = foo'();
+        ...
+        &x
+    };
+    ...
+}
+#+end_example
+
+No unpacks left - means we statically know the types we require. Also
+note that the call foo'() is just the call foo().
+
+Finally, lets look at first-class functions, we could write let f =
+&foo; to get a function pointer to foo, if foo is defined as above, what
+is the type? And where does unpacking happen?
+
+Rust does not allow generic function types and functions must be
+explicitly monomorphised before we can reference them, e.g., let f =
+bar::<String>;. The rules for existential quantification should follow:
+function types may not include existential quantifiers and the function
+must be unpacked before we take a reference. So, let f = &foo; is more
+explicitly thought of as
+
+#+begin_example
+unpack foo as (Z, z) in {  
+    let f = &z; // f: &Z, where Z: Clone (from the signature of foo)
+}
+#+end_example
+
+Note that just because we have made a function pointer, does not mean
+that f can escape the scope of the unpack, we must use f within that
+scope only. We can pass it to a higher-order function with a signature
+like
+
+#+begin_example
+fn bar<F, Y>(f: &F)  
+    where F: Fn() -> Y,
+          Y: Clone
+{
+    ...
+}
+#+end_example
+
+A more flexible alternative would be to allow existentially quantified
+function types. In the surface syntax we would allow Fn() -> impl Clone
+as a type. In the formal model, let f = &foo; is unchanged, and f has
+type &exists<X: Clone>.Fn() -> X. We must then unpack f before it is
+called:
+
+#+begin_example
+// let x = f(); becomes
+unpack f as (Z, z) in { // z: &Fn() -> Z  
+    let x = z(); // x: Z
+}
+#+end_example
+
+Clearly, x cannot escape the scope of this unpack. Note there is a
+little hand-waving here around the reference type - I silently moved the
+& inside the quantifier before unpacking.
+
+However, if f is an argument to a function, then even after
+monomorphising, we cannot eliminate the unpack - we have no
+corresponding pack expression to eliminate it with. So this fails our
+test for how existentials can be used. At a less theoretical level, this
+also makes sense - how can we know the type and size of z when f is
+known only by its type? Thus, we must take the earlier approach.
+
+** Trait methods, trait objects, and object safety
+
+So far, we've only considered free functions, but trait methods follow
+quite easily - a method declaration has the existential type you would
+expect, but no packing. Any implementation must have the same type and
+must include a pack. Default methods must also pack, but this is part of
+the default body, not the signature.
+
+When calling a trait method, if we have the static type of the receiver
+(i.e., calling using UFCS or method call syntax on an object with
+concrete type) then calling is exactly the same as for free functions.
+
+Where the receiver is generic things work, but are a little more
+complicated. Time for another example:
+
+#+begin_example
+trait Foo {  
+    fn foo(&self) -> impl Clone;
+}
+
+impl Foo for A {  
+    fn foo(&self) -> impl Clone {
+        ...
+    }
+}
+
+fn bar<X: Foo>(x: X) {  
+    let a = x.foo(); // a: impl Clone
+    let _b = a.clone();
+}
+#+end_example
+
+which is encoded as
+
+#+begin_example
+trait Foo {  
+    fn foo exists<X: Clone>.(&self) -> X;
+}
+
+impl Foo for A {  
+    fn foo exists<X: Clone>.(&self) -> X = pack (Bar, {
+        fn(&self) -> Bar {
+            ...
+        }
+    }) as exists<X: Clone>.(&Self) -> X
+}
+
+fn bar<X: Foo>(x: X) {  
+    unpack X::foo as (Z, z) in { // Z: Clone, z: Fn(&X) -> Z
+        let a = z(x); // a: Z
+        let _b = a.clone();
+    }
+}
+#+end_example
+
+And when we monomorphise the universal quantification of bar,
+substituting A we get
+
+: fn bar(x: A) {  
+:     unpack <A as Foo>::foo as (Z, z) in { // Z: Clone, z: Fn(&A) -> Z
+:         let a = z(x); // a: Z
+:         let _b = a.clone();
+:     }
+: }
+
+And then monomorphising the existential quantification
+
+: fn bar(x: A) {  
+:     unpack (pack (Bar, foo') as exists...) as (Z, z) in {
+:         let a = z(x); // a: Z
+:         let _b = a.clone();
+:     }
+: }
+
+And applying the pack/unpack reduction rules gives
+
+: fn bar(x: A) {  
+:     {
+:         let a = foo'(x); // a: Bar
+:         let _b = a.clone();
+:     }
+: }
+
+No unpack remains, so we're all good.
+
+The third way to call a trait method is via a trait object, e.g.,
+&Foo. However, in this case there is no monomorphisation to do, and so
+we would end up with unpacks left in the program at code generation time
+that we can't eliminate. This means we cannot allow impl Trait methods
+to be called on trait objects. Likewise, in intuitive terms, how could
+we know the size of the result if we don't know which implementation of
+the method is called until runtime?
+
+Thus, methods which return impl Trait must make a trait not object safe.
+
+** Specialisation
+
+One of the requirements for impl Trait was that it should work with
+specialisation, that is a specialised method implementation can return a
+different concrete type compared with the less specialised version.
+
+I won't go through another example here, but that works out just
+fine. Each implementation does its own pack, so there is no constraint
+for the concrete/witness types to be the same. Even with specialisation,
+after monomorphisation we have a concrete type for the impl and thus a
+single method, and so we can eliminate unpacks. As long as we don't have
+trait objects, we're fine.
+
+** Other stuff
+
+*** OIBITs
+
+An OIBIT is the worst-named feature in Rust - they are neither opt-in,
+nor built-in types. But they are types which are automatically
+derived. One issue with impl Trait is that we want OIBITs to leak to the
+abstract type without having to name them.
+
+In the existential model we can make this work in a kind of principled
+way: if the caller is generic, then we can assume only the explicit
+bounds, e.g., if we call x.foo() where x: X and X: Foo and foo: (&self)
+-> impl Clone, then we can only assume the bound Clone. However, if we
+have a fully explicit type, e.g., x: A where A is a struct which impls
+Foo, then we can assume any OIBIT bounds from the witness type.
+
+To be precise, the formal body for foo will look like
+
+: impl Foo for A {  
+:     fn foo exists<X: Clone>.(&self) -> X = pack (Bar, {
+:         fn(&self) -> Bar {
+:             ...
+:         }
+:     }) as exists<X: Clone>.(&Self) -> X
+: }
+
+Here the witness type is Bar. But in real Rust, this would all be
+inferred, as long as Bar implements Send, for example, then we could
+infer
+
+: impl Foo for A {  
+:     fn foo exists<X: Clone>.(&self) -> X = pack (Bar, {
+:         fn(&self) -> Bar {
+:             ...
+:         }
+:     }) as exists<X: Clone + Send>.(&Self) -> X
+: }
+
+Note the type in the pack expression. We rely on subtyping that
+
+: exists<X: Clone + Send>.(&Self) -> X <: exists<X: Clone>.(&Self) -> X  
+
+Now in the caller of foo, we only have the abstract type exists<X:
+Clone>.(&Self) -> X, but (since the code is not generic) we can inline
+the pack from the function definition at type checking, rather than
+during monomorphisation. We'll have something like:
+
+: unpack (pack (Bar, foo'()) as exists<X: Clone + Send>.Fn_4a5f() -> X) as (Z, z) in { ... }  
+
+Now we can type-check the body (...) with Z: Clone + Send (taking the
+bounds from the pack expression), rather than Z: Clone (from the
+function type). Note that we don't want to actually do the pack/unpack
+reduction at this stage, because then we would substitute the witness
+type for the abstract type (e.g., Bar for Z) and that would allow the
+caller to access methods and fields of the witness type that should have
+been abstracted away.
+
+*** Conditional bounds
+
+A conditional bound is of the form X: A => Y: B or Y: B if X: A or
+something. They are a way of saying a bound only holds if another
+does. These are useful in conjunction with impl Trait (in fact, they
+might only be useful with impl Trait), for example,
+
+: trait Foo {  
+:     fn foo(&self) -> impl Clone + (Baz if Self: Bar);
+: }
+
+Now, if we implement Foo for A and A is Bar, then the type returned from
+foo implements Baz, otherwise it does not.
+
+Obviously adding conditional bounds would be a big addition to Rust and
+would require a fair bit of design and implementation work. I'm not
+aware of a theoretical underpinning for them. They do seem to me to be
+orthogonal to the existential model of impl Trait. If we can make them
+work in the general case, then I think they should work with impl Trait
+as outlined here without much hassle.
+
+*** Using impl Type in other positions
+
+We have so far only discussed using impl Trait in return type position
+where the existential quantifier would implicitly cover the function
+signature.
+
+I have also used impl Trait as the type of variables taking values
+returned from such functions. In this case, impl Trait means the opened
+existential type. These types have different semantics, in particular,
+subtyping is reflexive for impl Trait in function types, but not
+(necessarily) for local variables. E.g.,
+
+: let a: impl Foo = ...;   // desugared to X where X: Foo  
+: let b: impl Foo = ...;   // desugared to Y where Y: Foo  
+: assert!(type_of::<a>() == type_of::<b>()); // Might fail, depending on the ...s  
+
+We could allow the compiler to infer the desugared variables with the
+right scopes, so if b = a.clone(), then a and b would be type
+compatible, but if a and b were separate calls to foo, then they would
+be type incompatible. I believe this is perfectly possible to implement,
+but the semantics here are pretty confusing. In particular, we have
+types which are expressible, but not denotable. Java wildcards also
+introduced such types and they caused much confusion in the Java world.
+
+On the other hand it is certainly desirable to assign the result of an
+impl Trait function into a variable and whether we can write the type or
+not, it still exists. An alternative is to introduce syntax for a new
+type, however, without making the scope of unpacks explicit (which seems
+undesirable), we still have types which are expressible but not
+denotable.
+
+In the case of fields, statics and consts, and function arguments, I
+think that the existential notion of impl Trait is a very simple sugar
+for adding a type parameter with the same bounds at the nearest
+scope. E.g., fn foo(x: impl Clone) { ... } is equivalent to fn foo<X:
+Clone>(x: X) where X is not used elsewhere. (This conversion is a simple
+kind of skolemisation. Return types can't be skolemised like this
+because the witness type/actual type parameter is chosen by the callee,
+not the caller).
+
+So, that makes three different meanings for impl Trait, which seems
+excessive. Although, I guess they are each useful in their way. I think
+that we can probably get away with the three different uses without
+anyone getting too confused - the intuition for what will happen in each
+case seems about right (except for type compatibility for local
+variables, but I don't see a way to avoid that). However, this situation
+does not make me very happy.
+
+Since type aliases are effectively erased before type checking, impl
+Trait should be usable on the right-hand side of a type alias. Where
+that type alias is used may be restricted.
+
+It is also fine to use impl Trait as an actual type parameter - thanks
+to monomorphisation, everything should just work with regards to code
+generation. If the corresponding formal type parameter is used as the
+return type of the function, then the implicit pack (and corresponding
+unpack at the call site) are assumed to only exist where the function is
+monomorphised with impl Trait as the actual type parameter.
+
+Finally, allowing impl Trait to instantiate an associated type. I think
+this should work too, but honestly at this point I'm running out of
+energy and this blog post is way too long already. Somebody should think
+about this some more.
+
+Nick Cameron
+
+- 0: "": https://www.ncameron.org/blog/abstract-return-types-aka-%60impl-trait%60/#
+- 9: "blog post": http://aturon.github.io/blog/2015/09/28/impl-trait/
+- 10: "105": https://github.com/rust-lang/rfcs/pull/105
+- 11: "1305": https://github.com/rust-lang/rfcs/pull/1305
+- 12: "specialisation": https://github.com/rust-lang/rfcs/pull/1210
+- 13: "discussion": https://github.com/rust-lang/rfcs/pull/1210
+- 14: "has proposed": https://github.com/rust-lang/rfcs/pull/1210#issuecomment-169959250
+- 15: "RFC PR 1305": https://github.com/rust-lang/rfcs/pull/1305
+

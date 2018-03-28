@@ -13,6 +13,7 @@ trait FnBox {
 // that uses `self: Box<Self>` in its signature, defining that trait for
 // any type that implements FnOnce() [...]
 impl<F: FnOnce()> FnBox for F {
+    //  uses (*self)() to move the closure out of the Box<T> and call the closure
     fn call_box(self: Box<F>) {
         (*self)()
     }
@@ -22,9 +23,15 @@ impl<F: FnOnce()> FnBox for F {
 // type of closure that execute receives.
 type Job = Box<FnBox + Send + 'static>;
 
+struct Worker {
+    id: usize,
+    thread: thread::JoinHandle<()>,
+}
+
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
         let thread = thread::spawn(move || loop {
+            // here in a clojure
             let job = receiver
                 .lock()
                 .expect("cannot get the lock")
@@ -66,9 +73,11 @@ impl Worker {
             // any type that implements FnOnce(), changing our type
             // alias to use the new trait, and changing Worker to use
             // the call_box method.
+
+            // [...] we use call_box instead of invoking the closure directly.
             job.call_box();
         });
-        
+
         Worker { id, thread }
     }
 }

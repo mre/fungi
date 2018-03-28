@@ -18,6 +18,8 @@ impl<F: FnOnce()> FnBox for F {
     }
 }
 
+// Job is going to be a type alias for a trait object that holds the
+// type of closure that execute receives.
 type Job = Box<FnBox + Send + 'static>;
 
 impl Worker {
@@ -88,6 +90,10 @@ impl ThreadPool {
         assert!(size > 0);
 
         let (sender, receiver) = mpsc::channel();
+        // [...] we put the receiving end of the channel in an Arc and a
+        // Mutex. For each new worker, we clone the Arc to bump the
+        // reference count so the workers can share ownership of the
+        // receiving end.
         let receiver = Arc::new(Mutex::new(receiver));
         let mut workers = Vec::with_capacity(size);
 
@@ -103,7 +109,7 @@ impl ThreadPool {
 //     where
 //         F: FnOnce() -> T + Send + 'static,
 //         T: Send + 'static
-
+//
 // F is the parameter we care about here; T is related to the return
 // value and we’re not concerned with that. Given that spawn uses FnOnce
 // as the trait bound on F, it’s probably what we want as well, since
@@ -117,7 +123,7 @@ impl ThreadPool {
 // closure from one thread to another, and 'static because we don’t know
 // how long the thread will execute. Let’s create an execute method on
 // ThreadPool that will take a generic parameter F with these bounds:
-
+//
 // The FnOnce trait still needs the () after it since this FnOnce is
 // representing a closure that takes no parameters and doesn’t return a
 // value. Just like function definitions, the return type can be omitted

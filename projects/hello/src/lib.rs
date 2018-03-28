@@ -1,20 +1,72 @@
-use std::thread;
-use std::sync::mpsc;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::mpsc;
+use std::thread;
 
-type Job = Box<FnOnce() + Send + 'static>;
-
-pub struct Worker {
-    id: usize,
-    thread: thread::JoinHandle<()>,
+// [...] we can take ownership of the value inside the Box<T> using
+// self: Box<Self> [...]
+trait FnBox {
+    fn call_box(self: Box<Self>);
 }
+
+// [...] This involves defining a new trait that has a method call_box
+// that uses `self: Box<Self>` in its signature, defining that trait for
+// any type that implements FnOnce() [...]
+impl<F: FnOnce()> FnBox for F {
+    fn call_box(self: Box<F>) {
+        (*self)()
+    }
+}
+
+type Job = Box<FnBox + Send + 'static>;
 
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
-        let thread = thread::spawn(|| {
-            receiver;
+        let thread = thread::spawn(move || loop {
+            let job = receiver
+                .lock()
+                .expect("cannot get the lock")
+                .recv()
+                .unwrap();
+
+            println!("Worker {} got a job; executing.", id);
+
+            // (*job)();
+            // error[E0161]: cannot move a value of type
+            // std::ops::FnOnce() + std::marker::Send: the size of
+            // std::ops::FnOnce() + std::marker::Send cannot be
+            // statically determined
+            //
+            // In order to call a FnOnce closure that is stored in a
+            // Box<T> (which is what our Job type alias is), the closure
+            // needs to be able to move itself out of the Box<T> since
+            // when we call the closure, it takes ownership of self.
+            //
+            // In general, moving a value out of a Box<T> isn’t allowed
+            // since Rust doesn’t know how big the value inside the
+            // Box<T> is going to be; [...] we used Box<T> precisely
+            // because we had something of an unknown size that we
+            // wanted to store in a Box<T> to get a value of a known
+            // size.
+            //
+            // we can write methods that use the syntax self: Box<Self>
+            // so that the method takes ownership of a Self value that
+            // is stored in a Box<T>.
+            //
+            // [...] there’s a trick that involves telling Rust
+            // explicitly that we’re in a case where we can take
+            // ownership of the value inside the Box<T> using self:
+            // Box<Self>, and once we have ownership of the closure, we
+            // can call it.
+            //
+            // defining a new trait that has a method call_box that uses
+            // self: Box<Self> in its signature, defining that trait for
+            // any type that implements FnOnce(), changing our type
+            // alias to use the new trait, and changing Worker to use
+            // the call_box method.
+            job.call_box();
         });
+        
         Worker { id, thread }
     }
 }
@@ -34,7 +86,7 @@ impl ThreadPool {
     /// The `new` function will panic if the size is zero.
     pub fn new(size: usize) -> ThreadPool {
         assert!(size > 0);
-        
+
         let (sender, receiver) = mpsc::channel();
         let receiver = Arc::new(Mutex::new(receiver));
         let mut workers = Vec::with_capacity(size);
@@ -43,10 +95,7 @@ impl ThreadPool {
             workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
 
-        ThreadPool {
-            workers,
-            sender,
-        }
+        ThreadPool { workers, sender }
     }
 }
 
@@ -76,8 +125,8 @@ impl ThreadPool {
 // the parentheses.
 impl ThreadPool {
     pub fn execute<F>(&self, f: F)
-        where
-            F: FnOnce() + Send + 'static
+    where
+        F: FnOnce() + Send + 'static,
     {
         let job = Box::new(f);
 

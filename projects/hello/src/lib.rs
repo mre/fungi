@@ -160,6 +160,16 @@ impl ThreadPool {
 // make sure they finish their work.
 impl Drop for ThreadPool {
     fn drop(&mut self) {
+        println!("sending Terminate message to all workers");
+
+        // Sending Message::Terminate to the workers before calling join
+        // on each worker thread.
+        for _ in &mut self.workers {
+            self.sender.send(Message::Terminate).unwrap();
+        }
+
+        println!("shutting down all workers");
+
         for worker in &mut self.workers {
             println!("shutting down worker {}", worker.id);
 

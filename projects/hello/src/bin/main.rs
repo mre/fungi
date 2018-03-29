@@ -6,6 +6,7 @@
 //! - https://doc.rust-lang.org/book/second-edition/ch20-03-designing-the-interface.html
 //! - https://doc.rust-lang.org/book/second-edition/ch20-04-storing-threads.html
 //! - https://doc.rust-lang.org/book/second-edition/ch20-05-sending-requests-via-channels.html
+//! - https://doc.rust-lang.org/book/second-edition/ch20-06-graceful-shutdown-and-cleanup.html
 
 extern crate hello;
 use hello::ThreadPool;

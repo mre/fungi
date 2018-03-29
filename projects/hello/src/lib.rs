@@ -23,16 +23,41 @@ impl<F: FnOnce()> FnBox for F {
 // type of closure that execute receives.
 type Job = Box<FnBox + Send + 'static>;
 
+enum Message {
+    NewJob(Job),
+    Terminate,
+}
+
+// Initially we had a "plain" thread::JoinHandle in the thread field of the
+// Worker, but in the graceful shutdown we inccurred in this error:
+//
+// error[E0507]: cannot move out of borrowed content
+//   --> src/lib.rs:65:13
+//    |
+// 65 |             worker.thread.join().unwrap();
+//    |             ^^^^^^ cannot move out of borrowed content
+//
+// we only have a mutable borrow of each worker, we can’t call join:
+// join takes ownership of its argument. In order to solve this, we need
+// a way to move the thread out of the Worker instance that owns thread
+// so that join can consume the thread.
+// [...] if the Worker holds an Option<thread::JoinHandle<()>
+// instead, we can call the take method on the Option to move the value
+// out of the Some variant and leave a None variant in its place. In
+// other words, a Worker that is running will have a Some variant in
+// thread, and when we want to clean up a worker, we’ll replace Some
+// with None so the worker doesn’t have a thread to run.
+
 struct Worker {
     id: usize,
-    thread: thread::JoinHandle<()>,
+    thread: Option<thread::JoinHandle<()>>,
 }
 
 impl Worker {
-    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
+    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Message>>>) -> Worker {
         let thread = thread::spawn(move || loop {
             // here in a clojure
-            let job = receiver
+            let message = receiver
                 .lock()
                 .expect("cannot get the lock")
                 .recv()
@@ -40,51 +65,63 @@ impl Worker {
 
             println!("Worker {} got a job; executing.", id);
 
-            // (*job)();
-            // error[E0161]: cannot move a value of type
-            // std::ops::FnOnce() + std::marker::Send: the size of
-            // std::ops::FnOnce() + std::marker::Send cannot be
-            // statically determined
-            //
-            // In order to call a FnOnce closure that is stored in a
-            // Box<T> (which is what our Job type alias is), the closure
-            // needs to be able to move itself out of the Box<T> since
-            // when we call the closure, it takes ownership of self.
-            //
-            // In general, moving a value out of a Box<T> isn’t allowed
-            // since Rust doesn’t know how big the value inside the
-            // Box<T> is going to be; [...] we used Box<T> precisely
-            // because we had something of an unknown size that we
-            // wanted to store in a Box<T> to get a value of a known
-            // size.
-            //
-            // we can write methods that use the syntax self: Box<Self>
-            // so that the method takes ownership of a Self value that
-            // is stored in a Box<T>.
-            //
-            // [...] there’s a trick that involves telling Rust
-            // explicitly that we’re in a case where we can take
-            // ownership of the value inside the Box<T> using self:
-            // Box<Self>, and once we have ownership of the closure, we
-            // can call it.
-            //
-            // defining a new trait that has a method call_box that uses
-            // self: Box<Self> in its signature, defining that trait for
-            // any type that implements FnOnce(), changing our type
-            // alias to use the new trait, and changing Worker to use
-            // the call_box method.
+            match message {
+                Message::NewJob(job) => {
+                    // (*job)();
+                    // error[E0161]: cannot move a value of type
+                    // std::ops::FnOnce() + std::marker::Send: the size of
+                    // std::ops::FnOnce() + std::marker::Send cannot be
+                    // statically determined
+                    //
+                    // In order to call a FnOnce closure that is stored in a
+                    // Box<T> (which is what our Job type alias is), the closure
+                    // needs to be able to move itself out of the Box<T> since
+                    // when we call the closure, it takes ownership of self.
+                    //
+                    // In general, moving a value out of a Box<T> isn’t allowed
+                    // since Rust doesn’t know how big the value inside the
+                    // Box<T> is going to be; [...] we used Box<T> precisely
+                    // because we had something of an unknown size that we
+                    // wanted to store in a Box<T> to get a value of a known
+                    // size.
+                    //
+                    // we can write methods that use the syntax self: Box<Self>
+                    // so that the method takes ownership of a Self value that
+                    // is stored in a Box<T>.
+                    //
+                    // [...] there’s a trick that involves telling Rust
+                    // explicitly that we’re in a case where we can take
+                    // ownership of the value inside the Box<T> using self:
+                    // Box<Self>, and once we have ownership of the closure, we
+                    // can call it.
+                    //
+                    // defining a new trait that has a method call_box that uses
+                    // self: Box<Self> in its signature, defining that trait for
+                    // any type that implements FnOnce(), changing our type
+                    // alias to use the new trait, and changing Worker to use
+                    // the call_box method.
 
-            // [...] we use call_box instead of invoking the closure directly.
-            job.call_box();
+                    // [...] we use call_box instead of invoking the closure directly.
+                    job.call_box();
+                }
+                Message::Terminate => {
+                    println!("worker {} was told to terminate.", id);
+
+                    break;
+                }
+            }
         });
 
-        Worker { id, thread }
+        Worker {
+            id,
+            thread: Some(thread),
+        }
     }
 }
 
 pub struct ThreadPool {
     workers: Vec<Worker>,
-    sender: mpsc::Sender<Job>,
+    sender: mpsc::Sender<Message>,
 }
 
 impl ThreadPool {
@@ -111,6 +148,27 @@ impl ThreadPool {
         }
 
         ThreadPool { workers, sender }
+    }
+}
+
+// [...] to implement the Drop trait for ThreadPool to call join on each of
+// the threads in the pool so that the threads will finish the requests
+// they’re working on. Then we’ll implement a way for the ThreadPool to
+// tell the threads they should stop accepting new requests and shut
+// down.
+// When the pool is dropped, we should join on all of our threads to
+// make sure they finish their work.
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+        for worker in &mut self.workers {
+            println!("shutting down worker {}", worker.id);
+
+            // [..] the take() method on Option takes the Some variant out and
+            // leaves None in its place.
+            if let Some(thread) = worker.thread.take() {
+                thread.join().unwrap();
+            }
+        }
     }
 }
 
@@ -145,6 +203,6 @@ impl ThreadPool {
     {
         let job = Box::new(f);
 
-        self.sender.send(job).unwrap();
+        self.sender.send(Message::NewJob(job)).unwrap();
     }
 }

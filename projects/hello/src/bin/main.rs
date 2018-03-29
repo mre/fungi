@@ -59,7 +59,7 @@ fn main() {
             let _r_tream = match r_stream {
                 Ok(stream) => {
                     pool.execute(|| {
-                        println!("Connection established!");
+                        info!("Connection established!");
                         handle_connection(stream);
                     });
                 }

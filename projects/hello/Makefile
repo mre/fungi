@@ -4,4 +4,7 @@ run:
 build:
 	cargo build
 
-.PHONY: run
+test:
+	RUST_TEST_TASKS=1 RUST_LOG=lib cargo test
+
+.PHONY: run build test

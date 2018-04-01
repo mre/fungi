@@ -1,0 +1,20 @@
+[package]
+name = "taker"
+version = "0.1.0"
+authors = ["Edoardo Rossi <edoardo.eddie.rossi@icloud.com>"]
+
+[dependencies]
+# https://github.com/rust-lang-nursery/log
+log = "0.4.0"
+# https://docs.rs/env_logger/*/env_logger/
+env_logger = "0.5.6"
+# https://github.com/chronotope/chrono
+chrono = "0.4"
+# https://github.com/kbknapp/clap-rs
+clap = "2.31"
+
+# https://doc.rust-lang.org/cargo/reference/manifest.html#configuring-a-target
+[[bin]]
+name = "taker"
+path = "bin/main.rs"
+

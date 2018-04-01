@@ -1,0 +1,47 @@
+[package]
+
+name = "hyper"
+version = "0.12.0-pre.0" # don't forget to update html_root_url
+description = "A modern HTTP library."
+readme = "README.md"
+homepage = "https://hyper.rs"
+documentation = "https://docs.rs/hyper"
+repository = "https://github.com/hyperium/hyper"
+license = "MIT"
+authors = ["Sean McArthur <sean@seanmonstar.com>"]
+keywords = ["http", "hyper", "hyperium"]
+categories = ["network-programming", "web-programming::http-client", "web-programming::http-server"]
+
+publish = false # pre
+
+include = [
+  "Cargo.toml",
+  "LICENSE",
+  "src/**/*"
+]
+
+[dependencies]
+bytes = "0.4.4"
+futures = "0.2.0-beta"
+futures-timer = { git = "https://github.com/alexcrichton/futures-timer.git" }
+http = "0.1.5"
+httparse = "1.0"
+iovec = "0.1"
+log = "0.4"
+net2 = "0.2.32"
+time = "0.1"
+tokio = { git = "https://github.com/seanmonstar/tokio.git", branch = "futures2-use-after-free", features = ["unstable-futures"] }
+tokio-executor = { git = "https://github.com/seanmonstar/tokio.git", branch = "futures2-use-after-free", features = ["unstable-futures"] }
+want = { git = "https://github.com/srijs/want.git", branch = "futures-0.2" }
+
+[dev-dependencies]
+num_cpus = "1.0"
+pretty_env_logger = "0.2.0"
+spmc = "0.2"
+url = "1.0"
+
+[features]
+nightly = []
+
+[replace]
+"futures:0.2.0-beta" = { git = "https://github.com/srijs/futures-rs.git", branch = "with-executor" }

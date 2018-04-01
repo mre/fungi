@@ -1,0 +1,50 @@
+language: rust
+
+sudo: required
+
+cache: cargo
+
+rust:
+  - stable
+
+matrix:
+  include:
+    - rust: nightly-2018-01-02
+      env:
+        - TEST=tsan
+        - RUSTFLAGS="-Z sanitizer=thread"
+        - TSAN_OPTIONS=suppressions=tsan_suppressions.txt
+    - rust: nightly-2018-01-02
+      env:
+        - TEST=lsan
+        - RUSTFLAGS="-Z sanitizer=leak"
+    - rust: nightly-2018-01-02
+      env:
+        - TEST=crash
+        - RUST_BACKTRACE=1
+
+script:
+  - bash -c 'case "$TEST" in
+               clippy)
+                 cargo test --features="clippy"
+                 ;;
+               lsan)
+                 cargo build -p stress2 --target x86_64-unknown-linux-gnu;
+                 sudo target/x86_64-unknown-linux-gnu/debug/stress2
+                 ;;
+               tsan)
+                 cargo run -p stress2 --features=lock_free_delays --target x86_64-unknown-linux-gnu
+                 ;;
+               crash)
+                 cargo test test_crash_recovery --release --features="check_snapshot_integrity" -- --nocapture
+                 ;;
+               *)
+                 cargo check;
+                 cargo check --features=all;
+                 cargo test --release
+                 ;;
+             esac'
+
+os:
+  - linux
+  - osx

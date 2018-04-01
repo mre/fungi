@@ -1,0 +1,25 @@
+"Getting Started" = [
+    "overview",
+    "status",
+    "quickstart",
+    "for-contributors",
+    "design-guide",
+]
+
+"User's Guide" = [
+    "introduction",
+    "workflow",
+    "init",
+    "update",
+    "build",
+    "serve",
+    "publish",
+    "clean",
+    "doxidize-toml",
+    "menu-toml",
+    "flags",
+]
+
+"Examples" = [
+    "simple-cli.rs",
+]

@@ -1,0 +1,10 @@
+[workspace]
+members = [
+  "crates/pagecache",
+  "crates/sled",
+  "bindings/sled-native",
+  "benchmarks/stress2",
+  "examples/pessimistic_transactions",
+  "examples/crdt_merge_store",
+  "tests"
+]

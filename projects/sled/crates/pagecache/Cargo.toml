@@ -1,0 +1,40 @@
+[package]
+name = "pagecache"
+version = "0.4.2"
+authors = ["Tyler Neely <t@jujit.su>"]
+description = "lock-free pagecache and log for high-performance databases"
+license = "MIT/Apache-2.0"
+homepage = "https://github.com/spacejam/sled/tree/master/crates/pagecache"
+repository = "https://github.com/spacejam/sled"
+keywords = ["database", "embedded", "concurrent", "persistent", "lock-free"]
+documentation = "https://docs.rs/pagecache/"
+readme = "README.md"
+
+[features]
+default = []
+lock_free_delays = ["rand"]
+failpoints = ["fail"]
+no_metrics = ["historian/bypass"]
+no_logs = ["log/max_level_off"]
+
+[dependencies.historian]
+version = "3.0"
+
+[dependencies.log]
+version = "0.4"
+
+[dependencies]
+libc = "0.2"
+crossbeam-epoch = "0.4"
+bincode = "0.9"
+serde = "1.0"
+serde_derive = "1.0"
+lazy_static = "1.0"
+fail = {version = "0.2", optional = true}
+rayon = {version = "1.0", optional = true}
+zstd = {version = "0.4", optional = true}
+clippy = {version = "0.0", optional = true}
+rand = {version = "0.4", optional = true}
+
+[dev-dependencies]
+rand = "0.4"

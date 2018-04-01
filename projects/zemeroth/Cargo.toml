@@ -1,0 +1,26 @@
+[package]
+name = "zemeroth"
+version = "0.4.0"
+authors = ["Andrey Lesnikov <ozkriff@gmail.com>"]
+license = "MIT/Apache-2.0"
+
+[workspace]
+members = ["hate", "rancor"]
+
+[dependencies]
+hate = { path = "hate" }
+rancor = { path = "rancor" }
+cgmath = "0.16"
+ron = "0.2"
+rand = "0.4"
+log = "0.4"
+env_logger = "0.5"
+serde = "1.0"
+serde_derive = "1.0"
+
+[package.metadata.android]
+assets = "assets"
+fullscreen = true
+
+[package.metadata.android.activity_attributes]
+"android:screenOrientation" = "sensorLandscape"

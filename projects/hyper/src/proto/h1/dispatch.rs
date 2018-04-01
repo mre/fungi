@@ -1,0 +1,520 @@
+use std::io;
+
+use bytes::Bytes;
+use futures::{Async, Future, Poll, Stream};
+use futures::task;
+use futures::io::{AsyncRead, AsyncWrite};
+use http::{Request, Response, StatusCode};
+
+use proto::body::Entity;
+use proto::{Body, BodyLength, Conn, Http1Transaction, MessageHead, RequestHead, RequestLine, ResponseHead};
+
+use ::service::Service;
+
+pub struct Dispatcher<D, Bs, I, B, T> {
+    conn: Conn<I, B, T>,
+    dispatch: D,
+    body_tx: Option<::proto::body::Sender>,
+    body_rx: Option<Bs>,
+    is_closing: bool,
+}
+
+pub trait Dispatch {
+    type PollItem;
+    type PollBody;
+    type RecvItem;
+    fn poll_msg(&mut self, cx: &mut task::Context) -> Poll<Option<(Self::PollItem, Option<Self::PollBody>)>, ::Error>;
+    fn recv_msg(&mut self, cx: &mut task::Context, msg: ::Result<(Self::RecvItem, Body)>) -> ::Result<()>;
+    fn poll_ready(&mut self, cx: &mut task::Context) -> Poll<(), ()>;
+    fn should_poll(&self) -> bool;
+}
+
+pub struct Server<S: Service> {
+    in_flight: Option<S::Future>,
+    service: S,
+}
+
+pub struct Client<B> {
+    callback: Option<::client::dispatch::Callback<ClientMsg<B>, Response<Body>>>,
+    rx: ClientRx<B>,
+}
+
+pub type ClientMsg<B> = Request<B>;
+
+type ClientRx<B> = ::client::dispatch::Receiver<ClientMsg<B>, Response<Body>>;
+
+impl<D, Bs, I, B, T> Dispatcher<D, Bs, I, B, T>
+where
+    D: Dispatch<PollItem=MessageHead<T::Outgoing>, PollBody=Bs, RecvItem=MessageHead<T::Incoming>>,
+    I: AsyncRead + AsyncWrite,
+    B: AsRef<[u8]>,
+    T: Http1Transaction,
+    Bs: Entity<Data=B, Error=::Error>,
+{
+    pub fn new(dispatch: D, conn: Conn<I, B, T>) -> Self {
+        Dispatcher {
+            conn: conn,
+            dispatch: dispatch,
+            body_tx: None,
+            body_rx: None,
+            is_closing: false,
+        }
+    }
+
+    pub fn disable_keep_alive(&mut self) {
+        self.conn.disable_keep_alive()
+    }
+
+    pub fn into_inner(self) -> (I, Bytes) {
+        self.conn.into_inner()
+    }
+
+    /// The "Future" poll function. Runs this dispatcher until the
+    /// connection is shutdown, or an error occurs.
+    pub fn poll_until_shutdown(&mut self, cx: &mut task::Context) -> Poll<(), ::Error> {
+        self.poll_catch(cx, true)
+    }
+
+    /// Run this dispatcher until HTTP says this connection is done,
+    /// but don't call `AsyncWrite::shutdown` on the underlying IO.
+    ///
+    /// This is useful for HTTP upgrades.
+    pub fn poll_without_shutdown(&mut self, cx: &mut task::Context) -> Poll<(), ::Error> {
+        self.poll_catch(cx, false)
+    }
+
+    fn poll_catch(&mut self, cx: &mut task::Context, should_shutdown: bool) -> Poll<(), ::Error> {
+        self.poll_inner(cx, should_shutdown).or_else(|e| {
+            // An error means we're shutting down either way.
+            // We just try to give the error to the user,
+            // and close the connection with an Ok. If we
+            // cannot give it to the user, then return the Err.
+            self.dispatch.recv_msg(cx, Err(e)).map(Async::Ready)
+        })
+    }
+
+    fn poll_inner(&mut self, cx: &mut task::Context, should_shutdown: bool) -> Poll<(), ::Error> {
+        self.poll_read(cx)?;
+        self.poll_write(cx)?;
+        self.poll_flush(cx)?;
+
+        if self.is_done() {
+            if should_shutdown {
+                try_ready!(self.conn.shutdown(cx));
+            }
+            self.conn.take_error()?;
+            Ok(Async::Ready(()))
+        } else {
+            Ok(Async::Pending)
+        }
+    }
+
+    fn poll_read(&mut self, cx: &mut task::Context) -> Poll<(), ::Error> {
+        loop {
+            if self.is_closing {
+                return Ok(Async::Ready(()));
+            } else if self.conn.can_read_head() {
+                try_ready!(self.poll_read_head(cx));
+            } else if let Some(mut body) = self.body_tx.take() {
+                if self.conn.can_read_body() {
+                    match body.poll_ready(cx) {
+                        Ok(Async::Ready(())) => (),
+                        Ok(Async::Pending) => {
+                            self.body_tx = Some(body);
+                            return Ok(Async::Pending);
+                        },
+                        Err(_canceled) => {
+                            // user doesn't care about the body
+                            // so we should stop reading
+                            trace!("body receiver dropped before eof, closing");
+                            self.conn.close_read();
+                            return Ok(Async::Ready(()));
+                        }
+                    }
+                    match self.conn.read_body(cx) {
+                        Ok(Async::Ready(Some(chunk))) => {
+                            match body.send_data(chunk) {
+                                Ok(()) => {
+                                    self.body_tx = Some(body);
+                                },
+                                Err(_canceled) => {
+                                    if self.conn.can_read_body() {
+                                        trace!("body receiver dropped before eof, closing");
+                                        self.conn.close_read();
+                                    }
+                                }
+
+                            }
+                        },
+                        Ok(Async::Ready(None)) => {
+                            // just drop, the body will close automatically
+                        },
+                        Ok(Async::Pending) => {
+                            self.body_tx = Some(body);
+                            return Ok(Async::Pending);
+                        }
+                        Err(e) => {
+                            body.send_error(::Error::Io(e));
+                        }
+                    }
+                } else {
+                    // just drop, the body will close automatically
+                }
+            } else {
+                return self.conn.read_keep_alive(cx).map(Async::Ready);
+            }
+        }
+    }
+
+    fn poll_read_head(&mut self, cx: &mut task::Context) -> Poll<(), ::Error> {
+        // can dispatch receive, or does it still care about, an incoming message?
+        match self.dispatch.poll_ready(cx) {
+            Ok(Async::Ready(())) => (),
+            Ok(Async::Pending) => unreachable!("dispatch not ready when conn is"),
+            Err(()) => {
+                trace!("dispatch no longer receiving messages");
+                self.close();
+                return Ok(Async::Ready(()));
+            }
+        }
+        // dispatch is ready for a message, try to read one
+        match self.conn.read_head(cx) {
+            Ok(Async::Ready(Some((head, has_body)))) => {
+                let body = if has_body {
+                    let (mut tx, rx) = Body::channel();
+                    let _ = tx.poll_ready(cx); // register this task if rx is dropped
+                    self.body_tx = Some(tx);
+                    rx
+                } else {
+                    Body::empty()
+                };
+                self.dispatch.recv_msg(cx, Ok((head, body)))?;
+                Ok(Async::Ready(()))
+            },
+            Ok(Async::Ready(None)) => {
+                // read eof, conn will start to shutdown automatically
+                Ok(Async::Ready(()))
+            }
+            Ok(Async::Pending) => Ok(Async::Pending),
+            Err(err) => {
+                debug!("read_head error: {}", err);
+                self.dispatch.recv_msg(cx, Err(err))?;
+                // if here, the dispatcher gave the user the error
+                // somewhere else. we still need to shutdown, but
+                // not as a second error.
+                Ok(Async::Ready(()))
+            }
+        }
+    }
+
+    fn poll_write(&mut self, cx: &mut task::Context) -> Poll<(), ::Error> {
+        loop {
+            if self.is_closing {
+                return Ok(Async::Ready(()));
+            } else if self.body_rx.is_none() && self.conn.can_write_head() && self.dispatch.should_poll() {
+                if let Some((head, body)) = try_ready!(self.dispatch.poll_msg(cx)) {
+                    let body_type = body.as_ref().map(|body| {
+                        body.content_length()
+                            .map(BodyLength::Known)
+                            .unwrap_or(BodyLength::Unknown)
+                    });
+                    self.conn.write_head(head, body_type);
+                    self.body_rx = body;
+                } else {
+                    self.close();
+                    return Ok(Async::Ready(()));
+                }
+            } else if !self.conn.can_buffer_body() {
+                try_ready!(self.poll_flush(cx));
+            } else if let Some(mut body) = self.body_rx.take() {
+                let chunk = match body.poll_data(cx)? {
+                    Async::Ready(Some(chunk)) => {
+                        self.body_rx = Some(body);
+                        chunk
+                    },
+                    Async::Ready(None) => {
+                        if self.conn.can_write_body() {
+                            self.conn.write_body(cx,  None)?;
+                        }
+                        continue;
+                    },
+                    Async::Pending => {
+                        self.body_rx = Some(body);
+                        return Ok(Async::Pending);
+                    }
+                };
+
+                if self.conn.can_write_body() {
+                    self.conn.write_body(cx, Some(chunk))?;
+                // This allows when chunk is `None`, or `Some([])`.
+                } else if chunk.as_ref().len() == 0 {
+                    // ok
+                } else {
+                    warn!("unexpected chunk when body cannot write");
+                }
+            } else {
+                return Ok(Async::Pending);
+            }
+        }
+    }
+
+    fn poll_flush(&mut self, cx: &mut task::Context) -> Poll<(), ::Error> {
+        self.conn.flush(cx).map_err(|err| {
+            debug!("error writing: {}", err);
+            err.into()
+        })
+    }
+
+    fn close(&mut self) {
+        self.is_closing = true;
+        self.conn.close_read();
+        self.conn.close_write();
+    }
+
+    fn is_done(&self) -> bool {
+        if self.is_closing {
+            return true;
+        }
+
+        let read_done = self.conn.is_read_closed();
+
+        if !T::should_read_first() && read_done {
+            // a client that cannot read may was well be done.
+            true
+        } else {
+            let write_done = self.conn.is_write_closed() ||
+                (!self.dispatch.should_poll() && self.body_rx.is_none());
+            read_done && write_done
+        }
+    }
+}
+
+
+impl<D, Bs, I, B, T> Future for Dispatcher<D, Bs, I, B, T>
+where
+    D: Dispatch<PollItem=MessageHead<T::Outgoing>, PollBody=Bs, RecvItem=MessageHead<T::Incoming>>,
+    I: AsyncRead + AsyncWrite,
+    B: AsRef<[u8]>,
+    T: Http1Transaction,
+    Bs: Entity<Data=B, Error=::Error>,
+{
+    type Item = ();
+    type Error = ::Error;
+
+    #[inline]
+    fn poll(&mut self, cx: &mut task::Context) -> Poll<Self::Item, Self::Error> {
+        self.poll_until_shutdown(cx)
+    }
+}
+
+// ===== impl Server =====
+
+impl<S> Server<S> where S: Service {
+    pub fn new(service: S) -> Server<S> {
+        Server {
+            in_flight: None,
+            service: service,
+        }
+    }
+}
+
+impl<S, Bs> Dispatch for Server<S>
+where
+    S: Service<Request=Request<Body>, Response=Response<Bs>, Error=::Error>,
+    Bs: Entity<Error=::Error>,
+{
+    type PollItem = MessageHead<StatusCode>;
+    type PollBody = Bs;
+    type RecvItem = RequestHead;
+
+    fn poll_msg(&mut self, cx: &mut task::Context) -> Poll<Option<(Self::PollItem, Option<Self::PollBody>)>, ::Error> {
+        if let Some(mut fut) = self.in_flight.take() {
+            let resp = match fut.poll(cx)? {
+                Async::Ready(res) => res,
+                Async::Pending => {
+                    self.in_flight = Some(fut);
+                    return Ok(Async::Pending);
+                }
+            };
+            let (parts, body) = resp.into_parts();
+            let head = MessageHead {
+                version: parts.version,
+                subject: parts.status,
+                headers: parts.headers,
+            };
+            let body = if body.is_end_stream() {
+                None
+            } else {
+                Some(body)
+            };
+            Ok(Async::Ready(Some((head, body))))
+        } else {
+            unreachable!("poll_msg shouldn't be called if no inflight");
+        }
+    }
+
+    fn recv_msg(&mut self, _cx: &mut task::Context, msg: ::Result<(Self::RecvItem, Body)>) -> ::Result<()> {
+        let (msg, body) = msg?;
+        let mut req = Request::new(body);
+        *req.method_mut() = msg.subject.0;
+        *req.uri_mut() = msg.subject.1;
+        *req.headers_mut() = msg.headers;
+        *req.version_mut() = msg.version;
+        self.in_flight = Some(self.service.call(req));
+        Ok(())
+    }
+
+    fn poll_ready(&mut self, _cx: &mut task::Context) -> Poll<(), ()> {
+        if self.in_flight.is_some() {
+            Ok(Async::Pending)
+        } else {
+            Ok(Async::Ready(()))
+        }
+    }
+
+    fn should_poll(&self) -> bool {
+        self.in_flight.is_some()
+    }
+}
+
+// ===== impl Client =====
+
+
+impl<B> Client<B> {
+    pub fn new(rx: ClientRx<B>) -> Client<B> {
+        Client {
+            callback: None,
+            rx: rx,
+        }
+    }
+}
+
+impl<B> Dispatch for Client<B>
+where
+    B: Entity<Error=::Error>,
+{
+    type PollItem = RequestHead;
+    type PollBody = B;
+    type RecvItem = ResponseHead;
+
+    fn poll_msg(&mut self, cx: &mut task::Context) -> Poll<Option<(Self::PollItem, Option<Self::PollBody>)>, ::Error> {
+        match self.rx.poll_next(cx) {
+            Ok(Async::Ready(Some((req, mut cb)))) => {
+                // check that future hasn't been canceled already
+                match cb.poll_cancel(cx).expect("poll_cancel cannot error") {
+                    Async::Ready(()) => {
+                        trace!("request canceled");
+                        Ok(Async::Ready(None))
+                    },
+                    Async::Pending => {
+                        let (parts, body) = req.into_parts();
+                        let head = RequestHead {
+                            version: parts.version,
+                            subject: RequestLine(parts.method, parts.uri),
+                            headers: parts.headers,
+                        };
+
+                        let body = if body.is_end_stream() {
+                            None
+                        } else {
+                            Some(body)
+                        };
+                        self.callback = Some(cb);
+                        Ok(Async::Ready(Some((head, body))))
+                    }
+                }
+            },
+            Ok(Async::Ready(None)) => {
+                trace!("client tx closed");
+                // user has dropped sender handle
+                Ok(Async::Ready(None))
+            },
+            Ok(Async::Pending) => return Ok(Async::Pending),
+            Err(_) => unreachable!("receiver cannot error"),
+        }
+    }
+
+    fn recv_msg(&mut self, cx: &mut task::Context, msg: ::Result<(Self::RecvItem, Body)>) -> ::Result<()> {
+        match msg {
+            Ok((msg, body)) => {
+                if let Some(cb) = self.callback.take() {
+                    let mut res = Response::new(body);
+                    *res.status_mut() = msg.subject;
+                    *res.headers_mut() = msg.headers;
+                    *res.version_mut() = msg.version;
+                    let _ = cb.send(Ok(res));
+                    Ok(())
+                } else {
+                    Err(::Error::Io(io::Error::new(io::ErrorKind::InvalidData, "response received without matching request")))
+                }
+            },
+            Err(err) => {
+                if let Some(cb) = self.callback.take() {
+                    let _ = cb.send(Err((err, None)));
+                    Ok(())
+                } else if let Ok(Async::Ready(Some((req, cb)))) = self.rx.poll_next(cx) {
+                    trace!("canceling queued request with connection error: {}", err);
+                    // in this case, the message was never even started, so it's safe to tell
+                    // the user that the request was completely canceled
+                    let _ = cb.send(Err((::Error::new_canceled(Some(err)), Some(req))));
+                    Ok(())
+                } else {
+                    Err(err)
+                }
+            }
+        }
+    }
+
+    fn poll_ready(&mut self, cx: &mut task::Context) -> Poll<(), ()> {
+        match self.callback {
+            Some(ref mut cb) => match cb.poll_cancel(cx) {
+                Ok(Async::Ready(())) => {
+                    trace!("callback receiver has dropped");
+                    Err(())
+                },
+                Ok(Async::Pending) => Ok(Async::Ready(())),
+                Err(_) => unreachable!("oneshot poll_cancel cannot error"),
+            },
+            None => Err(()),
+        }
+    }
+
+    fn should_poll(&self) -> bool {
+        self.callback.is_none()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    extern crate pretty_env_logger;
+
+    use super::*;
+    use futures::executor::block_on;
+    use futures::future::lazy;
+    use mock::AsyncIo;
+    use proto::ClientTransaction;
+
+    #[test]
+    fn client_read_bytes_before_writing_request() {
+        let _ = pretty_env_logger::try_init();
+        block_on(lazy(|cx| {
+            let io = AsyncIo::new_buf(b"HTTP/1.1 200 OK\r\n\r\n".to_vec(), 100);
+            let (mut tx, rx) = ::client::dispatch::channel();
+            let conn = Conn::<_, ::Chunk, ClientTransaction>::new(io);
+            let mut dispatcher = Dispatcher::new(Client::new(rx), conn);
+
+            let mut res_rx = tx.try_send(::Request::new(::Body::empty())).unwrap();
+
+            let a1 = dispatcher.poll(cx).expect("error should be sent on channel");
+            assert!(a1.is_ready(), "dispatcher should be closed");
+            let result = res_rx.poll(cx)
+                .expect("callback poll");
+
+            match result {
+                Async::Ready(Err((::Error::Cancel(_), Some(_)))) => (),
+                other => panic!("expected Err(Canceled), got {:?}", other),
+            }
+            Ok::<_, ()>(())
+        })).unwrap();
+    }
+}

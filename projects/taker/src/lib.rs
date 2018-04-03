@@ -47,33 +47,44 @@ pub fn run() -> Result<bool, io::Error> {
     // https://doc.rust-lang.org/std/path/struct.Path.html
     // impl AsRef<Path> for String
     //   fn as_ref(&self) -> &Path
-    let mut src: PathBuf = [
-        home,
-        BASE_URL.to_owned(),
-        "test".to_owned(),
-        "foo.txt".to_owned(),
+    let mut src: PathBuf = [&home, BASE_URL, "test", "foo.txt"].iter().collect();
+
+    let mut dst: PathBuf = [
+        &home,
+        BASE_URL,
+        "test",
+        format!("{}.foo.txt", timez::datetag()).as_ref(),
     ].iter()
         .collect();
-    let mut dst = format!("{}/{}/test/{}.foo.txt", home, BASE_URL, timez::datetag());
     // https://doc.rust-lang.org/std/fs/fn.copy.html
     // https://doc.rust-lang.org/std/fs/struct.File.html
-    info!("copying {:?} into {}", &src, &dst);
+    info!("copying {:?} into {:?}", &src, &dst);
     // https://github.com/rust-lang/rfcs/pull/243
-    let r = fs::copy(&src, &dst);
+    let mut r = fs::copy(&src, &dst);
     match &r {
         Ok(n_bytes) => {
-            debug!("copied {} bytes from {:?} to {}", n_bytes, &src, &dst);
+            debug!("copied {} bytes from {:?} to {:?}", n_bytes, &src, &dst);
         }
         Err(e) => {
-            error!("cannot copy {:?} into {}: {}", &src, &dst, e);
+            error!("cannot copy {:?} into {:?}: {:?}", &src, &dst, e);
         }
     };
 
     debug!("result of the copy: {:?}", r);
 
-    src = format!("{}/{}/test/", home, BASE_URL);
-    dst = format!("{}/{}/tset/", home, BASE_URL);
-    fs::copy(src, dst)?;
+    src = [&home, BASE_URL, "test"].iter().collect();
+    dst = [&home, BASE_URL, "tset"].iter().collect();
+
+    r = fs::copy(&src, &dst);
+    match &r {
+        Ok(n_bytes) => {
+            debug!("copied {} bytes from {:?} to {:?}", n_bytes, &src, &dst);
+        }
+        Err(e) => {
+            error!("cannot copy {:?} into {:?}: {:?}", &src, &dst, e);
+        }
+    };
+
     // https://doc.rust-lang.org/std/fs/struct.DirEntry.html
     if let Ok(entries) = fs::read_dir(".") {
         for entry in entries {

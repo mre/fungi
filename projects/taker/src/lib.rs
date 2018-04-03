@@ -1,3 +1,8 @@
+// TODO: group error messages
+// TODO: group error types
+// TODO: encapsulate worker
+// TODO: encapsulate operation
+
 // https://github.com/rust-lang-nursery/log
 // https://github.com/sebasmagri/env_logger/
 // https://docs.rs/env_logger/*/env_logger/
@@ -40,22 +45,25 @@ fn verify_operation(op: Operation, src: &PathBuf, dst: &PathBuf) -> Result<bool,
             // md: fs::Metadata
             s_size = md.len();
             debug!("meta from the source (size: {:?})", s_size);
-        },
+        }
         Err(e) => {
             error!("cannot get metadata from {:?}: {}", src, e);
-        },
+        }
     };
     match fs::metadata(dst) {
         Ok(md) => {
             d_size = md.len();
             debug!("meta from the destination (size: {:?})", d_size);
-        },
+        }
         Err(e) => {
             error!("cannot get metadata from {:?}: {}", dst, e);
-        },
+        }
     };
     if s_size != d_size {
-        error!("Something something has been lost performing {:?} on {:?} and {:?}", op, src, dst);
+        error!(
+            "Something something has been lost performing {:?} on {:?} and {:?}",
+            op, src, dst
+        );
         return Err(String::from("mismatching_size"));
     }
     info!("Operation {:?} on {:?} and {:?} successful", op, src, dst);
@@ -126,6 +134,17 @@ pub fn run() -> Result<bool, io::Error> {
         format!("{}.foo.txt", timez::datetag()).as_ref(),
     ].iter()
         .collect();
+
+    if fs::File::open(&src).is_err() {
+            error!("ERROR: cannot copy {:?} because it's missing", &src);
+            let custom_error = io::Error::new(io::ErrorKind::Other, "missing_src");
+            return Err(custom_error);
+    }
+    if fs::File::open(&dst).is_ok() {
+            error!("ERROR: cannot copy into {:?} because it's already there", &dst);
+            let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_override");
+            return Err(custom_error);
+    }
     // https://doc.rust-lang.org/std/fs/fn.copy.html
     // https://doc.rust-lang.org/std/fs/struct.File.html
     info!("copying {:?} into {:?}", &src, &dst);
@@ -141,17 +160,21 @@ pub fn run() -> Result<bool, io::Error> {
     };
 
     match verify_operation(Operation::CopyFile, &src, &dst) {
-        Ok(_) => {},
+        Ok(_) => {}
         // https://doc.rust-lang.org/std/process/fn.exit.html
         // https://doc.rust-lang.org/std/io/struct.Error.html
         Err(e) => {
             let custom_error = io::Error::new(io::ErrorKind::Other, e);
             return Err(custom_error);
-        },
+        }
     };
 
     src = [&home, BASE_URL, "test"].iter().collect();
     dst = [&home, BASE_URL, "tset"].iter().collect();
+
+    if src.is_dir() {
+        visit_dirs(&src, &|d| info!("entering {:?} found {:?}", &src, d))?;
+    }
 
     r = fs::copy(&src, &dst);
     match r {

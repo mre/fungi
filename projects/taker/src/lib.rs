@@ -173,7 +173,9 @@ pub fn run() -> Result<bool, io::Error> {
     dst = [&home, BASE_URL, "tset"].iter().collect();
 
     if src.is_dir() {
-        visit_dirs(&src, &|d| info!("entering {:?} found {:?}", &src, d))?;
+        visit_dirs(&src, &|d| {
+            info!("entering {:?} found {:?}", &src, d))?;
+        }
     }
 
     r = fs::copy(&src, &dst);

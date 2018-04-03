@@ -8,15 +8,37 @@ extern crate env_logger;
 use std::io::prelude::*;
 // use std::fmt;
 use std::env;
-use std::fs::{self, DirBuilder, File};
+use std::fs::{self, DirBuilder, DirEntry, File, ReadDir};
 use std::io;
 // use std::io::Read;
 // use std::fs::File;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 mod timez;
 
 const BASE_URL: &'static str = "Downloads";
+
+// https://doc.rust-lang.org/std/fs/fn.read_dir.html
+// one possible implementation of walking a directory only visiting files
+fn visit_dirs(dir: &Path, cb: &Fn(&DirEntry)) -> io::Result<()> {
+    if dir.is_dir() {
+        // https://doc.rust-lang.org/std/fs/fn.read_dir.html
+        // pub fn read_dir<P: AsRef<Path>>(path: P) -> Result<ReadDir>
+        let entry: io::Result<ReadDir> = fs::read_dir(dir);
+        match entry {
+            Ok(entry) => {
+                let path = entry.path();
+                if path.is_dir() {
+                    visit_dirs(&path, cb)?;
+                } else {
+                    cb(&entry);
+                }
+            },
+            // Error(err) => { error!("cannot visit dir {}", &dir) },
+        };
+    }
+    Ok(())
+}
 
 pub fn run() -> Result<bool, io::Error> {
     let mut home = "HOME".to_owned();

@@ -24,17 +24,21 @@ fn visit_dirs(dir: &Path, cb: &Fn(&DirEntry)) -> io::Result<()> {
     if dir.is_dir() {
         // https://doc.rust-lang.org/std/fs/fn.read_dir.html
         // pub fn read_dir<P: AsRef<Path>>(path: P) -> Result<ReadDir>
-        let entry: io::Result<ReadDir> = fs::read_dir(dir);
-        match entry {
-            Ok(entry) => {
+        let r_rds: io::Result<ReadDir> = fs::read_dir(dir);
+        match r_rds {
+            Ok(entries) => {
+                for entry in entries {
+                  let entry = entry?;
                 let path = entry.path();
                 if path.is_dir() {
                     visit_dirs(&path, cb)?;
                 } else {
                     cb(&entry);
                 }
+                }
             },
-            // Error(err) => { error!("cannot visit dir {}", &dir) },
+            // https://doc.rust-lang.org/std/io/struct.Error.html
+            Err(e) => { error!("cannot visit dir {:?} {}", &dir, e) },
         };
     }
     Ok(())
@@ -84,10 +88,10 @@ pub fn run() -> Result<bool, io::Error> {
     // https://github.com/rust-lang/rfcs/pull/243
     let mut r = fs::copy(&src, &dst);
     match &r {
-        Ok(n_bytes) => {
+        &Ok(n_bytes) => {
             debug!("copied {} bytes from {:?} to {:?}", n_bytes, &src, &dst);
         }
-        Err(e) => {
+        &Err(ref e) => {
             error!("cannot copy {:?} into {:?}: {:?}", &src, &dst, e);
         }
     };
@@ -98,7 +102,7 @@ pub fn run() -> Result<bool, io::Error> {
     dst = [&home, BASE_URL, "tset"].iter().collect();
 
     r = fs::copy(&src, &dst);
-    match &r {
+    match r {
         Ok(n_bytes) => {
             debug!("copied {} bytes from {:?} to {:?}", n_bytes, &src, &dst);
         }

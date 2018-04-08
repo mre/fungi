@@ -12,7 +12,7 @@ extern crate env_logger;
 extern crate taker;
 use log::Level;
 
-fn main() {
+fn run_app() -> Result<(), ()> {
     env_logger::init();
 
     let matches = App::new("taker")
@@ -50,4 +50,16 @@ fn main() {
         info!("running the taker CLI");
     }
     let _ = taker::run();
+    Ok(())
 }
+
+fn main() {
+    ::std::process::exit(match run_app() {
+       Ok(_) => 0,
+       Err(err) => {
+           eprintln!("error: {:?}", err);
+           1
+       }
+    });
+}
+

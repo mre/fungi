@@ -144,9 +144,9 @@ pub fn run() -> Result<bool, io::Error> {
         Ok(_) => {},
         // https://doc.rust-lang.org/std/process/fn.exit.html
         // https://doc.rust-lang.org/std/io/struct.Error.html
-        e => {
+        Err(e) => {
             let custom_error = io::Error::new(io::ErrorKind::Other, e);
-            return Error(custom_error);
+            return Err(custom_error);
         },
     };
 

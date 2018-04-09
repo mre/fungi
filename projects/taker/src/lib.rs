@@ -174,8 +174,8 @@ pub fn run() -> Result<bool, io::Error> {
 
     if src.is_dir() {
         visit_dirs(&src, &|d| {
-            info!("entering {:?} found {:?}", &src, d))?;
-        }
+            info!("entering {:?} found {:?}", &src, d);
+        })?;
     }
 
     r = fs::copy(&src, &dst);

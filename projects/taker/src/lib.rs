@@ -4,6 +4,7 @@
 // TODO: encapsulate operation
 // TODO: check for existing files
 // TODO: check for existing directories
+// TODO: bubble up errors
 
 // https://github.com/rust-lang-nursery/log
 // https://github.com/sebasmagri/env_logger/
@@ -105,12 +106,18 @@ pub fn run() -> Result<bool, io::Error> {
         Err(_) => "/".to_owned(),
     };
     info!("considering {} as $HOME", home);
+
     // https://doc.rust-lang.org/std/path/struct.PathBuf.html
     let mut dir: PathBuf = [&home, BASE_URL].iter().collect();
     dir.push("test");
 
     // https://doc.rust-lang.org/std/fs/struct.DirBuilder.html#method.create
-    match DirBuilder::new().recursive(true).create(&dir) {
+    // Create the specified directory with the options configured in
+    // this builder.
+    //
+    // It is considered an error if the directory already exists unless
+    // recursive mode is enabled.
+    match DirBuilder::new().recursive(false).create(&dir) {
         // https://doc.rust-lang.org/std/io/type.Result.html
         Ok(_) => {
             info!("directory {:?} created", &dir);
@@ -119,7 +126,19 @@ pub fn run() -> Result<bool, io::Error> {
             let mut file = File::create(f_dir)?;
             file.write_all(b"Hello, world!")?;
         }
-        Err(e) => error!("cannot create directory {:?}: {}", &dir, e),
+        Err(e) => {
+            error!("cannot create directory {:?}: {}... destroy (try again)!", &dir, e);
+            // https://doc.rust-lang.org/std/fs/fn.remove_dir.html
+            // pub fn remove_dir<P: AsRef<Path>>(path: P) -> Result<()>
+            // Removes an existing, empty directory.
+            //
+            // https://doc.rust-lang.org/std/fs/fn.remove_dir_all.html
+            // pub fn remove_dir_all<P: AsRef<Path>>(path: P) -> Result<()>
+            // Removes a directory at this path, after removing all its
+            // contents. Use carefully!
+            fs::remove_dir_all(&dir)?;
+            return Err(e);
+        },
     };
 
     assert!(fs::metadata(&dir).unwrap().is_dir());
@@ -193,7 +212,7 @@ pub fn run() -> Result<bool, io::Error> {
             Err(e) => error!("cannot create directory {:?}: {}", &dir, e),
         };
     }
-    
+
     if src.is_dir() {
         visit_dirs(&src, &|d| {
             info!("entering {:?} found {:?}", &src, d);

@@ -11,8 +11,9 @@ extern crate env_logger;
 
 extern crate taker;
 use log::Level;
+use std::io;
 
-fn run_app() -> Result<(), ()> {
+fn run_app() -> Result<bool, io::Error> {
     env_logger::init();
 
     let matches = App::new("taker")
@@ -49,8 +50,7 @@ fn run_app() -> Result<(), ()> {
     if log_enabled!(Level::Debug) {
         info!("running the taker CLI");
     }
-    let _ = taker::run();
-    Ok(())
+    taker::run()
 }
 
 fn main() {

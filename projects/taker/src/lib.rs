@@ -2,6 +2,8 @@
 // TODO: group error types
 // TODO: encapsulate worker
 // TODO: encapsulate operation
+// TODO: check for existing files
+// TODO: check for existing directories
 
 // https://github.com/rust-lang-nursery/log
 // https://github.com/sebasmagri/env_logger/
@@ -136,14 +138,17 @@ pub fn run() -> Result<bool, io::Error> {
         .collect();
 
     if fs::File::open(&src).is_err() {
-            error!("ERROR: cannot copy {:?} because it's missing", &src);
-            let custom_error = io::Error::new(io::ErrorKind::Other, "missing_src");
-            return Err(custom_error);
+        error!("ERROR: cannot copy {:?} because it's missing", &src);
+        let custom_error = io::Error::new(io::ErrorKind::Other, "missing_src");
+        return Err(custom_error);
     }
     if fs::File::open(&dst).is_ok() {
-            error!("ERROR: cannot copy into {:?} because it's already there", &dst);
-            let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_override");
-            return Err(custom_error);
+        error!(
+            "ERROR: cannot copy into {:?} because it's already there",
+            &dst
+        );
+        let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_override");
+        return Err(custom_error);
     }
     // https://doc.rust-lang.org/std/fs/fn.copy.html
     // https://doc.rust-lang.org/std/fs/struct.File.html
@@ -172,6 +177,23 @@ pub fn run() -> Result<bool, io::Error> {
     src = [&home, BASE_URL, "test"].iter().collect();
     dst = [&home, BASE_URL, "tset"].iter().collect();
 
+    if dst.is_dir() {
+        error!("directory {:?} is already there, cannot copy!", &dst);
+    } else {
+        // https://doc.rust-lang.org/std/fs/struct.DirBuilder.html#method.create
+        match DirBuilder::new().recursive(true).create(&dst) {
+            // https://doc.rust-lang.org/std/io/type.Result.html
+            Ok(_) => {
+                info!("directory {:?} created", &dst);
+                // let mut f_dir: PathBuf = dir.clone();
+                // f_dir.push("foo.txt");
+                // let mut file = File::create(f_dir)?;
+                // file.write_all(b"Hello, world!")?;
+            }
+            Err(e) => error!("cannot create directory {:?}: {}", &dir, e),
+        };
+    }
+    
     if src.is_dir() {
         visit_dirs(&src, &|d| {
             info!("entering {:?} found {:?}", &src, d);

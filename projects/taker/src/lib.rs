@@ -81,7 +81,10 @@ fn verify_operation<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt:
 
 // https://doc.rust-lang.org/std/fs/fn.read_dir.html
 // one possible implementation of walking a directory only visiting files
-fn visit_dirs(dir: &Path, cb: &Fn(&DirEntry)) -> io::Result<()> {
+fn visit_dirs<T>(dir: &Path, cb: &T) -> io::Result<()>
+where
+    T: Fn(&DirEntry) -> Result<bool, io::Error>,
+{
     if dir.is_dir() {
         // https://doc.rust-lang.org/std/fs/fn.read_dir.html
         // pub fn read_dir<P: AsRef<Path>>(path: P) -> Result<ReadDir>
@@ -94,7 +97,7 @@ fn visit_dirs(dir: &Path, cb: &Fn(&DirEntry)) -> io::Result<()> {
                     if path.is_dir() {
                         visit_dirs(&path, cb)?;
                     } else {
-                        cb(&entry);
+                        cb(&entry)?;
                     }
                 }
             }
@@ -133,12 +136,15 @@ fn home_name() -> String {
     }
 }
 
-fn copy_file_in<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt::Debug>(src: S, dst: D) -> Result<bool, io::Error> {
+fn copy_file_in<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt::Debug>(
+    src: S,
+    dst: D,
+) -> Result<bool, io::Error> {
     // https://doc.rust-lang.org/std/fs/fn.copy.html
     // https://doc.rust-lang.org/std/fs/struct.File.html
     info!("copying {:?} into {:?}", &src, &dst);
     // https://github.com/rust-lang/rfcs/pull/243
-    let mut r = fs::copy(&src, &dst);
+    let r = fs::copy(&src, &dst);
     match &r {
         &Ok(n_bytes) => {
             debug!("OK: copied {} bytes from {:?} to {:?}", n_bytes, &src, &dst);
@@ -149,7 +155,9 @@ fn copy_file_in<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt::Deb
     };
 
     match verify_operation(Operation::CopyFile, &src, &dst) {
-        Ok(_) => { return Ok(true);}
+        Ok(_) => {
+            return Ok(true);
+        }
         // https://doc.rust-lang.org/std/process/fn.exit.html
         // https://doc.rust-lang.org/std/io/struct.Error.html
         Err(e) => {
@@ -221,9 +229,9 @@ pub fn run() -> Result<bool, io::Error> {
         let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_override");
         return Err(custom_error);
     }
-    
+
     copy_file_in(&src, &dst)?;
-    
+
     src = [&home, BASE_URL, "test"].iter().collect();
     dst = [&home, BASE_URL, "tset"].iter().collect();
 
@@ -257,7 +265,7 @@ pub fn run() -> Result<bool, io::Error> {
                 &src, f_src, f_src_s
             );
             let f_dst: PathBuf = tag_name(&home, &dst.to_str().unwrap(), &f_src_s);
-            copy_file_in(f_src_s, f_dst);
+            return copy_file_in(f_src_s, f_dst);
         })?;
     }
 

@@ -70,12 +70,12 @@ fn verify_operation<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt:
     };
     if s_size != d_size {
         error!(
-            "Something something has been lost performing {:?} on {:?} and {:?}",
+            "something something has been lost performing {:?} on {:?} and {:?}",
             op, src, dst
         );
         return Err(String::from("mismatching_size"));
     }
-    info!("Operation {:?} on {:?} and {:?} successful", op, src, dst);
+    info!("operation {:?} on {:?} and {:?} successful", op, src, dst);
     Ok(true)
 }
 
@@ -147,10 +147,10 @@ fn copy_file_in<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt::Deb
     let r = fs::copy(&src, &dst);
     match &r {
         &Ok(n_bytes) => {
-            debug!("OK: copied {} bytes from {:?} to {:?}", n_bytes, &src, &dst);
+            debug!("copied {} bytes from {:?} to {:?}", n_bytes, &src, &dst);
         }
         &Err(ref e) => {
-            error!("ERROR: cannot copy {:?} into {:?}: {:?}", &src, &dst, e);
+            error!("cannot copy {:?} into {:?}: {:?}", &src, &dst, e);
         }
     };
 
@@ -217,13 +217,13 @@ pub fn run() -> Result<bool, io::Error> {
     let mut dst: PathBuf = tag_name(&home, "test", f_target);
 
     if fs::File::open(&src).is_err() {
-        error!("ERROR: cannot copy {:?} because it's missing", &src);
+        error!("cannot copy {:?} because it's missing", &src);
         let custom_error = io::Error::new(io::ErrorKind::Other, "missing_src");
         return Err(custom_error);
     }
     if fs::File::open(&dst).is_ok() {
         error!(
-            "ERROR: cannot copy into {:?} because it's already there",
+            "cannot copy into {:?} because it's already there",
             &dst
         );
         let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_override");

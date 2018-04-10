@@ -26,6 +26,8 @@ use std::io;
 // use std::fs::File;
 use std::path::{Path, PathBuf};
 
+// use std::fmt::Debug;
+
 mod timez;
 
 const BASE_URL: &'static str = "Downloads";
@@ -108,10 +110,10 @@ where
     Ok(())
 }
 
-fn tag_name(home: &str, path: &str, name: &str) -> PathBuf {
+fn tag_name<P: AsRef<Path> + std::fmt::Debug>(home: &P, path: &P, name: &P) -> PathBuf {
     [
         home,
-        BASE_URL,
+        &PathBuf::from(BASE_URL),
         path,
         format!("{}.{}", timez::datetag(), name).as_ref(),
     ].iter()
@@ -261,10 +263,13 @@ pub fn run() -> Result<bool, io::Error> {
 
     if src.is_dir() {
         visit_dirs(&src, &|f_src| {
-            let f_src_s = f_src.file_name().into_string().unwrap();
+            let f_src_path = f_src.path();
             debug!("entering {:?} found {:?}", &src, f_src);
-            let f_src_s: PathBuf = [&src, &f_src_s].iter().collect().into();
-            let f_dst: PathBuf = tag_name(&home, &dst.to_str().unwrap(), &f_src_s);
+            let f_dst: PathBuf =
+                tag_name(&home, &dst.to_str().unwrap(), &f_src_path);
+            debug!("destination filename: {:?}", &f_dst);
+            let f_src_s: PathBuf = [src.to_str().unwrap(), &f_src_s].iter().collect();
+            debug!("source filename: {:?}", &f_src_s);
             return copy_file_in(f_src_s, f_dst);
         })?;
     }

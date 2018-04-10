@@ -111,25 +111,26 @@ fn tag_name(home: &str, path: &str, name: &str) -> PathBuf {
         .collect()
 }
 
-fn create_file_in(dir: &PathBuf) -> Result<bool, io::Error> {
+fn create_file_in(dir: &PathBuf) -> Result<PathBuf, io::Error> {
     let mut f_dir: PathBuf = dir.clone();
     f_dir.push("foo.txt");
     let mut file = File::create(&f_dir)?;
     return match file.write_all(b"Hello, world!") {
-        Ok(_) => {
-            info!("content written in {:?}", &f_dir);
-            Ok(true)
-        }
+        Ok(_) => Ok(f_dir),
         Err(e) => Err(e),
     };
 }
 
-pub fn run() -> Result<bool, io::Error> {
-    let mut home: String = "HOME".to_owned();
-    home = match env::var(home) {
+fn home_name() -> String {
+    let home: String = "HOME".to_owned();
+    match env::var(home) {
         Ok(h) => h,
         Err(_) => "/".to_owned(),
-    };
+    }
+}
+
+pub fn run() -> Result<bool, io::Error> {
+    let home: String = home_name();
     info!("considering {} as $HOME", home);
 
     // https://doc.rust-lang.org/std/path/struct.PathBuf.html
@@ -146,8 +147,9 @@ pub fn run() -> Result<bool, io::Error> {
         // https://doc.rust-lang.org/std/io/type.Result.html
         Ok(_) => {
             info!("directory {:?} created", &dir);
-            create_file_in(&dir)?;
-        }
+            let f_dir: PathBuf = create_file_in(&dir)?;
+            info!("content written in {:?}", f_dir);
+     }
         Err(e) => {
             error!(
                 "cannot create directory {:?}: {}... destroy (try again)!",

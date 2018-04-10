@@ -5,6 +5,8 @@
 // TODO: check for existing files
 // TODO: check for existing directories
 // TODO: bubble up errors
+// TODO: tar compression
+// TODO: symmetric encryption
 
 // https://github.com/rust-lang-nursery/log
 // https://github.com/sebasmagri/env_logger/
@@ -99,8 +101,31 @@ fn visit_dirs(dir: &Path, cb: &Fn(&DirEntry)) -> io::Result<()> {
     Ok(())
 }
 
+fn tag_name(home: &str, path: &str, name: &str) -> PathBuf {
+    [
+        home,
+        BASE_URL,
+        path,
+        format!("{}.{}", timez::datetag(), name).as_ref(),
+    ].iter()
+        .collect()
+}
+
+fn create_file_in(dir: &PathBuf) -> Result<bool, io::Error> {
+    let mut f_dir: PathBuf = dir.clone();
+    f_dir.push("foo.txt");
+    let mut file = File::create(&f_dir)?;
+    return match file.write_all(b"Hello, world!") {
+        Ok(_) => {
+            info!("content written in {:?}", &f_dir);
+            Ok(true)
+        }
+        Err(e) => Err(e),
+    };
+}
+
 pub fn run() -> Result<bool, io::Error> {
-    let mut home = "HOME".to_owned();
+    let mut home: String = "HOME".to_owned();
     home = match env::var(home) {
         Ok(h) => h,
         Err(_) => "/".to_owned(),
@@ -121,10 +146,7 @@ pub fn run() -> Result<bool, io::Error> {
         // https://doc.rust-lang.org/std/io/type.Result.html
         Ok(_) => {
             info!("directory {:?} created", &dir);
-            let mut f_dir: PathBuf = dir.clone();
-            f_dir.push("foo.txt");
-            let mut file = File::create(f_dir)?;
-            file.write_all(b"Hello, world!")?;
+            create_file_in(&dir)?;
         }
         Err(e) => {
             error!(
@@ -151,13 +173,7 @@ pub fn run() -> Result<bool, io::Error> {
     //   fn as_ref(&self) -> &Path
     let mut src: PathBuf = [&home, BASE_URL, "test", "foo.txt"].iter().collect();
 
-    let mut dst: PathBuf = [
-        &home,
-        BASE_URL,
-        "test",
-        format!("{}.foo.txt", timez::datetag()).as_ref(),
-    ].iter()
-        .collect();
+    let mut dst: PathBuf = tag_name(&home, "test", "foo.txt");
 
     if fs::File::open(&src).is_err() {
         error!("ERROR: cannot copy {:?} because it's missing", &src);

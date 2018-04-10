@@ -110,11 +110,28 @@ where
     Ok(())
 }
 
-fn tag_name<P: AsRef<Path> + std::fmt::Debug>(home: &P, path: &P, name: &P) -> PathBuf {
+// https://doc.rust-lang.org/std/convert/trait.AsRef.html
+// fn is_hello<T: AsRef<str>>(s: T) {
+//    assert_eq!("hello", s.as_ref());
+// }
+//
+// let s = "hello";
+// is_hello(s);
+//
+// let s = "hello".to_string();
+// is_hello(s);
+//
+
+fn tag_name<P>(home: &P, path: &P, name: &P) -> PathBuf
+where
+    P: AsRef<Path> + std::fmt::Debug + std::fmt::Display,
+    // P: AsRef<std::path::Path>,
+{
+    let b_url: PathBuf = PathBuf::from(BASE_URL);
     [
-        home,
-        &PathBuf::from(BASE_URL),
-        path,
+        home.as_ref(),
+        b_url.as_ref(),
+        path.as_ref(),
         format!("{}.{}", timez::datetag(), name).as_ref(),
     ].iter()
         .collect()
@@ -265,8 +282,7 @@ pub fn run() -> Result<bool, io::Error> {
         visit_dirs(&src, &|f_src| {
             let f_src_path = f_src.path();
             debug!("entering {:?} found {:?}", &src, f_src);
-            let f_dst: PathBuf =
-                tag_name(&home, &dst.to_str().unwrap(), &f_src_path);
+            let f_dst: PathBuf = tag_name(&home, &dst.to_str().unwrap(), &f_src_path);
             debug!("destination filename: {:?}", &f_dst);
             let f_src_s: PathBuf = [src.to_str().unwrap(), &f_src_s].iter().collect();
             debug!("source filename: {:?}", &f_src_s);

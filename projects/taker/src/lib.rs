@@ -149,7 +149,7 @@ pub fn run() -> Result<bool, io::Error> {
             info!("directory {:?} created", &dir);
             let f_dir: PathBuf = create_file_in(&dir)?;
             info!("content written in {:?}", f_dir);
-     }
+        }
         Err(e) => {
             error!(
                 "cannot create directory {:?}: {}... destroy (try again)!",
@@ -173,9 +173,10 @@ pub fn run() -> Result<bool, io::Error> {
     // https://doc.rust-lang.org/std/path/struct.Path.html
     // impl AsRef<Path> for String
     //   fn as_ref(&self) -> &Path
-    let mut src: PathBuf = [&home, BASE_URL, "test", "foo.txt"].iter().collect();
+    let f_target: &str = "foo.txt";
+    let mut src: PathBuf = [&home, BASE_URL, "test", f_target].iter().collect();
 
-    let mut dst: PathBuf = tag_name(&home, "test", "foo.txt");
+    let mut dst: PathBuf = tag_name(&home, "test", f_target);
 
     if fs::File::open(&src).is_err() {
         error!("ERROR: cannot copy {:?} because it's missing", &src);
@@ -232,13 +233,17 @@ pub fn run() -> Result<bool, io::Error> {
                 // let mut file = File::create(f_dir)?;
                 // file.write_all(b"Hello, world!")?;
             }
-            Err(e) => error!("cannot create directory {:?}: {}", &dir, e),
+            Err(e) => {
+                error!("cannot create directory {:?}: {}", &dir, e);
+                return Err(e);
+            }
         };
     }
 
     if src.is_dir() {
-        visit_dirs(&src, &|d| {
-            info!("entering {:?} found {:?}", &src, d);
+        visit_dirs(&src, &|f_src| {
+            info!("entering {:?} found {:?}", &src, f_src);
+            let f_dst: PathBuf = tag_name(&home, &dst.to_str().unwrap(), f_src);
         })?;
     }
 

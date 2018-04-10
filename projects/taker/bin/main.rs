@@ -11,6 +11,7 @@ extern crate env_logger;
 
 extern crate taker;
 use log::Level;
+use std::error::Error;
 use std::io;
 
 fn run_app() -> Result<bool, io::Error> {
@@ -57,7 +58,7 @@ fn main() {
     ::std::process::exit(match run_app() {
        Ok(_) => 0,
        Err(err) => {
-           eprintln!("error: {:?}", err);
+           eprintln!("error: {:?}", err.description());
            1
        }
     });

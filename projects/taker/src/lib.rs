@@ -127,7 +127,10 @@ pub fn run() -> Result<bool, io::Error> {
             file.write_all(b"Hello, world!")?;
         }
         Err(e) => {
-            error!("cannot create directory {:?}: {}... destroy (try again)!", &dir, e);
+            error!(
+                "cannot create directory {:?}: {}... destroy (try again)!",
+                &dir, e
+            );
             // https://doc.rust-lang.org/std/fs/fn.remove_dir.html
             // pub fn remove_dir<P: AsRef<Path>>(path: P) -> Result<()>
             // Removes an existing, empty directory.
@@ -138,7 +141,7 @@ pub fn run() -> Result<bool, io::Error> {
             // contents. Use carefully!
             fs::remove_dir_all(&dir)?;
             return Err(e);
-        },
+        }
     };
 
     assert!(fs::metadata(&dir).unwrap().is_dir());
@@ -198,6 +201,8 @@ pub fn run() -> Result<bool, io::Error> {
 
     if dst.is_dir() {
         error!("directory {:?} is already there, cannot copy!", &dst);
+        let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_override");
+        return Err(custom_error);
     } else {
         // https://doc.rust-lang.org/std/fs/struct.DirBuilder.html#method.create
         match DirBuilder::new().recursive(true).create(&dst) {
@@ -226,6 +231,18 @@ pub fn run() -> Result<bool, io::Error> {
         }
         Err(e) => {
             error!("cannot copy {:?} into {:?}: {:?}", &src, &dst, e);
+            let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_copy");
+            return Err(custom_error);
+        }
+    };
+
+    match verify_operation(Operation::CopyDir, &src, &dst) {
+        Ok(_) => {}
+        // https://doc.rust-lang.org/std/process/fn.exit.html
+        // https://doc.rust-lang.org/std/io/struct.Error.html
+        Err(e) => {
+            let custom_error = io::Error::new(io::ErrorKind::Other, e);
+            return Err(custom_error);
         }
     };
 

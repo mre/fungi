@@ -41,7 +41,11 @@ enum Operation {
     CopyDir,
 }
 
-fn verify_operation(op: Operation, src: &PathBuf, dst: &PathBuf) -> Result<bool, String> {
+fn verify_operation<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt::Debug>(
+    op: Operation,
+    src: &S,
+    dst: &D,
+) -> Result<bool, String> {
     debug!("verifying the result of {:?}", op);
     let mut s_size: u64 = 0;
     let mut d_size: u64 = 0;
@@ -129,6 +133,32 @@ fn home_name() -> String {
     }
 }
 
+fn copy_file_in<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt::Debug>(src: S, dst: D) -> Result<bool, io::Error> {
+    // https://doc.rust-lang.org/std/fs/fn.copy.html
+    // https://doc.rust-lang.org/std/fs/struct.File.html
+    info!("copying {:?} into {:?}", &src, &dst);
+    // https://github.com/rust-lang/rfcs/pull/243
+    let mut r = fs::copy(&src, &dst);
+    match &r {
+        &Ok(n_bytes) => {
+            debug!("OK: copied {} bytes from {:?} to {:?}", n_bytes, &src, &dst);
+        }
+        &Err(ref e) => {
+            error!("ERROR: cannot copy {:?} into {:?}: {:?}", &src, &dst, e);
+        }
+    };
+
+    match verify_operation(Operation::CopyFile, &src, &dst) {
+        Ok(_) => { return Ok(true);}
+        // https://doc.rust-lang.org/std/process/fn.exit.html
+        // https://doc.rust-lang.org/std/io/struct.Error.html
+        Err(e) => {
+            let custom_error = io::Error::new(io::ErrorKind::Other, e);
+            return Err(custom_error);
+        }
+    };
+}
+
 pub fn run() -> Result<bool, io::Error> {
     let home: String = home_name();
     info!("considering {} as $HOME", home);
@@ -191,30 +221,9 @@ pub fn run() -> Result<bool, io::Error> {
         let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_override");
         return Err(custom_error);
     }
-    // https://doc.rust-lang.org/std/fs/fn.copy.html
-    // https://doc.rust-lang.org/std/fs/struct.File.html
-    info!("copying {:?} into {:?}", &src, &dst);
-    // https://github.com/rust-lang/rfcs/pull/243
-    let mut r = fs::copy(&src, &dst);
-    match &r {
-        &Ok(n_bytes) => {
-            debug!("OK: copied {} bytes from {:?} to {:?}", n_bytes, &src, &dst);
-        }
-        &Err(ref e) => {
-            error!("ERROR: cannot copy {:?} into {:?}: {:?}", &src, &dst, e);
-        }
-    };
-
-    match verify_operation(Operation::CopyFile, &src, &dst) {
-        Ok(_) => {}
-        // https://doc.rust-lang.org/std/process/fn.exit.html
-        // https://doc.rust-lang.org/std/io/struct.Error.html
-        Err(e) => {
-            let custom_error = io::Error::new(io::ErrorKind::Other, e);
-            return Err(custom_error);
-        }
-    };
-
+    
+    copy_file_in(&src, &dst)?;
+    
     src = [&home, BASE_URL, "test"].iter().collect();
     dst = [&home, BASE_URL, "tset"].iter().collect();
 
@@ -242,12 +251,17 @@ pub fn run() -> Result<bool, io::Error> {
 
     if src.is_dir() {
         visit_dirs(&src, &|f_src| {
-            info!("entering {:?} found {:?}", &src, f_src);
-            let f_dst: PathBuf = tag_name(&home, &dst.to_str().unwrap(), f_src);
+            let f_src_s = f_src.file_name().into_string().unwrap();
+            info!(
+                "entering {:?} found {:?} (in OsString: {:?})",
+                &src, f_src, f_src_s
+            );
+            let f_dst: PathBuf = tag_name(&home, &dst.to_str().unwrap(), &f_src_s);
+            copy_file_in(f_src_s, f_dst);
         })?;
     }
 
-    r = fs::copy(&src, &dst);
+    let r = fs::copy(&src, &dst);
     match r {
         Ok(n_bytes) => {
             debug!("copied {} bytes from {:?} to {:?}", n_bytes, &src, &dst);

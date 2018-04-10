@@ -167,9 +167,13 @@ fn copy_file_in<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt::Deb
     };
 }
 
+fn create_token_file_in(dir: &PathBuf) -> Result<PathBuf, io::Error> {
+    create_file_in(&dir)
+}
+
 pub fn run() -> Result<bool, io::Error> {
     let home: String = home_name();
-    info!("considering {} as $HOME", home);
+    debug!("considering {} as $HOME", home);
 
     // https://doc.rust-lang.org/std/path/struct.PathBuf.html
     let mut dir: PathBuf = [&home, BASE_URL].iter().collect();
@@ -185,8 +189,8 @@ pub fn run() -> Result<bool, io::Error> {
         // https://doc.rust-lang.org/std/io/type.Result.html
         Ok(_) => {
             info!("directory {:?} created", &dir);
-            let f_dir: PathBuf = create_file_in(&dir)?;
-            info!("content written in {:?}", f_dir);
+            let f_dir: PathBuf = create_token_file_in(&dir).unwrap();
+            debug!("content written in {:?}", f_dir);
         }
         Err(e) => {
             error!(
@@ -206,6 +210,7 @@ pub fn run() -> Result<bool, io::Error> {
         }
     };
 
+    debug!("ensuring that {:?} is a directory", &dir);
     assert!(fs::metadata(&dir).unwrap().is_dir());
 
     // https://doc.rust-lang.org/std/path/struct.Path.html
@@ -222,10 +227,7 @@ pub fn run() -> Result<bool, io::Error> {
         return Err(custom_error);
     }
     if fs::File::open(&dst).is_ok() {
-        error!(
-            "cannot copy into {:?} because it's already there",
-            &dst
-        );
+        error!("cannot copy into {:?} because it's already there", &dst);
         let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_override");
         return Err(custom_error);
     }
@@ -260,10 +262,8 @@ pub fn run() -> Result<bool, io::Error> {
     if src.is_dir() {
         visit_dirs(&src, &|f_src| {
             let f_src_s = f_src.file_name().into_string().unwrap();
-            info!(
-                "entering {:?} found {:?} (in OsString: {:?})",
-                &src, f_src, f_src_s
-            );
+            debug!("entering {:?} found {:?}", &src, f_src);
+            let f_src_s: PathBuf = [&src, &f_src_s].iter().collect().into();
             let f_dst: PathBuf = tag_name(&home, &dst.to_str().unwrap(), &f_src_s);
             return copy_file_in(f_src_s, f_dst);
         })?;

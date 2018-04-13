@@ -59,7 +59,7 @@ enum Operation {
 }
 
 fn config() -> Result<bool, io::Error> {
-    config::parse("nope");
+    config::parse("nope".to_string());
     Ok(true)
 }
 

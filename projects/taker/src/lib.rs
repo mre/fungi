@@ -60,11 +60,6 @@ mod timez;
 
 const BASE_URL: &'static str = "Downloads";
 
-// #[derive(Debug)]
-// struct Operation  {
-//     name: String,
-// }
-
 #[derive(Debug)]
 enum Operation {
     CopyFile,
@@ -72,9 +67,12 @@ enum Operation {
     CopyDir,
 }
 
-pub fn config() -> Result<bool, io::Error> {
-    config::parse("nope".to_string());
-    Ok(true)
+pub fn config() -> config::Config {
+    let cfg_path: String = "TAKER_CFG".to_owned();
+    config::parse(match env::var(cfg_path) {
+        Ok(h) => h,
+        Err(_) => "~/.taker.toml".to_owned(),
+    })
 }
 
 fn verify_operation<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt::Debug>(
@@ -238,7 +236,15 @@ fn random_from(seed: &str) -> String {
     return chars;
 }
 
-pub fn run() -> Result<bool, io::Error> {
+pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
+    match cfg.files.len() {
+        0 => info!("nothing to do"),
+        c => info!("taking {:?} entries", c),
+    };
+    Ok(true)
+}
+
+pub fn sample(_: config::Config) -> Result<bool, io::Error> {
     let home: String = home_name();
     debug!("considering {} as $HOME", home);
 
@@ -333,12 +339,13 @@ pub fn run() -> Result<bool, io::Error> {
     // src: mut PathBuf
     if !src.is_dir() || !dst.is_dir() {
         error!(
-            "cannot copy {:?} into {:?}: buth must be exsting directories",
+            "cannot copy {:?} into {:?}: buth must be an existing directory",
             &src, &dst
         );
         let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_copy");
         return Err(custom_error);
     }
+    
     info!("copying content of {:?} into {:?}", src, dst);
     visit_dirs(&src, &|f_src| {
         // let f_src_path = f_src.path();
@@ -384,7 +391,7 @@ pub fn run() -> Result<bool, io::Error> {
                 }
                 c = c + 1;
             }
-        };
+        }
         info!("inspected {:?} entries in {:?}", c, &dst);
     }
 

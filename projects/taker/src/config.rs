@@ -7,7 +7,7 @@ use std::io::prelude::*;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
-    files: Vec<String>,
+    pub files: Vec<String>,
 }
 
 macro_rules! vec_of_strings {

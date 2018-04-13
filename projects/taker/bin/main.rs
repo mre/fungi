@@ -1,6 +1,6 @@
 // https://github.com/kbknapp/clap-rs/
 extern crate clap;
-use clap::{Arg, App};
+use clap::{App, Arg};
 
 // https://github.com/rust-lang-nursery/log
 // https://github.com/sebasmagri/env_logger/
@@ -53,17 +53,15 @@ fn run_app() -> Result<bool, io::Error> {
         info!("running the taker CLI");
     }
 
-    taker::config()?;
-    taker::run()
+    taker::run(taker::config())
 }
 
 fn main() {
     ::std::process::exit(match run_app() {
-       Ok(_) => 0,
-       Err(err) => {
-           eprintln!("error: {:?}", err.description());
-           1
-       }
+        Ok(_) => 0,
+        Err(err) => {
+            eprintln!("error: {:?}", err.description());
+            1
+        }
     });
 }
-

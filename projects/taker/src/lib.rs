@@ -238,7 +238,7 @@ pub fn run() -> Result<bool, io::Error> {
     let f_target: &str = "foo.txt";
     let mut src: PathBuf = [&home, BASE_URL, "test", f_target].iter().collect();
 
-    let mut dst: PathBuf = tag_name(&home, "test", f_target);
+    let mut dst: PathBuf = tag_name(&home, &String::from("test"), &String::from(f_target));
 
     if fs::File::open(&src).is_err() {
         error!("cannot copy {:?} because it's missing", &src);

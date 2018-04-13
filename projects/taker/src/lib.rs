@@ -37,9 +37,9 @@ use std::path::{Path, PathBuf};
 // use std::fmt::Debug;
 
 // https://github.com/rust-lang-nursery/rand/blob/master/src/lib.rs
+use rand::Rng;
 use rand::distributions::Alphanumeric;
 use rand::thread_rng;
-use rand::Rng;
 
 // Rust only knows to look in src/lib.rs by default. If we want to add
 // more files to our project, we need to tell Rust in src/lib.rs to look
@@ -181,10 +181,9 @@ fn create_file_in(dir: &PathBuf) -> Result<PathBuf, io::Error> {
 }
 
 fn home_name() -> String {
-    let home: String = "HOME".to_owned();
-    match env::var(home) {
-        Ok(h) => h,
-        Err(_) => "/".to_owned(),
+    match env::home_dir() {
+        Some(path) => String::from(path.to_str().unwrap()),
+        None => "/".to_owned(),
     }
 }
 
@@ -261,6 +260,28 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
 
             debug!("ensuring that {:?} is a directory", &dir);
             assert!(fs::metadata(&dir).unwrap().is_dir());
+
+            for f in cfg.files {
+                let f: PathBuf = PathBuf::from(f);
+                debug!("unpacking {:?}", f);
+
+                // let p: std::result::Result<
+                //     &std::path::Path,
+                //     std::path::StripPrefixError,
+                // > = f.strip_prefix("~");
+
+                if let Ok(p) = f.strip_prefix("~") {
+                    let p: &PathBuf = &Path::new(&home_name()).join(p);
+                    debug!("expanded path: {:?}", p);
+                    if fs::metadata(&p).unwrap().is_dir() {
+                        debug!("{:?} is a directory", p);
+                    } else {
+                        debug!("{:?} is a file", p);
+                    }
+                } else {
+                    error!("cannot strip $HOME from {:?}", f);
+                }
+            }
         }
     };
     Ok(true)

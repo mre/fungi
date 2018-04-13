@@ -34,8 +34,10 @@ pub fn parse(path: String) -> Config {
     let mut file = match File::open(&path) {
         Ok(file) => file,
         Err(_) => {
-            error!("Could not find config file, using default!");
-            return Config::default();
+            warn!("Could not find config file, using default!");
+            let cfg: Config = Config::default();
+            debug!("running with this configuration: {:?}", cfg);            
+            return cfg;
         }
     };
 

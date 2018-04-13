@@ -1,3 +1,8 @@
+#[macro_use]
+extern crate serde_derive;
+extern crate toml;
+
+use std::fs::File;
 
 #[derive(Serialize)]
 struct Config {

@@ -1,24 +1,13 @@
-#[macro_use]
-extern crate serde_derive;
 extern crate toml;
 
 // https://doc.rust-lang.org/std/io/trait.Read.html
+use std::error::Error;
+use std::fs::File;
 use std::io::prelude::*;
-use std::fs::File;
 
-use std::fs::File;
-
-#[derive(Serialize)]
-struct Config {
+#[derive(Deserialize, Debug)]
+pub struct Config {
     files: Vec<String>,
-}
-
-impl Config {
-    fn new() -> Config {
-        Config{
-            files: vec![],
-        }
-    }
 }
 
 macro_rules! vec_of_strings {
@@ -46,7 +35,7 @@ pub fn parse(path: String) -> Config {
         Ok(file) => file,
         Err(_) => {
             error!("Could not find config file, using default!");
-            return Config::new();
+            return Config::default();
         }
     };
 
@@ -54,24 +43,18 @@ pub fn parse(path: String) -> Config {
     file.read_to_string(&mut config_toml)
         .unwrap_or_else(|err| panic!("Error while reading config: [{}]", err));
 
-    let mut parser = Parser::new(&config_toml);
-    let toml = parser.parse();
-
-    if toml.is_none() {
-        for err in &parser.errors {
-            let (loline, locol) = parser.to_linecol(err.lo);
-            let (hiline, hicol) = parser.to_linecol(err.hi);
-            println!(
-                "{}:{}:{}-{}:{} error: {}",
-                path, loline, locol, hiline, hicol, err.desc
-            );
+    // https://docs.rs/toml/0.4.6/toml/de/fn.from_str.html
+    let parsed = toml::from_str(&config_toml);
+    match parsed {
+        Ok(c) => {
+            let cfg: Config = c;
+            debug!("running with this configuration: {:?}", cfg);
+            return cfg;
+        },
+        Err(e) => {
+            let (line, col) = e.line_col().expect("unparseable parse error");
+            error!("{}:{} error: {}", line, col, e.description());
+            return Config::default();
         }
-        panic!("Unrecoverable Error");
-    }
-
-    let config = Config(toml.unwrap());
-    match toml::decode(config) {
-        Some(t) => t,
-        None => panic!("Error while deserializing config"),
     }
 }

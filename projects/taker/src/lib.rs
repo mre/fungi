@@ -41,7 +41,21 @@ use rand::Rng;
 use rand::distributions::Alphanumeric;
 use rand::thread_rng;
 
+// Rust only knows to look in src/lib.rs by default. If we want to add
+// more files to our project, we need to tell Rust in src/lib.rs to look
+// in other files; this is why mod client needs to be defined in
+// src/lib.rs and can't be defined in src/client.rs.
+//
+// The mod keyword declares a new module. Code within the module appears either
+// immediately following this declaration within curly brackets or in another
+// file.
+// 
+// The use keyword brings modules, or the definitions inside modules, into
+// scope so it's easier to refer to them.
+
+// content of config.rs
 mod config;
+// content of timez.rs
 mod timez;
 
 const BASE_URL: &'static str = "Downloads";
@@ -340,15 +354,22 @@ pub fn run() -> Result<bool, io::Error> {
     })?;
 
     // https://doc.rust-lang.org/std/fs/struct.DirEntry.html
-    if let Ok(entries) = fs::read_dir(dst) {
+    if let Ok(entries) = fs::read_dir(&dst) {
+        let c = &entries.count();
+        info!("inspecting {:?} entries in {:?}", c, &dst);
+
         for entry in entries {
             if let Ok(entry) = entry {
                 // Here, `entry` is a `DirEntry`.
                 if let Ok(metadata) = entry.metadata() {
                     // Now let's show our entry's permissions!
-                    println!("{:?}: {:?}", entry.path(), metadata.permissions());
+                    debug!(
+                        "metadata of {:?}: {:?}",
+                        entry.path(),
+                        metadata.permissions()
+                    );
                 } else {
-                    println!("Couldn't get metadata for {:?}", entry.path());
+                    error!("couldn't get metadata for {:?}", entry.path());
                 }
             }
         }

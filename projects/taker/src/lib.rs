@@ -32,8 +32,8 @@ use std::path::{Path, PathBuf};
 // use std::fmt::Debug;
 
 // https://github.com/rust-lang-nursery/rand/blob/master/src/lib.rs
-use rand::distributions::Alphanumeric;
 use rand::Rng;
+use rand::distributions::Alphanumeric;
 use rand::thread_rng;
 
 mod timez;
@@ -305,45 +305,27 @@ pub fn run() -> Result<bool, io::Error> {
     }
 
     // src: mut PathBuf
-    if src.is_dir() {
-        visit_dirs(&src, &|f_src| {
-            // let f_src_path = f_src.path();
-            debug!("entering {:?} found {:?}", &src, f_src.file_name());
-
-            let home = PathBuf::from(&home);
-
-            let f_dst: PathBuf = tag_name(&home, &dst, &PathBuf::from(f_src.file_name()));
-            debug!("destination filename: {:?}", &f_dst);
-            let f_src_s: PathBuf = [&src, &f_src.path()].iter().collect();
-            debug!("source filename: {:?}", &f_src_s);
-            return copy_file_in(f_src_s, f_dst);
-        })?;
+    if !src.is_dir() || !dst.is_dir() {
+        error!("cannot copy {:?} into {:?}: buth must be exsting directories", &src, &dst);
+        let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_copy");
+        return Err(custom_error);
     }
+    info!("copying content of {:?} into {:?}", src, dst);
+    visit_dirs(&src, &|f_src| {
+        // let f_src_path = f_src.path();
+        debug!("entering {:?} found {:?}", &src, f_src.file_name());
 
-    let r = fs::copy(&src, &dst);
-    match r {
-        Ok(n_bytes) => {
-            debug!("copied {} bytes from {:?} to {:?}", n_bytes, &src, &dst);
-        }
-        Err(e) => {
-            error!("cannot copy {:?} into {:?}: {:?}", &src, &dst, e);
-            let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_copy");
-            return Err(custom_error);
-        }
-    };
+        let home = PathBuf::from(&home);
 
-    match verify_operation(Operation::CopyDir, &src, &dst) {
-        Ok(_) => {}
-        // https://doc.rust-lang.org/std/process/fn.exit.html
-        // https://doc.rust-lang.org/std/io/struct.Error.html
-        Err(e) => {
-            let custom_error = io::Error::new(io::ErrorKind::Other, e);
-            return Err(custom_error);
-        }
-    };
+        let f_dst: PathBuf = tag_name(&home, &dst, &PathBuf::from(f_src.file_name()));
+        debug!("destination filename: {:?}", &f_dst);
+        let f_src_s: PathBuf = [&src, &f_src.path()].iter().collect();
+        debug!("source filename: {:?}", &f_src_s);
+        return copy_file_in(f_src_s, f_dst);
+    })?;
 
     // https://doc.rust-lang.org/std/fs/struct.DirEntry.html
-    if let Ok(entries) = fs::read_dir(".") {
+    if let Ok(entries) = fs::read_dir(dst) {
         for entry in entries {
             if let Ok(entry) = entry {
                 // Here, `entry` is a `DirEntry`.
@@ -358,10 +340,10 @@ pub fn run() -> Result<bool, io::Error> {
     }
 
     // https://doc.rust-lang.org/std/fs/struct.DirBuilder.html
-    let path = "/tmp/foo/bar/baz";
-    DirBuilder::new().recursive(true).create(path).unwrap();
-
-    assert!(fs::metadata(path).unwrap().is_dir());
+    // let path = "/tmp/foo/bar/baz";
+    // DirBuilder::new().recursive(true).create(path).unwrap();
+    // assert!(fs::metadata(path).unwrap().is_dir());
+    
     Ok(true)
 }
 

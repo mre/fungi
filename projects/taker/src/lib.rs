@@ -14,8 +14,11 @@
 #[macro_use]
 extern crate log;
 extern crate env_logger;
+// https://docs.rs/rand/0.5.0-pre.0/rand/
+extern crate rand;
 
 use std::io::prelude::*;
+use std::iter;
 // use std::fmt;
 use std::env;
 use std::fs::{self, DirBuilder, DirEntry, File, ReadDir};
@@ -27,6 +30,11 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 // use std::fmt::Debug;
+
+// https://github.com/rust-lang-nursery/rand/blob/master/src/lib.rs
+use rand::distributions::Alphanumeric;
+use rand::Rng;
+use rand::thread_rng;
 
 mod timez;
 
@@ -191,6 +199,19 @@ fn create_token_file_in(dir: &PathBuf) -> Result<PathBuf, io::Error> {
     create_file_in(&dir)
 }
 
+// https://github.com/rust-lang-nursery/rand/blob/master/src/lib.rs#L601
+// https://github.com/rust-lang-nursery/rand/blob/master/src/lib.rs#L380
+// https://github.com/rust-lang-nursery/rand/blob/0.5.0-pre.0/src/distributions/other.rs
+fn random_from(seed: &str) -> String {
+    let mut rng = thread_rng();
+    let distr = &Alphanumeric;
+    let chars: String = iter::repeat(())
+        .map(|()| rng.sample(distr))
+        .take(seed.len())
+        .collect();
+    return chars;
+}
+
 pub fn run() -> Result<bool, io::Error> {
     let home: String = home_name();
     debug!("considering {} as $HOME", home);
@@ -239,7 +260,9 @@ pub fn run() -> Result<bool, io::Error> {
     let f_target: &str = "foo.txt";
     let mut src: PathBuf = [&home, BASE_URL, "test", f_target].iter().collect();
 
-    let mut dst: PathBuf = tag_name(&home, &String::from("test"), &String::from(f_target));
+    // let mut dst: PathBuf = tag_name(&home, &String::from("test"), &String::from(f_target));
+
+    let mut dst: PathBuf = PathBuf::from(random_from("foo"));
 
     if fs::File::open(&src).is_err() {
         error!("cannot copy {:?} because it's missing", &src);
@@ -282,17 +305,14 @@ pub fn run() -> Result<bool, io::Error> {
     // src: mut PathBuf
     if src.is_dir() {
         visit_dirs(&src, &|f_src| {
-            let f_src_path = f_src.path();
-            debug!("entering {:?} found {:?}", &src, f_src);
-            
+            // let f_src_path = f_src.path();
+            debug!("entering {:?} found {:?}", &src, f_src.file_name());
+
             let home = PathBuf::from(&home);
-            
-            let f_dst: PathBuf = tag_name(&home, &dst, &f_src_path);
+
+            let f_dst: PathBuf = tag_name(&home, &dst, &PathBuf::from(f_src.file_name()));
             debug!("destination filename: {:?}", &f_dst);
-            let f_src_s: PathBuf = [
-                &src,
-                &f_src.path(),
-            ].iter().collect();
+            let f_src_s: PathBuf = [&src, &f_src.path()].iter().collect();
             debug!("source filename: {:?}", &f_src_s);
             return copy_file_in(f_src_s, f_dst);
         })?;

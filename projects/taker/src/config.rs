@@ -11,18 +11,25 @@ struct Config {
 
 impl Config {
     fn new() -> Config {
+        Config{
+            files: vec![],
+        }
     }
+}
+
+macro_rules! vec_of_strings {
+    ($($x:expr),*) => (vec![$($x.to_string()),*]);
 }
 
 impl Default for Config {
     fn default() -> Config {
         Config {
-            files: [
+            files: vec_of_strings![
                 "~/.bash_profile",
                 "~/.ssh/",
                 "~/.emacs.el",
                 "~/.aws",
-                "~/.config/awesome/rc.lua",
+                "~/.config/awesome/rc.lua"
             ],
         }
     }

@@ -128,12 +128,12 @@ where
     P: AsRef<std::path::Path>,
 {
     let b_url: PathBuf = PathBuf::from(BASE_URL);
-    let name = name.as_ref();
+    let name: &Path = name.as_ref();
     [
         home.as_ref(),
         b_url.as_ref(),
         path.as_ref(),
-        format!("{}.{}", timez::datetag(), name).as_ref(),
+        format!("{}.{}", timez::datetag(), name.display()).as_ref(),
     ].iter()
         .collect()
 }
@@ -289,7 +289,10 @@ pub fn run() -> Result<bool, io::Error> {
             
             let f_dst: PathBuf = tag_name(&home, &dst, &f_src_path);
             debug!("destination filename: {:?}", &f_dst);
-            let f_src_s: PathBuf = [src.to_str().unwrap(), f_src].iter().collect();
+            let f_src_s: PathBuf = [
+                &src,
+                &f_src.path(),
+            ].iter().collect();
             debug!("source filename: {:?}", &f_src_s);
             return copy_file_in(f_src_s, f_dst);
         })?;

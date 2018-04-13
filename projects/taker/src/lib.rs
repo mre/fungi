@@ -290,6 +290,13 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                             return copy_file_in(f_src_s, f_dst);
                         })?;
                     } else {
+                            // let f_dst: PathBuf =
+                            //     tag_name(&home, &dst, &PathBuf::from(p.file_name()));
+                            // debug!("destination filename: {:?}", &f_dst);
+                            // let f_src_s: PathBuf = [p, &f_src.path()].iter().collect();
+                            // debug!("source filename: {:?}", &f_src_s);
+                            // return copy_file_in(f_src_s, f_dst);
+                        
                         debug!("{:?} is a file", p);
                     }
                 } else {

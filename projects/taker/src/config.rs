@@ -1,10 +1,12 @@
-#[macro_use]
-extern crate serde_derive;
-extern crate toml;
 
 #[derive(Serialize)]
 struct Config {
     files: Vec<String>,
+}
+
+impl Config {
+    fn new() -> Config {
+    }
 }
 
 impl Default for Config {

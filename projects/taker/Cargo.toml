@@ -12,9 +12,15 @@ env_logger = "0.5.6"
 chrono = "0.4"
 # https://github.com/kbknapp/clap-rs
 clap = "2.31"
-
 # https://github.com/rust-lang-nursery/rand
 rand = "0.5.0-pre.0"
+# https://github.com/alexcrichton/toml-rs
+# https://docs.rs/toml/0.4.6/toml/
+toml = "0.4"
+# https://serde.rs/
+# https://github.com/serde-rs/serde
+serde = "1.0.38"
+serde_derive = "1.0.38"
 
 # https://doc.rust-lang.org/cargo/reference/manifest.html#configuring-a-target
 [[bin]]

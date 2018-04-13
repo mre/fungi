@@ -2,11 +2,12 @@
 // TODO: group error types
 // TODO: encapsulate worker
 // TODO: encapsulate operation
-// TODO: check for existing files
-// TODO: check for existing directories
+// DONE: check for existing files
+// DONE: check for existing directories
 // TODO: bubble up errors
 // TODO: tar compression
 // TODO: symmetric encryption
+// TODO: read config from .toml
 
 // https://github.com/rust-lang-nursery/log
 // https://github.com/sebasmagri/env_logger/
@@ -16,6 +17,10 @@ extern crate log;
 extern crate env_logger;
 // https://docs.rs/rand/0.5.0-pre.0/rand/
 extern crate rand;
+
+#[macro_use]
+extern crate serde_derive;
+extern crate toml;
 
 use std::io::prelude::*;
 use std::iter;
@@ -36,6 +41,7 @@ use rand::Rng;
 use rand::distributions::Alphanumeric;
 use rand::thread_rng;
 
+mod config;
 mod timez;
 
 const BASE_URL: &'static str = "Downloads";
@@ -48,7 +54,13 @@ const BASE_URL: &'static str = "Downloads";
 #[derive(Debug)]
 enum Operation {
     CopyFile,
+    #[allow(dead_code)]
     CopyDir,
+}
+
+fn config() -> Result<bool, io::Error> {
+    config::parse("nope");
+    Ok(true)
 }
 
 fn verify_operation<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt::Debug>(
@@ -306,7 +318,10 @@ pub fn run() -> Result<bool, io::Error> {
 
     // src: mut PathBuf
     if !src.is_dir() || !dst.is_dir() {
-        error!("cannot copy {:?} into {:?}: buth must be exsting directories", &src, &dst);
+        error!(
+            "cannot copy {:?} into {:?}: buth must be exsting directories",
+            &src, &dst
+        );
         let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_copy");
         return Err(custom_error);
     }
@@ -343,7 +358,7 @@ pub fn run() -> Result<bool, io::Error> {
     // let path = "/tmp/foo/bar/baz";
     // DirBuilder::new().recursive(true).create(path).unwrap();
     // assert!(fs::metadata(path).unwrap().is_dir());
-    
+
     Ok(true)
 }
 

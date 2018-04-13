@@ -10,6 +10,7 @@ extern crate log;
 extern crate env_logger;
 
 extern crate taker;
+
 use log::Level;
 use std::error::Error;
 use std::io;
@@ -51,6 +52,8 @@ fn run_app() -> Result<bool, io::Error> {
     if log_enabled!(Level::Debug) {
         info!("running the taker CLI");
     }
+
+    taker::config();
     taker::run()
 }
 

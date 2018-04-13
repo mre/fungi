@@ -58,7 +58,7 @@ enum Operation {
     CopyDir,
 }
 
-fn config() -> Result<bool, io::Error> {
+pub fn config() -> Result<bool, io::Error> {
     config::parse("nope".to_string());
     Ok(true)
 }

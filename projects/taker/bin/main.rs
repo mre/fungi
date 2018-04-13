@@ -53,7 +53,7 @@ fn run_app() -> Result<bool, io::Error> {
         info!("running the taker CLI");
     }
 
-    taker::config();
+    taker::config()?;
     taker::run()
 }
 

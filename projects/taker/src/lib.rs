@@ -243,27 +243,27 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
 
             let home: String = home_name();
             debug!("considering {} as $HOME", home);
-            let mut dir: PathBuf = [&home, BASE_URL].iter().collect();
-            dir.push("taker_target");
-            match DirBuilder::new().recursive(false).create(&dir) {
+            let mut dst: PathBuf = [&home, BASE_URL].iter().collect();
+            dst.push("taker_target");
+            match DirBuilder::new().recursive(false).create(&dst) {
                 Ok(_) => {
-                    info!("directory {:?} created", &dir);
+                    info!("directory {:?} created", &dst);
                 }
                 Err(e) => {
                     error!(
                         "cannot create directory {:?}: {}... destroy (try again)!",
-                        &dir, e
+                        &dst, e
                     );
                     return Err(e);
                 }
             };
 
-            debug!("ensuring that {:?} is a directory", &dir);
-            assert!(fs::metadata(&dir).unwrap().is_dir());
+            debug!("ensuring that {:?} is a directory", &dst);
+            assert!(fs::metadata(&dst).unwrap().is_dir());
 
             for f in cfg.files {
                 let f: PathBuf = PathBuf::from(f);
-                debug!("unpacking {:?}", f);
+                debug!("considering {:?}", f);
 
                 // let p: std::result::Result<
                 //     &std::path::Path,
@@ -275,11 +275,25 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                     debug!("expanded path: {:?}", p);
                     if fs::metadata(&p).unwrap().is_dir() {
                         debug!("{:?} is a directory", p);
+                        info!("copying content of {:?} into {:?}", p, &dst);
+                        visit_dirs(p, &|f_src| {
+                            debug!("entering {:?} found {:?}", p, f_src.file_name());
+
+                            let home = PathBuf::from(&home);
+
+                            // TODO: push the original dir name
+                            let f_dst: PathBuf =
+                                tag_name(&home, &dst, &PathBuf::from(f_src.file_name()));
+                            debug!("destination filename: {:?}", &f_dst);
+                            let f_src_s: PathBuf = [p, &f_src.path()].iter().collect();
+                            debug!("source filename: {:?}", &f_src_s);
+                            return copy_file_in(f_src_s, f_dst);
+                        })?;
                     } else {
                         debug!("{:?} is a file", p);
                     }
                 } else {
-                    error!("cannot strip $HOME from {:?}", f);
+                    error!("cannot strip (or no need to) $HOME from {:?}", f);
                 }
             }
         }

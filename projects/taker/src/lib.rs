@@ -239,7 +239,29 @@ fn random_from(seed: &str) -> String {
 pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
     match cfg.files.len() {
         0 => info!("nothing to do"),
-        c => info!("taking {:?} entries", c),
+        c => {
+            info!("taking {:?} entries", c);
+
+            let home: String = home_name();
+            debug!("considering {} as $HOME", home);
+            let mut dir: PathBuf = [&home, BASE_URL].iter().collect();
+            dir.push("taker_target");
+            match DirBuilder::new().recursive(false).create(&dir) {
+                Ok(_) => {
+                    info!("directory {:?} created", &dir);
+                }
+                Err(e) => {
+                    error!(
+                        "cannot create directory {:?}: {}... destroy (try again)!",
+                        &dir, e
+                    );
+                    return Err(e);
+                }
+            };
+
+            debug!("ensuring that {:?} is a directory", &dir);
+            assert!(fs::metadata(&dir).unwrap().is_dir());
+        }
     };
     Ok(true)
 }
@@ -345,7 +367,7 @@ pub fn sample(_: config::Config) -> Result<bool, io::Error> {
         let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_copy");
         return Err(custom_error);
     }
-    
+
     info!("copying content of {:?} into {:?}", src, dst);
     visit_dirs(&src, &|f_src| {
         // let f_src_path = f_src.path();

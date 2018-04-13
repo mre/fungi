@@ -2,6 +2,10 @@
 extern crate serde_derive;
 extern crate toml;
 
+// https://doc.rust-lang.org/std/io/trait.Read.html
+use std::io::prelude::*;
+use std::fs::File;
+
 use std::fs::File;
 
 #[derive(Serialize)]
@@ -46,6 +50,7 @@ pub fn parse(path: String) -> Config {
         }
     };
 
+    // https://doc.rust-lang.org/std/io/trait.Read.html
     file.read_to_string(&mut config_toml)
         .unwrap_or_else(|err| panic!("Error while reading config: [{}]", err));
 

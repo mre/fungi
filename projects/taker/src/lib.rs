@@ -124,10 +124,11 @@ where
 
 fn tag_name<P>(home: &P, path: &P, name: &P) -> PathBuf
 where
-    P: AsRef<Path> + std::fmt::Debug + std::fmt::Display,
-    // P: AsRef<std::path::Path>,
+    // P: AsRef<Path> + std::fmt::Debug + std::fmt::Display,
+    P: AsRef<std::path::Path>,
 {
     let b_url: PathBuf = PathBuf::from(BASE_URL);
+    let name = name.as_ref();
     [
         home.as_ref(),
         b_url.as_ref(),
@@ -278,13 +279,17 @@ pub fn run() -> Result<bool, io::Error> {
         };
     }
 
+    // src: mut PathBuf
     if src.is_dir() {
         visit_dirs(&src, &|f_src| {
             let f_src_path = f_src.path();
             debug!("entering {:?} found {:?}", &src, f_src);
-            let f_dst: PathBuf = tag_name(&home, &dst.to_str().unwrap(), &f_src_path);
+            
+            let home = PathBuf::from(&home);
+            
+            let f_dst: PathBuf = tag_name(&home, &dst, &f_src_path);
             debug!("destination filename: {:?}", &f_dst);
-            let f_src_s: PathBuf = [src.to_str().unwrap(), &f_src_s].iter().collect();
+            let f_src_s: PathBuf = [src.to_str().unwrap(), f_src].iter().collect();
             debug!("source filename: {:?}", &f_src_s);
             return copy_file_in(f_src_s, f_dst);
         })?;

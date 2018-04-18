@@ -37,9 +37,9 @@ use std::path::{Path, PathBuf};
 // use std::fmt::Debug;
 
 // https://github.com/rust-lang-nursery/rand/blob/master/src/lib.rs
-use rand::Rng;
 use rand::distributions::Alphanumeric;
 use rand::thread_rng;
+use rand::Rng;
 
 // Rust only knows to look in src/lib.rs by default. If we want to add
 // more files to our project, we need to tell Rust in src/lib.rs to look
@@ -49,7 +49,7 @@ use rand::thread_rng;
 // The mod keyword declares a new module. Code within the module appears either
 // immediately following this declaration within curly brackets or in another
 // file.
-// 
+//
 // The use keyword brings modules, or the definitions inside modules, into
 // scope so it's easier to refer to them.
 
@@ -354,9 +354,20 @@ pub fn run() -> Result<bool, io::Error> {
     })?;
 
     // https://doc.rust-lang.org/std/fs/struct.DirEntry.html
+    // - if let Ok(ref entries) = &fs::read_dir(&dst) {}
+    // - if let Ok(entries) = fs::read_dir(&dst) {}
+
     if let Ok(entries) = fs::read_dir(&dst) {
-        let c = &entries.count();
-        info!("inspecting {:?} entries in {:?}", c, &dst);
+        // https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.count
+        // Consumes the iterator, counting the number of iterations and returning it.
+        // let c = entries.count();
+
+        let mut c: usize = 0;
+
+        // https://doc.rust-lang.org/std/fs/struct.ReadDir.html
+        // https://doc.rust-lang.org/std/iter/trait.Iterator.html
+        // - entries.map(|entry| {})
+        // - for entry in &entries {}
 
         for entry in entries {
             if let Ok(entry) = entry {
@@ -371,8 +382,10 @@ pub fn run() -> Result<bool, io::Error> {
                 } else {
                     error!("couldn't get metadata for {:?}", entry.path());
                 }
+                c = c + 1;
             }
-        }
+        };
+        info!("inspected {:?} entries in {:?}", c, &dst);
     }
 
     // https://doc.rust-lang.org/std/fs/struct.DirBuilder.html

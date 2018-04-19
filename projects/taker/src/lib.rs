@@ -33,7 +33,8 @@ use std::io;
 
 // use std::io::Read;
 // use std::fs::File;
-use std::path::{Path, PathBuf, StripPrefixError};
+// use std::path::{StripPrefixError};
+use std::path::{Path, PathBuf};
 
 // use std::fmt::Debug;
 
@@ -267,7 +268,7 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
 
             // pick up one entry at the time from the given config.
             for f in cfg.files {
-                let mut f: &PathBuf = &PathBuf::from(f);
+                let mut f: PathBuf = PathBuf::from(f);
                 debug!("considering {:?}", f);
 
                 // let p: std::result::Result<
@@ -275,20 +276,23 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                 //     std::path::StripPrefixError,
                 // > = f.strip_prefix("~");
 
+                // https://stackoverflow.com/questions/29688753/how-can-i-bind-a-variable-in-a-match-arm-when-matching-on-a-mutable-reference
+                
                 let stripped = &f.strip_prefix("~");
-                match stripped {
+                
+                f = match stripped {
                     Ok(p) => {
-                        let f = &Path::new(&home_name()).join(p);
-                        debug!("expanded path: {:?}", f);
+                        debug!("0:F: {:?}", f);
+                        Path::new(&home_name()).join(p)
+                    },
+                    Err(e) => {
+                        error!("cannot strip (or no need to) $HOME from {:?}: {:?}", &f, e);
+                        debug!("1:F: {:?}", f);
+                        f
                     }
-                    // Err(ref error) if error.kind() == std::path::StripPrefixError => {},
-                    Err(e) => error!(
-                        "cannot strip (or no need to) $HOME from {:?}: {:?}",
-                        &f,
-                        e
-                    ),
-                }
+                };
 
+                debug!("2:F: {:?}", f);
                 match fs::metadata(&f) {
                     Ok(meta) => {
                         if meta.is_dir() {

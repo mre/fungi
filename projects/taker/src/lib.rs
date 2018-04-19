@@ -303,18 +303,28 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                 match fs::metadata(&f) {
                     Ok(meta) => {
                         if meta.is_dir() {
-                            debug!("meta: {:?}", meta);
                             debug!("{:?} is a directory", f);
 
-                            info!("copying content of {:?} into {:?}", f, &dst);
+                            info!(
+                                "copying content of {:?} (file name: {:?} expanded as {:?}) into {:?}",
+                                &f,
+                                &f.file_name().unwrap(),
+                                maybe_expand_dot(&PathBuf::from(&f.file_name().unwrap())),
+                                &dst
+                            );
+
+                            let inner: PathBuf = create_dir(
+                                dst.to_owned(),
+                                &maybe_expand_dot(&PathBuf::from(&f.file_name().unwrap())).into_os_string().into_string().unwrap()
+                            )?;
+
                             visit_dirs(&f, &|f_src| {
                                 debug!("entering {:?} found {:?}", f, f_src.file_name());
 
                                 let home = PathBuf::from(&home);
 
-                                // TODO: push the original dir name
                                 let f_dst: PathBuf =
-                                    tag_name(&home, &dst, &PathBuf::from(f_src.file_name()));
+                                    tag_name(&home, &inner, &PathBuf::from(f_src.file_name()));
                                 debug!("destination filename: {:?}", &f_dst);
                                 let f_src_s: PathBuf = [&f, &f_src.path()].iter().collect();
                                 debug!("source filename: {:?}", &f_src_s);

@@ -10,7 +10,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::io::Error;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use self::crypto::buffer::{BufferResult, ReadBuffer, WriteBuffer};
 use self::crypto::{aes, blockmodes, buffer, symmetriccipher};

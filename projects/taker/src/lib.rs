@@ -338,7 +338,10 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                 error!("cannot create the archive destination");
             };
 
-            encrypter::sample(&dst);
+            match encrypter::sample(&dst) {
+                Ok(r) => info!("encryption of {:?} was successful ({:?}", &dst, r),
+                Err(e) => error!("error encrypting {:?}: {}", &dst, e),
+            };
         }
     };
     Ok(true)

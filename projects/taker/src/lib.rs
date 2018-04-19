@@ -40,9 +40,9 @@ use std::path::{Path, PathBuf};
 // use std::fmt::Debug;
 
 // https://github.com/rust-lang-nursery/rand/blob/master/src/lib.rs
-use rand::Rng;
 use rand::distributions::Alphanumeric;
 use rand::thread_rng;
+use rand::Rng;
 
 // Rust only knows to look in src/lib.rs by default. If we want to add
 // more files to our project, we need to tell Rust in src/lib.rs to look
@@ -261,8 +261,7 @@ fn create_dir(mut dst: PathBuf, name: &str) -> Result<PathBuf, io::Error> {
 
 fn create_target_dir(home: &str) -> Result<PathBuf, io::Error> {
     // create the target directory where the files will be copied.
-    let mut dst: PathBuf = [home, BASE_URL].iter().collect();
-    create_dir(dst, "taker_target")
+    create_dir([home, BASE_URL].iter().collect(), "taker_target")
 }
 
 fn maybe_expand_home(f: &PathBuf) -> PathBuf {

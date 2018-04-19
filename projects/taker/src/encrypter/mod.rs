@@ -3,6 +3,7 @@
 extern crate crypto;
 extern crate rand;
 
+use std::str;
 // https://doc.rust-lang.org/std/fs/struct.File.html
 use std::fs::File;
 // https://doc.rust-lang.org/std/io/trait.Read.html
@@ -121,11 +122,6 @@ fn decrypt(
     Ok(final_result)
 }
 
-// use std::os;
-// use std::io::BufferedReader;
-// use std::io::File;
-// use std::io::BufferedWriter;
-
 fn get_file_buffer(path: &PathBuf) -> Result<Vec<u8>, Error> {
     info!("buffer of {:?}", path);
     let file = File::open(&path)?;
@@ -153,8 +149,25 @@ pub fn sample(src: &PathBuf) -> Result<bool, Error> {
     rng.fill_bytes(&mut key);
     rng.fill_bytes(&mut iv);
 
-    warn!("encrypting {:?} with key: {:?}", src, &key);
-    warn!("encrypting {:?} with iv: {:?}", src, &iv);
+    match str::from_utf8(&key) {
+        Ok(v) => warn!("encrypting {:?} with key: {}", src, v),
+        Err(e) => warn!(
+            "encrypting {:?} with generated key ({})",
+            src,
+            // String::from_utf8_lossy(&key),
+            e
+        ),
+    };
+
+    match str::from_utf8(&iv) {
+        Ok(v) => warn!("encrypting {:?} with initialisation vector: {}", src, v),
+        Err(e) => warn!(
+            "encrypting {:?} with generated initialisation vector ({})",
+            src,
+            // String::from_utf8_lossy(&iv),
+            e
+        ),
+    };
 
     let clear_data = get_file_buffer(src)?;
     warn!("{:?} is {:?} long", src, clear_data.len());

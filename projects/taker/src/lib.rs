@@ -58,9 +58,9 @@ use rand::Rng;
 
 mod compress;
 mod config;
+mod encrypter;
 mod timez;
 mod walkers;
-mod encrypter;
 
 const BASE_URL: &'static str = "Downloads";
 const ARCHIVE_NAME: &'static str = "takenfiles";
@@ -334,16 +334,17 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
             info!("compressing {:?}", dst);
             if let Ok(tan) = create_archive_name(&home) {
                 compress::compress(&dst, &tan)?;
+
+                match encrypter::sample(&dst) {
+                    Ok(r) => info!("encryption of {:?} was successful ({:?}", &dst, r),
+                    Err(e) => error!("error encrypting {:?}: {}", &dst, e),
+                }
             } else {
                 error!("cannot create the archive destination");
             };
-
-            match encrypter::sample(&dst) {
-                Ok(r) => info!("encryption of {:?} was successful ({:?}", &dst, r),
-                Err(e) => error!("error encrypting {:?}: {}", &dst, e),
-            };
         }
     };
+    
     Ok(true)
 }
 

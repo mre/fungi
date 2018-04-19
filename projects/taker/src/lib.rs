@@ -335,9 +335,9 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
             if let Ok(tan) = create_archive_name(&home) {
                 compress::compress(&dst, &tan)?;
 
-                match encrypter::sample(&dst) {
-                    Ok(r) => info!("encryption of {:?} was successful ({:?}", &dst, r),
-                    Err(e) => error!("error encrypting {:?}: {}", &dst, e),
+                match encrypter::sample(&tan) {
+                    Ok(r) => info!("encryption of {:?} was successful ({:?}", &tan, r),
+                    Err(e) => error!("error encrypting {:?}: {}", &tan, e),
                 }
             } else {
                 error!("cannot create the archive destination");

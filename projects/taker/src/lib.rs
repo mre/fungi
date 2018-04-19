@@ -33,7 +33,7 @@ use std::io;
 
 // use std::io::Read;
 // use std::fs::File;
-use std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf, StripPrefixError};
 
 // use std::fmt::Debug;
 
@@ -267,7 +267,7 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
 
             // pick up one entry at the time from the given config.
             for f in cfg.files {
-                let mut f: PathBuf = PathBuf::from(f);
+                let mut f: &PathBuf = &PathBuf::from(f);
                 debug!("considering {:?}", f);
 
                 // let p: std::result::Result<
@@ -275,11 +275,18 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                 //     std::path::StripPrefixError,
                 // > = f.strip_prefix("~");
 
-                if let Ok(p) = &f.strip_prefix("~") {
-                    f = Path::new(&home_name()).join(p);
-                    debug!("expanded path: {:?}", f);
-                } else {
-                    error!("cannot strip (or no need to) $HOME from {:?}", f);
+                let stripped = &f.strip_prefix("~");
+                match stripped {
+                    Ok(p) => {
+                        let f = &Path::new(&home_name()).join(p);
+                        debug!("expanded path: {:?}", f);
+                    }
+                    // Err(ref error) if error.kind() == std::path::StripPrefixError => {},
+                    Err(e) => error!(
+                        "cannot strip (or no need to) $HOME from {:?}: {:?}",
+                        &f,
+                        e
+                    ),
                 }
 
                 match fs::metadata(&f) {

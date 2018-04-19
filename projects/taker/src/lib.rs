@@ -7,7 +7,7 @@
 // TODO: bubble up errors
 // TODO: tar compression
 // TODO: symmetric encryption
-// TODO: read config from .toml
+// DONE: read config from .toml
 
 // https://github.com/rust-lang-nursery/log
 // https://github.com/sebasmagri/env_logger/
@@ -239,10 +239,10 @@ fn random_from(seed: &str) -> String {
     return chars;
 }
 
-fn create_target_dir(home: &str) -> Result<PathBuf, io::Error> {
+fn create_dir(home: &str, name: &str) -> Result<PathBuf, io::Error> {
     // create the target directory where the files will be copied.
     let mut dst: PathBuf = [home, BASE_URL].iter().collect();
-    dst.push("taker_target");
+    dst.push(name);
 
     match DirBuilder::new().recursive(false).create(&dst) {
         Ok(_) => {
@@ -259,6 +259,10 @@ fn create_target_dir(home: &str) -> Result<PathBuf, io::Error> {
         }
     };
     return Ok(dst);
+}
+
+fn create_target_dir(home: &str) -> Result<PathBuf, io::Error> {
+    create_dir(home, "taker_target")
 }
 
 fn maybe_expand_home(f: &PathBuf) -> PathBuf {

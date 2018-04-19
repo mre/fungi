@@ -28,7 +28,7 @@ use std::io::prelude::*;
 use std::iter;
 // use std::fmt;
 use std::env;
-use std::fs::{self, DirBuilder, DirEntry, File, ReadDir};
+use std::fs::{self, DirBuilder, File};
 use std::io;
 // use std::io::{Error, ErrorKind};
 
@@ -56,9 +56,7 @@ use rand::Rng;
 // The use keyword brings modules, or the definitions inside modules, into
 // scope so it's easier to refer to them.
 
-// content of config.rs
 mod config;
-// content of timez.rs
 mod timez;
 mod compress;
 mod walkers;
@@ -291,7 +289,7 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                                 &maybe_expand_dot(&PathBuf::from(&f.file_name().unwrap())).into_os_string().into_string().unwrap()
                             )?;
 
-                            visit_dirs(&f, &|f_src| {
+                            walkers::visit_dirs(&f, &|f_src| {
                                 debug!("entering {:?} found {:?}", f, f_src.file_name());
 
                                 let home = PathBuf::from(&home);
@@ -423,7 +421,7 @@ pub fn sample(_: config::Config) -> Result<bool, io::Error> {
     }
 
     info!("copying content of {:?} into {:?}", src, dst);
-    visit_dirs(&src, &|f_src| {
+    walkers::visit_dirs(&src, &|f_src| {
         // let f_src_path = f_src.path();
         debug!("entering {:?} found {:?}", &src, f_src.file_name());
 

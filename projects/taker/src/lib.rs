@@ -39,9 +39,9 @@ use std::path::{Path, PathBuf};
 // use std::fmt::Debug;
 
 // https://github.com/rust-lang-nursery/rand/blob/master/src/lib.rs
+use rand::Rng;
 use rand::distributions::Alphanumeric;
 use rand::thread_rng;
-use rand::Rng;
 
 // Rust only knows to look in src/lib.rs by default. If we want to add
 // more files to our project, we need to tell Rust in src/lib.rs to look
@@ -238,34 +238,38 @@ fn random_from(seed: &str) -> String {
     return chars;
 }
 
+fn create_target_dir(home: &str) -> Result<PathBuf, io::Error> {
+    // create the target directory where the files will be copied.
+    let mut dst: PathBuf = [home, BASE_URL].iter().collect();
+    dst.push("taker_target");
+
+    match DirBuilder::new().recursive(false).create(&dst) {
+        Ok(_) => {
+            info!("directory {:?} created", &dst);
+            debug!("ensuring that {:?} is a directory", &dst);
+            assert!(fs::metadata(&dst).unwrap().is_dir());
+        }
+        Err(e) => {
+            error!(
+                "cannot create directory {:?}: {}... destroy (try again)!",
+                &dst, e
+            );
+            return Err(e);
+        }
+    };
+    return Ok(dst);
+}
+
 pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
     match cfg.files.len() {
         0 => info!("nothing to do"),
         c => {
             info!("taking {:?} entries", c);
-
             // check what's the $HOME path here.
             let home: String = home_name();
             debug!("considering {} as $HOME", home);
 
-            // create the target directory where the files will be copied.
-            let mut dst: PathBuf = [&home, BASE_URL].iter().collect();
-            dst.push("taker_target");
-            match DirBuilder::new().recursive(false).create(&dst) {
-                Ok(_) => {
-                    info!("directory {:?} created", &dst);
-                    debug!("ensuring that {:?} is a directory", &dst);
-                    assert!(fs::metadata(&dst).unwrap().is_dir());
-                }
-                Err(e) => {
-                    error!(
-                        "cannot create directory {:?}: {}... destroy (try again)!",
-                        &dst, e
-                    );
-                    return Err(e);
-                }
-            };
-
+            let dst = create_target_dir(&home).unwrap();
             // pick up one entry at the time from the given config.
             for cf in cfg.files {
                 let mut f: PathBuf = PathBuf::from(cf);
@@ -277,9 +281,7 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                 // > = f.strip_prefix("~");
 
                 f = match f.to_owned().strip_prefix("~") {
-                    Ok(p) => {
-                        Path::new(&home_name()).join(p)
-                    },
+                    Ok(p) => Path::new(&home_name()).join(p),
                     Err(e) => {
                         error!("cannot strip (or no need to) $HOME from {:?}: {:?}", f, e);
                         f
@@ -307,12 +309,11 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                             })?;
                         } else {
                             debug!("{:?} is a file", f);
-                            // let f_dst: PathBuf =
-                            //     tag_name(&home, &dst, &PathBuf::from(p.file_name()));
-                            // debug!("destination filename: {:?}", &f_dst);
-                            // let f_src_s: PathBuf = [p, &f_src.path()].iter().collect();
-                            // debug!("source filename: {:?}", &f_src_s);
-                            // return copy_file_in(f_src_s, f_dst);
+                            let f = f.file_name().unwrap();
+                            let f_dst: PathBuf =
+                                 tag_name(&PathBuf::from(&home), &dst, &PathBuf::from(f));
+                            debug!("destination filename: {:?}", &f_dst);
+                            return copy_file_in(f, f_dst);
                         }
                     }
                     Err(e) => error!("cannot read {:?}: {:?}", &f, e.description()),

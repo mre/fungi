@@ -164,6 +164,7 @@ where
 {
     let b_url: PathBuf = PathBuf::from(BASE_URL);
     let name: &Path = name.as_ref();
+
     [
         home.as_ref(),
         b_url.as_ref(),
@@ -260,6 +261,25 @@ fn create_target_dir(home: &str) -> Result<PathBuf, io::Error> {
     return Ok(dst);
 }
 
+fn maybe_expand_home(f: &PathBuf) -> PathBuf {
+    match f.to_owned().strip_prefix("~") {
+        Ok(p) => Path::new(&home_name()).join(p),
+        Err(e) => {
+            error!("cannot strip (or no need to) $HOME from {:?}: {:?}", f, e);
+            PathBuf::from(f)
+        }
+    }
+}
+
+fn maybe_expand_dot(f: &PathBuf) -> PathBuf {
+    debug!("expanding DOT for {:?}", f);
+    if f.to_str().unwrap().starts_with(".") {
+        PathBuf::from(format!("dot{}", f.display()))
+    } else {
+        PathBuf::from(f)
+    }
+}
+
 pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
     match cfg.files.len() {
         0 => info!("nothing to do"),
@@ -280,17 +300,12 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                 //     std::path::StripPrefixError,
                 // > = f.strip_prefix("~");
 
-                f = match f.to_owned().strip_prefix("~") {
-                    Ok(p) => Path::new(&home_name()).join(p),
-                    Err(e) => {
-                        error!("cannot strip (or no need to) $HOME from {:?}: {:?}", f, e);
-                        f
-                    }
-                };
+                f = maybe_expand_home(&f);
 
                 match fs::metadata(&f) {
                     Ok(meta) => {
                         if meta.is_dir() {
+                            debug!("meta: {:?}", meta);
                             debug!("{:?} is a directory", f);
 
                             info!("copying content of {:?} into {:?}", f, &dst);
@@ -309,11 +324,13 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                             })?;
                         } else {
                             debug!("{:?} is a file", f);
-                            let f = f.file_name().unwrap();
-                            let f_dst: PathBuf =
-                                 tag_name(&PathBuf::from(&home), &dst, &PathBuf::from(f));
+                            let f_dst: PathBuf = tag_name(
+                                &PathBuf::from(&home),
+                                &dst,
+                                &maybe_expand_dot(&PathBuf::from(f.file_name().unwrap())),
+                            );
                             debug!("destination filename: {:?}", &f_dst);
-                            return copy_file_in(f, f_dst);
+                            copy_file_in(f, f_dst)?;
                         }
                     }
                     Err(e) => error!("cannot read {:?}: {:?}", &f, e.description()),

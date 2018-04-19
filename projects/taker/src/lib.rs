@@ -8,6 +8,7 @@
 // TODO: tar compression
 // TODO: symmetric encryption
 // DONE: read config from .toml
+// TODO: remove "home" parameter from create_dir
 
 // https://github.com/rust-lang-nursery/log
 // https://github.com/sebasmagri/env_logger/
@@ -239,11 +240,8 @@ fn random_from(seed: &str) -> String {
     return chars;
 }
 
-fn create_dir(home: &str, name: &str) -> Result<PathBuf, io::Error> {
-    // create the target directory where the files will be copied.
-    let mut dst: PathBuf = [home, BASE_URL].iter().collect();
+fn create_dir(mut dst: PathBuf, name: &str) -> Result<PathBuf, io::Error> {
     dst.push(name);
-
     match DirBuilder::new().recursive(false).create(&dst) {
         Ok(_) => {
             info!("directory {:?} created", &dst);
@@ -262,7 +260,9 @@ fn create_dir(home: &str, name: &str) -> Result<PathBuf, io::Error> {
 }
 
 fn create_target_dir(home: &str) -> Result<PathBuf, io::Error> {
-    create_dir(home, "taker_target")
+    // create the target directory where the files will be copied.
+    let mut dst: PathBuf = [home, BASE_URL].iter().collect();
+    create_dir(dst, "taker_target")
 }
 
 fn maybe_expand_home(f: &PathBuf) -> PathBuf {
@@ -298,11 +298,6 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
             for cf in cfg.files {
                 let mut f: PathBuf = PathBuf::from(cf);
                 debug!("considering {:?}", f);
-
-                // let p: std::result::Result<
-                //     &std::path::Path,
-                //     std::path::StripPrefixError,
-                // > = f.strip_prefix("~");
 
                 f = maybe_expand_home(&f);
 

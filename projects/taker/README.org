@@ -1,0 +1,13 @@
+* Taker
+
+Take your dotfiles, compress (and encrypt).
+
+** Config
+
+Content of =~/.taker.toml= :
+
+: files = ["~/.bash_profile", "~/.ssh", "~/.emacs.el"]
+
+And run (WIP here) with:
+
+: TAKER_CFG="/home/user/.taker.toml" make

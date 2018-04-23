@@ -1,11 +1,11 @@
 // TODO: group error messages
 // TODO: group error types
 // TODO: encapsulate worker
-// TODO: encapsulate operation
+// DONE: encapsulate operation
 // DONE: check for existing files
 // DONE: check for existing directories
 // TODO: bubble up errors
-// TODO: tar compression
+// DONE: tar compression
 // TODO: symmetric encryption
 // DONE: read config from .toml
 // TODO: remove "home" parameter from create_dir

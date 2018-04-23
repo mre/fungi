@@ -62,6 +62,8 @@ mod timez;
 mod walkers;
 
 const BASE_URL: &'static str = "Downloads";
+const ARCHIVE_NAME: &'static str = "takenfiles";
+const COPY_DEST: &'static str = "takentarget";
 
 #[derive(Debug)]
 enum Operation {
@@ -230,9 +232,18 @@ fn create_dir(mut dst: PathBuf, name: &str) -> Result<PathBuf, io::Error> {
     return Ok(dst);
 }
 
+// Create the target directory where the files will be copied.
 fn create_target_dir(home: &str) -> Result<PathBuf, io::Error> {
-    // create the target directory where the files will be copied.
-    create_dir([home, BASE_URL].iter().collect(), "taker_target")
+    create_dir([home, BASE_URL].iter().collect(), COPY_DEST)
+}
+
+// Return the file name for the backup archive.
+fn create_archive_name(home: &str) -> Result<PathBuf, bool> {
+    let mut fln: PathBuf = [home, BASE_URL, ARCHIVE_NAME].iter().collect();
+    if fln.set_extension("tar") {
+        return Ok(fln);
+    }
+    Err(false)
 }
 
 fn maybe_expand_home(f: &PathBuf) -> PathBuf {
@@ -318,8 +329,13 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                     Err(e) => error!("cannot read {:?}: {:?}", &f, e.description()),
                 }
             }
+
             info!("compressing {:?}", dst);
-            compress::compress(&dst, "/Users/edoardo/Downloads/try.this.tar")?;
+            if let Ok(tan) = create_archive_name(&home) {
+                compress::compress(&dst, &tan)?;
+            } else {
+                error!("cannot create the archive destination");
+            };
         }
     };
     Ok(true)

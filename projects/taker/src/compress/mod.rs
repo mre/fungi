@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io;
 use std::path::PathBuf;
 
-pub fn compress(src: &PathBuf, dst: &str) -> io::Result<()> {
+pub fn compress(src: &PathBuf, dst: &PathBuf) -> io::Result<()> {
     debug!("creating {:?}", dst);
     let file = File::create(dst).unwrap();
     debug!("building...");

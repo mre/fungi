@@ -318,7 +318,8 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                     Err(e) => error!("cannot read {:?}: {:?}", &f, e.description()),
                 }
             }
-            compress::compress(&dst, "/Users/edoardo/Dowloads/try.this.tar")?;
+            info!("compressing {:?}", dst);
+            compress::compress(&dst, "/Users/edoardo/Downloads/try.this.tar")?;
         }
     };
     Ok(true)

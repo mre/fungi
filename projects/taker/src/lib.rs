@@ -318,7 +318,7 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                     Err(e) => error!("cannot read {:?}: {:?}", &f, e.description()),
                 }
             }
-            compress::compress(&dst, "/Users/edoardo/Dowloads/try.this.tar")
+            compress::compress(&dst, "/Users/edoardo/Dowloads/try.this.tar")?;
         }
     };
     Ok(true)

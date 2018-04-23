@@ -31,6 +31,7 @@ where
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn visit_mut_dirs<T>(dir: &Path, cb: &mut T) -> io::Result<()>
 where
     T: FnMut(&DirEntry) -> Result<bool, io::Error>,

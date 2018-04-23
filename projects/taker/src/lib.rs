@@ -60,9 +60,7 @@ use rand::Rng;
 mod config;
 // content of timez.rs
 mod timez;
-// content of compress.rs
 mod compress;
-// content of walkers.rs
 mod walkers;
 
 const BASE_URL: &'static str = "Downloads";

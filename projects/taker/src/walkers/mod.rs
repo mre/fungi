@@ -1,7 +1,7 @@
 
 // https://doc.rust-lang.org/std/fs/fn.read_dir.html
 // one possible implementation of walking a directory only visiting files
-fn visit_dirs<T>(dir: &Path, cb: &T) -> io::Result<()>
+pub fn visit_dirs<T>(dir: &Path, cb: &T) -> io::Result<()>
 where
     T: Fn(&DirEntry) -> Result<bool, io::Error>,
 {

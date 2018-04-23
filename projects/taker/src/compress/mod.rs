@@ -5,13 +5,13 @@ use std::fs::File;
 use std::path::PathBuf;
 use tar::Builder;
 
-mod walkers;
+use walkers;
 
 fn compress(src: PathBuf, dst: &str) {
     let file = File::create(dst).unwrap();
     let mut a = Builder::new(file);
 
-    visit_dirs(&f, &|f_src| {
+    walkers::visit_dirs(&f, &|f_src| {
         debug!("entering {:?} found {:?}", f, f_src.file_name());
     });
 

@@ -60,6 +60,10 @@ use rand::Rng;
 mod config;
 // content of timez.rs
 mod timez;
+// content of compress.rs
+mod compress;
+// content of walkers.rs
+mod walkers;
 
 const BASE_URL: &'static str = "Downloads";
 
@@ -114,35 +118,6 @@ fn verify_operation<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt:
     }
     info!("operation {:?} on {:?} and {:?} successful", op, src, dst);
     Ok(true)
-}
-
-// https://doc.rust-lang.org/std/fs/fn.read_dir.html
-// one possible implementation of walking a directory only visiting files
-fn visit_dirs<T>(dir: &Path, cb: &T) -> io::Result<()>
-where
-    T: Fn(&DirEntry) -> Result<bool, io::Error>,
-{
-    if dir.is_dir() {
-        // https://doc.rust-lang.org/std/fs/fn.read_dir.html
-        // pub fn read_dir<P: AsRef<Path>>(path: P) -> Result<ReadDir>
-        let r_rds: io::Result<ReadDir> = fs::read_dir(dir);
-        match r_rds {
-            Ok(entries) => {
-                for entry in entries {
-                    let entry = entry?;
-                    let path = entry.path();
-                    if path.is_dir() {
-                        visit_dirs(&path, cb)?;
-                    } else {
-                        cb(&entry)?;
-                    }
-                }
-            }
-            // https://doc.rust-lang.org/std/io/struct.Error.html
-            Err(e) => error!("cannot visit dir {:?} {}", &dir, e),
-        };
-    }
-    Ok(())
 }
 
 // Minimal example of an AsRef conversion.
@@ -292,7 +267,7 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
             let home: String = home_name();
             debug!("considering {} as $HOME", home);
 
-            let dst = create_target_dir(&home).unwrap();
+            let dst: PathBuf = create_target_dir(&home).unwrap();
             // pick up one entry at the time from the given config.
             for cf in cfg.files {
                 let mut f: PathBuf = PathBuf::from(cf);
@@ -396,8 +371,6 @@ pub fn sample(_: config::Config) -> Result<bool, io::Error> {
     //   fn as_ref(&self) -> &Path
     let f_target: &str = "foo.txt";
     let mut src: PathBuf = [&home, BASE_URL, "test", f_target].iter().collect();
-
-    // let mut dst: PathBuf = tag_name(&home, &String::from("test"), &String::from(f_target));
 
     let mut dst_name = random_from("foo");
     dst_name.push_str(".txt");

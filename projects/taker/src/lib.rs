@@ -56,9 +56,9 @@ use rand::Rng;
 // The use keyword brings modules, or the definitions inside modules, into
 // scope so it's easier to refer to them.
 
+mod compress;
 mod config;
 mod timez;
-mod compress;
 mod walkers;
 
 const BASE_URL: &'static str = "Downloads";
@@ -286,7 +286,10 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
 
                             let inner: PathBuf = create_dir(
                                 dst.to_owned(),
-                                &maybe_expand_dot(&PathBuf::from(&f.file_name().unwrap())).into_os_string().into_string().unwrap()
+                                &maybe_expand_dot(&PathBuf::from(&f.file_name().unwrap()))
+                                    .into_os_string()
+                                    .into_string()
+                                    .unwrap(),
                             )?;
 
                             walkers::visit_dirs(&f, &|f_src| {
@@ -315,6 +318,7 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                     Err(e) => error!("cannot read {:?}: {:?}", &f, e.description()),
                 }
             }
+            compress::compress(&dst, "/Users/edoardo/Dowloads/try.this.tar")
         }
     };
     Ok(true)

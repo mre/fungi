@@ -136,8 +136,8 @@ fn get_file_buffer(path: &PathBuf) -> Result<Vec<u8>, Error> {
 }
 
 pub fn sample(src: &PathBuf) -> Result<bool, Error> {
-    let mut key: [u8; 32] = [0; 32];
-    let mut iv: [u8; 16] = [0; 16];
+    let mut key: [u8; 3] = [0; 3];
+    let mut iv: [u8; 3] = [0; 3];
 
     // In a real program, the key and iv may be determined
     // using some other mechanism. If a password is to be used
@@ -148,6 +148,9 @@ pub fn sample(src: &PathBuf) -> Result<bool, Error> {
     let mut rng = OsRng::new().ok().unwrap();
     rng.fill_bytes(&mut key);
     rng.fill_bytes(&mut iv);
+
+    let key = "aaa".as_bytes();
+    let iv = "bbb".as_bytes();
 
     match str::from_utf8(&key) {
         Ok(v) => warn!("encrypting {:?} with key: {}", src, v),
@@ -188,3 +191,7 @@ pub fn sample(src: &PathBuf) -> Result<bool, Error> {
         Err(e) => Err(e),
     };
 }
+
+// https://github.com/ctz/fastpbkdf2
+// https://github.com/briansmith/crypto-bench
+// https://github.com/briansmith/crypto-bench/blob/master/fastpbkdf2/fastpbkdf2.rs

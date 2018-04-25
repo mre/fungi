@@ -331,10 +331,11 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                 }
             }
 
-            info!("compressing {:?}", dst);
             if let Ok(tan) = create_archive_name(&home) {
+                info!("compressing {:?}", dst);
                 compress::compress(&dst, &tan)?;
 
+                info!("ciphering {:?}", tan);
                 match encrypter::cipher(&tan) {
                     Ok(r) => info!("encryption of {:?} was successful ({:?}", &tan, r),
                     Err(e) => error!("error encrypting {:?}: {}", &tan, e),

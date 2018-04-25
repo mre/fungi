@@ -4,9 +4,9 @@
 
 // #![no_std]
 extern crate block_cipher_trait;
-extern crate twofish;
 extern crate crypto;
 extern crate ring;
+extern crate twofish;
 // extern crate rand;
 
 // https://github.com/DaGenix/rust-crypto/blob/master/examples/symmetriccipher.rs
@@ -18,11 +18,11 @@ use std::str;
 use std::fs::File;
 // https://doc.rust-lang.org/std/io/trait.Read.html
 // https://doc.rust-lang.org/std/io/trait.BufRead.html
+use std::collections::HashMap;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::io::Error;
 use std::path::PathBuf;
-use std::collections::HashMap;
 
 use rand::{OsRng, RngCore};
 
@@ -34,20 +34,19 @@ use self::ring::{digest, pbkdf2};
 // http://fizyk20.github.io/generic-array/generic_array/
 // https://github.com/fizyk20/generic-array
 // https://github.com/RustCrypto/traits
-use self::block_cipher_trait::BlockCipher;
 use self::block_cipher_trait::generic_array::GenericArray;
+use self::block_cipher_trait::BlockCipher;
 
 use self::twofish::Twofish;
 
 static DIGEST_ALG: &'static digest::Algorithm = &digest::SHA256;
 const CREDENTIAL_LEN: usize = digest::SHA256_OUTPUT_LEN;
 
-pub type Credential = [u8; CREDENTIAL_LEN];
+type Credential = [u8; CREDENTIAL_LEN];
 
 struct PasswordDatabase {
     pbkdf2_iterations: u32,
     db_salt_component: [u8; 16],
-
     // Normally this would be a persistent database.
     storage: HashMap<String, Credential>,
 }
@@ -107,24 +106,11 @@ fn ring_sample() {
     // Normally these parameters would be loaded from a configuration file.
     let mut db = PasswordDatabase {
         pbkdf2_iterations: 100_000,
+        #[cfg_attr(rustfmt, rustfmt_skip)]
         db_salt_component: [
             // This value was generated from a secure PRNG.
-            0xd6,
-            0x26,
-            0x98,
-            0xda,
-            0xf4,
-            0xdc,
-            0x50,
-            0x52,
-            0x24,
-            0xf2,
-            0x27,
-            0xd1,
-            0xfe,
-            0x39,
-            0x01,
-            0x8a,
+            0xd6, 0x26, 0x98, 0xda, 0xf4, 0xdc, 0x50, 0x52, 0x24, 0xf2,
+            0x27, 0xd1, 0xfe, 0x39, 0x01, 0x8a,
         ],
         storage: HashMap::new(),
     };
@@ -258,12 +244,34 @@ fn get_file_buffer(path: &PathBuf) -> Result<Vec<u8>, Error> {
     }
 }
 
+fn salt(component: Vec<u8>, input: &str) -> Vec<u8> {
+    let mut output = Vec::with_capacity(component.len() + input.as_bytes().len());
+    output.extend(component.as_ref());
+    output.extend(input.as_bytes());
+    output
+}
+
 pub fn cipher(src: &PathBuf) -> Result<bool, Error> {
-    // let key = [0u8; 32];
-    let key = String::from("foobar").into_bytes();
+    let password: String = String::from("foobar");
+    let pbkdf2_iterations: u32 = 100_000;
+    // This value was generated from a secure PRNG.
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+        let component: Vec<u8> = vec![
+            0xd6, 0x26, 0x98, 0xda, 0xf4, 0xdc, 0x50, 0x52, 0x24, 0xf2,
+            0x27, 0xd1, 0xfe, 0x39, 0x01, 0x8a,
+        ];
+    let salt = salt(component, "taker");
+    let mut key: Credential = [0u8; CREDENTIAL_LEN];
+    pbkdf2::derive(
+        DIGEST_ALG,
+        pbkdf2_iterations,
+        &salt,
+        password.as_bytes(),
+        &mut to_store,
+    );
 
     let twofish = Twofish::new_varkey(&key).unwrap();
-    
+
     // let mut plain = GenericArray::default();
     // let mut buf = plain.clone();
     // let plain = get_file_buffer(src)?;

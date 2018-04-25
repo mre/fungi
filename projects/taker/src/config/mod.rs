@@ -22,7 +22,8 @@ impl Default for Config {
                 "~/.ssh/",
                 "~/.emacs.el",
                 "~/.aws",
-                "~/.config/awesome/rc.lua"
+                "~/.config/awesome/rc.lua",
+                "~/.this/pwsafe.psafe3"
             ],
         }
     }
@@ -34,9 +35,9 @@ pub fn parse(path: String) -> Config {
     let mut file = match File::open(&path) {
         Ok(file) => file,
         Err(_) => {
-            warn!("Could not find config file, using default!");
+            warn!("Could not find config file {:?}, using default!", &path);
             let cfg: Config = Config::default();
-            debug!("running with this configuration: {:?}", cfg);            
+            info!("running with this configuration: {:?}", &cfg);
             return cfg;
         }
     };
@@ -52,7 +53,7 @@ pub fn parse(path: String) -> Config {
             let cfg: Config = c;
             debug!("running with this configuration: {:?}", cfg);
             return cfg;
-        },
+        }
         Err(e) => {
             let (line, col) = e.line_col().expect("unparseable parse error");
             error!("{}:{} error: {}", line, col, e.description());

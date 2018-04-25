@@ -4,11 +4,11 @@
 // DONE: encapsulate operation
 // DONE: check for existing files
 // DONE: check for existing directories
-// TODO: bubble up errors
+// DONE: bubble up errors
 // DONE: tar compression
-// TODO: symmetric encryption
+// DONE: symmetric encryption
 // DONE: read config from .toml
-// TODO: remove "home" parameter from create_dir
+// DONE: remove "home" parameter from create_dir
 
 // https://github.com/rust-lang-nursery/log
 // https://github.com/sebasmagri/env_logger/
@@ -65,6 +65,8 @@ mod walkers;
 const BASE_URL: &'static str = "Downloads";
 const ARCHIVE_NAME: &'static str = "takenfiles";
 const COPY_DEST: &'static str = "takentarget";
+pub const ENV_CFG: &'static str = "TAKER_CFG";
+pub const LOG_CFG: &'static str = "RUST_LOG";
 
 #[derive(Debug)]
 enum Operation {
@@ -74,10 +76,13 @@ enum Operation {
 }
 
 pub fn config() -> config::Config {
-    let cfg_path: String = "TAKER_CFG".to_owned();
+    let cfg_path: String = ENV_CFG.to_owned();
     config::parse(match env::var(cfg_path) {
         Ok(h) => h,
-        Err(_) => "~/.taker.toml".to_owned(),
+        Err(_) => maybe_expand_home(&PathBuf::from("~/.taker.toml"))
+            .to_str()
+            .unwrap()
+            .to_owned(),
     })
 }
 
@@ -226,12 +231,14 @@ fn create_target_dir(home: &str) -> Result<PathBuf, io::Error> {
 }
 
 // Return the file name for the backup archive.
-fn create_archive_name(home: &str) -> Result<PathBuf, bool> {
+fn create_archive_name(home: &str) -> Result<PathBuf, io::Error> {
     let mut fln: PathBuf = [home, BASE_URL, ARCHIVE_NAME].iter().collect();
     if fln.set_extension("tar") {
         return Ok(fln);
+    } else {
+        let custom_error = io::Error::new(io::ErrorKind::Other, "cannot set the file extension");
+        return Err(custom_error);
     }
-    Err(false)
 }
 
 fn maybe_expand_home(f: &PathBuf) -> PathBuf {
@@ -318,26 +325,39 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                 }
             }
 
-            if let Ok(tan) = create_archive_name(&home) {
-                info!("compressing {:?}", dst);
-                compress::compress(&dst, &tan)?;
-                let out: PathBuf = tag_name(
-                    &PathBuf::from(&home),
-                    &PathBuf::from(""),
-                    &maybe_expand_dot(&PathBuf::from(tan.file_name().unwrap())),
-                );
-                info!("ciphering {:?} into {:?}", tan, out);
-                match encrypter::symmetric(&tan, &out) {
-                    Ok(r) => {
-                        info!("encryption of {:?} into {:?} was successful ({:?})", &tan, &out, &r);
-                        // let p = encrypter::decipher(&r).expect("cannot decrypt; this is bad");
-                        // info!("decryption of {:?} was successful ({:?})", &r, &p);
+            match create_archive_name(&home) {
+                Ok(tan) => {
+                    info!("compressing {:?}", dst);
+                    compress::compress(&dst, &tan)?;
+                    let out: PathBuf = tag_name(
+                        &PathBuf::from(&home),
+                        &PathBuf::from(""),
+                        &maybe_expand_dot(&PathBuf::from(tan.file_name().unwrap())),
+                    );
+                    info!("ciphering {:?} into {:?}", tan, out);
+                    match encrypter::symmetric(&tan, &out) {
+                        Ok(r) => {
+                            info!(
+                                "encryption of {:?} into {:?} was successful ({:?})",
+                                &tan, &out, &r
+                            );
+                            // let p = encrypter::decipher(&r).expect("cannot decrypt; this is bad");
+                            // info!("decryption of {:?} was successful ({:?})", &r, &p);
+                            return fs::remove_dir_all(&dst)
+                                .and_then(|_| fs::remove_file(&tan))
+                                .and_then(|_| Ok(true));
+                        }
+                        Err(e) => {
+                            error!("error encrypting {:?}: {}", &tan, e);
+                            return Err(e);
+                        }
                     }
-                    Err(e) => error!("error encrypting {:?}: {}", &tan, e),
                 }
-            } else {
-                error!("cannot create the archive destination");
-            };
+                Err(e) => {
+                    error!("cannot create the archive destination");
+                    return Err(e);
+                }
+            }
         }
     };
 

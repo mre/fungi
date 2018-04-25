@@ -41,6 +41,7 @@ use self::block_cipher_trait::BlockCipher;
 use self::twofish::Twofish;
 
 mod progressbar;
+mod prompts;
 
 static DIGEST_ALG: &'static digest::Algorithm = &digest::SHA256;
 const CREDENTIAL_LEN: usize = digest::SHA256_OUTPUT_LEN;
@@ -80,7 +81,29 @@ fn component() -> Vec<u8> {
 }
 
 fn tf() -> Twofish {
-    let password: String = String::from("foobar");
+    let password: String;
+    loop {
+        let pv = prompts::getpass::get_pass("password: ");
+        let pa = match str::from_utf8(&pv) {
+            Ok(v) => v,
+            Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+        };
+        
+        let pv = prompts::getpass::get_pass("confirm: ");
+        let pb = match str::from_utf8(&pv) {
+            Ok(v) => v,
+            Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+        };
+
+        if pa == pb {
+            password = pa.to_owned();
+            break;
+        } else {
+            warn!("passwords aren't matching");
+            continue;
+        };
+    }
+
     let pbkdf2_iterations: u32 = 100_000;
     let salt = salt(component(), "taker");
     let mut key: Credential = [0u8; CREDENTIAL_LEN];
@@ -92,6 +115,7 @@ fn tf() -> Twofish {
         password.as_bytes(),
         &mut key,
     );
+
     debug!("initial password: {:?}", password);
     debug!("initial salt: {:?}", salt);
     debug!("initial key: {:?}", key);

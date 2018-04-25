@@ -36,7 +36,10 @@ twofish = "0.1.0"
 ring = "0.12.1"
 # https://github.com/a8m/pb
 # http://a8m.github.io/pb/doc/pbr/index.html
-pbr = "1.0.0" 
+pbr = "1.0.0"
+# https://github.com/rust-lang/libc
+# https://crates.io/crates/libc
+libc = "0.2.40"
 
 # https://doc.rust-lang.org/cargo/reference/manifest.html#configuring-a-target
 [[bin]]

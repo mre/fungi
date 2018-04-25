@@ -1,14 +1,14 @@
-// https://github.com/DaGenix/rust-crypto/blob/master/examples/symmetriccipher.rs
-// https://tools.ietf.org/html/rfc2898#section-5.2
-// https://github.com/RustCrypto/block-ciphers
 
 #![no_std]
 extern crate block_cipher_trait;
 extern crate twofish;
-
 extern crate crypto;
-extern crate rand;
 extern crate ring;
+// extern crate rand;
+
+// https://github.com/DaGenix/rust-crypto/blob/master/examples/symmetriccipher.rs
+// https://tools.ietf.org/html/rfc2898#section-5.2
+// https://github.com/RustCrypto/block-ciphers
 
 use std::str;
 // https://doc.rust-lang.org/std/fs/struct.File.html
@@ -19,17 +19,18 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::io::Error;
 use std::path::PathBuf;
+use std::collections::HashMap;
+
+use rand::{OsRng, RngCore};
 
 use self::crypto::buffer::{BufferResult, ReadBuffer, WriteBuffer};
 use self::crypto::{aes, blockmodes, buffer, symmetriccipher};
 
-use rand::{OsRng, RngCore};
-
 use self::ring::{digest, pbkdf2};
-use std::collections::HashMap;
 
 use self::block_cipher_trait::BlockCipher;
 use self::block_cipher_trait::generic_array::GenericArray;
+
 use self::twofish::Twofish;
 
 static DIGEST_ALG: &'static digest::Algorithm = &digest::SHA256;

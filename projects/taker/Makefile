@@ -11,7 +11,7 @@ run:
 	RUST_LOG=taker cargo run
 
 install:
-	cargo build && cargo build --release && cargo install --force
+	cargo build && cargo build --release && cargo install --path . --force
 
 clean:
 	@echo "Removing 'test'"

@@ -23,7 +23,7 @@ impl Default for Config {
                 "~/.emacs.el",
                 "~/.aws",
                 "~/.config/awesome/rc.lua",
-                "~/.this/pwsafe.psafe3"
+                "~/this/pwsafe.psafe3"
             ],
         }
     }

@@ -18,7 +18,6 @@ use std::error::Error;
 use std::io;
 
 fn run_app() -> Result<bool, io::Error> {
-    env_logger::init();
     // let version = format!("{}.{}.{}{}",
     //                  env!("CARGO_PKG_VERSION_MAJOR"),
     //                  env!("CARGO_PKG_VERSION_MINOR"),
@@ -52,7 +51,7 @@ fn run_app() -> Result<bool, io::Error> {
                 .multiple(false)
                 .help("e[x]ecute the taker"),
         );
-    
+
     let mut a = app.clone();
     let matches = app.get_matches();
 
@@ -72,17 +71,28 @@ fn run_app() -> Result<bool, io::Error> {
         0 => {
             println!("No verbose info (warn)");
             env::set_var(taker::LOG_CFG, "taker=warn");
+            assert_eq!(env::var(taker::LOG_CFG), Ok("taker=warn".to_string()));
         }
         1 => {
             println!("Some verbose info (info)");
             env::set_var(taker::LOG_CFG, "taker=info");
+            assert_eq!(env::var(taker::LOG_CFG), Ok("taker=info".to_string()));
         }
         2 => {
             println!("More verbose info (debug)");
             env::set_var(taker::LOG_CFG, "taker=debug");
+            assert_eq!(env::var(taker::LOG_CFG), Ok("taker=debug".to_string()));
         }
-        3 | _ => println!("Don't be crazy"),
+        3 | _ => {
+            println!("Don't be crazy");
+            env::set_var(taker::LOG_CFG, "taker=debug");
+            assert_eq!(env::var(taker::LOG_CFG), Ok("taker=debug".to_string()));
+        }
     };
+
+    env_logger::Builder::from_default_env()
+        .default_format_timestamp(true)
+        .init();
 
     if log_enabled!(Level::Debug) {
         info!("running the taker CLI");

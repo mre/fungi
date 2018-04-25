@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "aes-soft",
+    "blowfish",
+    "block-modes",
+    "des",
+    "kuznyechik",
+    "magma",
+    "rc2",
+    "twofish"
+]

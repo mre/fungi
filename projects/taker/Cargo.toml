@@ -34,6 +34,9 @@ twofish = "0.1.0"
 # https://briansmith.org/rustdoc/ring
 # https://github.com/briansmith/ring
 ring = "0.12.1"
+# https://github.com/a8m/pb
+# http://a8m.github.io/pb/doc/pbr/index.html
+pbr = "1.0.0" 
 
 # https://doc.rust-lang.org/cargo/reference/manifest.html#configuring-a-target
 [[bin]]

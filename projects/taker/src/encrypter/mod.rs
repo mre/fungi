@@ -1,7 +1,9 @@
 // https://github.com/DaGenix/rust-crypto/blob/master/examples/symmetriccipher.rs
+// https://tools.ietf.org/html/rfc2898#section-5.2
 
 extern crate crypto;
 extern crate rand;
+extern crate ring;
 
 use std::str;
 // https://doc.rust-lang.org/std/fs/struct.File.html
@@ -17,6 +19,114 @@ use self::crypto::buffer::{BufferResult, ReadBuffer, WriteBuffer};
 use self::crypto::{aes, blockmodes, buffer, symmetriccipher};
 
 use rand::{OsRng, RngCore};
+
+use self::ring::{digest, pbkdf2};
+use std::collections::HashMap;
+
+static DIGEST_ALG: &'static digest::Algorithm = &digest::SHA256;
+const CREDENTIAL_LEN: usize = digest::SHA256_OUTPUT_LEN;
+
+pub type Credential = [u8; CREDENTIAL_LEN];
+
+struct PasswordDatabase {
+    pbkdf2_iterations: u32,
+    db_salt_component: [u8; 16],
+
+    // Normally this would be a persistent database.
+    storage: HashMap<String, Credential>,
+}
+
+enum EncError {
+    WrongUsernameOrPassword,
+}
+
+#[allow(dead_code)]
+impl PasswordDatabase {
+    // The salt should have a user-specific component so that an attacker
+    // cannot crack one password for multiple users in the database. It
+    // should have a database-unique component so that an attacker cannot
+    // crack the same user's password across databases in the unfortunate
+    // but common case that the user has used the same password for
+    // multiple systems.
+    fn salt(&self, username: &str) -> Vec<u8> {
+        let mut salt = Vec::with_capacity(self.db_salt_component.len() + username.as_bytes().len());
+        salt.extend(self.db_salt_component.as_ref());
+        salt.extend(username.as_bytes());
+        salt
+    }
+
+    fn store_password(&mut self, username: &str, password: &str) {
+        let salt = self.salt(username);
+        let mut to_store: Credential = [0u8; CREDENTIAL_LEN];
+        pbkdf2::derive(
+            DIGEST_ALG,
+            self.pbkdf2_iterations,
+            &salt,
+            password.as_bytes(),
+            &mut to_store,
+        );
+        self.storage.insert(String::from(username), to_store);
+    }
+
+    fn verify_password(
+        &self,
+        username: &str,
+        attempted_password: &str,
+    ) -> Result<(), EncError> {
+        match self.storage.get(username) {
+            Some(actual_password) => {
+                let salt = self.salt(username);
+                pbkdf2::verify(
+                    DIGEST_ALG,
+                    self.pbkdf2_iterations,
+                    &salt,
+                    attempted_password.as_bytes(),
+                    actual_password,
+                ).map_err(|_| EncError::WrongUsernameOrPassword)
+            }
+
+            None => Err(EncError::WrongUsernameOrPassword),
+        }
+    }
+}
+
+fn ring_sample() {
+    // Normally these parameters would be loaded from a configuration file.
+    let mut db = PasswordDatabase {
+        pbkdf2_iterations: 100_000,
+        db_salt_component: [
+            // This value was generated from a secure PRNG.
+            0xd6,
+            0x26,
+            0x98,
+            0xda,
+            0xf4,
+            0xdc,
+            0x50,
+            0x52,
+            0x24,
+            0xf2,
+            0x27,
+            0xd1,
+            0xfe,
+            0x39,
+            0x01,
+            0x8a,
+        ],
+        storage: HashMap::new(),
+    };
+
+    db.store_password("alice", "@74d7]404j|W}6u");
+
+    // An attempt to log in with the wrong password fails.
+    assert!(db.verify_password("alice", "wrong password").is_err());
+
+    // Normally there should be an expoentially-increasing delay between
+    // attempts to further protect against online attacks.
+
+    // An attempt to log in with the right password succeeds.
+    assert!(db.verify_password("alice", "@74d7]404j|W}6u").is_ok());
+}
 
 // Encrypt a buffer with the given key and iv using
 // AES-256/CBC/Pkcs encryption.
@@ -136,8 +246,8 @@ fn get_file_buffer(path: &PathBuf) -> Result<Vec<u8>, Error> {
 }
 
 pub fn sample(src: &PathBuf) -> Result<bool, Error> {
-    let mut key: [u8; 3] = [0; 3];
-    let mut iv: [u8; 3] = [0; 3];
+    let mut key: [u8; 32] = [0; 32];
+    let mut iv: [u8; 16] = [0; 16];
 
     // In a real program, the key and iv may be determined
     // using some other mechanism. If a password is to be used

@@ -27,6 +27,11 @@ tar = "0.4.15"
 # https://github.com/DaGenix/rust-crypto
 rust-crypto = "0.2.36"
 
+# https://crates.io/crates/ring
+# https://briansmith.org/rustdoc/ring
+# https://github.com/briansmith/ring
+ring = "0.12.1"
+
 # https://doc.rust-lang.org/cargo/reference/manifest.html#configuring-a-target
 [[bin]]
 name = "taker"

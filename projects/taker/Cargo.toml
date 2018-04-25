@@ -26,7 +26,10 @@ serde_derive = "1.0.38"
 tar = "0.4.15"
 # https://github.com/DaGenix/rust-crypto
 rust-crypto = "0.2.36"
-
+# https://github.com/RustCrypto/block-ciphers
+# https://github.com/RustCrypto/block-ciphers/tree/master/twofish
+block-cipher-trait = "0.5.0"
+twofish = "0.1.0"
 # https://crates.io/crates/ring
 # https://briansmith.org/rustdoc/ring
 # https://github.com/briansmith/ring

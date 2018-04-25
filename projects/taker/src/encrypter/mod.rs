@@ -245,8 +245,8 @@ fn get_file_buffer(path: &PathBuf) -> Result<Vec<u8>, Error> {
 }
 
 fn salt(component: Vec<u8>, input: &str) -> Vec<u8> {
-    let mut output = Vec::with_capacity(component.len() + input.as_bytes().len());
-    output.extend(component.as_ref());
+    let mut output: Vec<u8> = Vec::with_capacity(component.len() + input.as_bytes().len());
+    output.extend(component);
     output.extend(input.as_bytes());
     output
 }
@@ -262,12 +262,13 @@ pub fn cipher(src: &PathBuf) -> Result<bool, Error> {
         ];
     let salt = salt(component, "taker");
     let mut key: Credential = [0u8; CREDENTIAL_LEN];
+    
     pbkdf2::derive(
         DIGEST_ALG,
         pbkdf2_iterations,
         &salt,
         password.as_bytes(),
-        &mut to_store,
+        &mut key,
     );
 
     let twofish = Twofish::new_varkey(&key).unwrap();

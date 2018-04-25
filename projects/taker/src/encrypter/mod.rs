@@ -282,15 +282,17 @@ pub fn cipher(src: &PathBuf) -> Result<bool, Error> {
     let f_buf: &[u8] = &f_buf;
     debug!("buffer from file is {:?} bytes long", f_buf.len());
 
-    // GenericArray has lwngth of 16, no more.
-    let plain = GenericArray::default(); // f_buf;
-    let mut buf = plain.clone();
-    debug!("buffer from GenericArray is {:?} bytes long", plain.len());
+    for chunk in f_buf.chunks(16) {
+        // GenericArray has lwngth of 16, no more.
+        let plain = GenericArray::from_slice(chunk);
+        let mut buf = plain.clone();
+        debug!("buffer from GenericArray is {:?} bytes long", plain.len());
 
-    twofish.encrypt_block(&mut buf);
-    let mut cipher = buf.clone();
-    twofish.decrypt_block(&mut cipher);
-    assert_eq!(plain, cipher);
+        twofish.encrypt_block(&mut buf);
+        let mut cipher = buf.clone();
+        twofish.decrypt_block(&mut cipher);
+        assert_eq!(plain, &cipher);
+    }
     Ok(true)
 }
 

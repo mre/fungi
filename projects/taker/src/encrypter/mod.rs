@@ -1,5 +1,10 @@
 // https://github.com/DaGenix/rust-crypto/blob/master/examples/symmetriccipher.rs
 // https://tools.ietf.org/html/rfc2898#section-5.2
+// https://github.com/RustCrypto/block-ciphers
+
+#![no_std]
+extern crate block_cipher_trait;
+extern crate twofish;
 
 extern crate crypto;
 extern crate rand;
@@ -22,6 +27,10 @@ use rand::{OsRng, RngCore};
 
 use self::ring::{digest, pbkdf2};
 use std::collections::HashMap;
+
+use self::block_cipher_trait::BlockCipher;
+use self::block_cipher_trait::generic_array::GenericArray;
+use self::twofish::Twofish;
 
 static DIGEST_ALG: &'static digest::Algorithm = &digest::SHA256;
 const CREDENTIAL_LEN: usize = digest::SHA256_OUTPUT_LEN;
@@ -242,6 +251,21 @@ fn get_file_buffer(path: &PathBuf) -> Result<Vec<u8>, Error> {
     }
 }
 
+pub fn cipher(src: &PathBuf) -> Result<bool, Error> {
+    let mut key = [0u8; 32];
+    let mut plain = GenericArray::default();
+    let mut cipher;
+
+    let twofish = Twofish::new_varkey(&key).unwrap();
+
+    let mut buf = plain.clone();
+    twofish.encrypt_block(&mut buf);
+    cipher = buf.clone();
+    twofish.decrypt_block(&mut buf);
+    assert_eq!(plain, buf);
+    Ok(true)
+}
+
 pub fn sample(src: &PathBuf) -> Result<bool, Error> {
     let mut key: [u8; 32] = [0; 32];
     let mut iv: [u8; 16] = [0; 16];
@@ -258,16 +282,16 @@ pub fn sample(src: &PathBuf) -> Result<bool, Error> {
 
     let key = "aaa".as_bytes();
     let iv = "bbb".as_bytes();
-    
-        let salt = self.salt(username);
-        let mut to_store: Credential = [0u8; CREDENTIAL_LEN];
-        pbkdf2::derive(
-            DIGEST_ALG,
-            self.pbkdf2_iterations,
-            &salt,
-            password.as_bytes(),
-            &mut to_store,
-        );
+
+    // let salt = self.salt(username);
+    // let mut to_store: Credential = [0u8; CREDENTIAL_LEN];
+    // pbkdf2::derive(
+    //     DIGEST_ALG,
+    //     self.pbkdf2_iterations,
+    //     &salt,
+    //     password.as_bytes(),
+    //     &mut to_store,
+    // );
 
     match str::from_utf8(&key) {
         Ok(v) => warn!("encrypting {:?} with key: {}", src, v),

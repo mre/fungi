@@ -337,7 +337,7 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
 
                 info!("ciphering {:?}", tan);
                 match encrypter::cipher(&tan) {
-                    Ok(r) => info!("encryption of {:?} was successful ({:?}", &tan, r),
+                    Ok(r) => info!("encryption of {:?} was successful ({:?})", &tan, r),
                     Err(e) => error!("error encrypting {:?}: {}", &tan, e),
                 }
             } else {

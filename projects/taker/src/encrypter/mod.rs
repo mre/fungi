@@ -253,16 +253,20 @@ fn salt(component: Vec<u8>, input: &str) -> Vec<u8> {
 
 pub fn cipher(src: &PathBuf) -> Result<bool, Error> {
     let password: String = String::from("foobar");
+    debug!("initial password: {:?}", password);
+
     let pbkdf2_iterations: u32 = 100_000;
     // This value was generated from a secure PRNG.
     #[cfg_attr(rustfmt, rustfmt_skip)]
-        let component: Vec<u8> = vec![
-            0xd6, 0x26, 0x98, 0xda, 0xf4, 0xdc, 0x50, 0x52, 0x24, 0xf2,
-            0x27, 0xd1, 0xfe, 0x39, 0x01, 0x8a,
-        ];
+    let component: Vec<u8> = vec![
+        0xd6, 0x26, 0x98, 0xda, 0xf4, 0xdc, 0x50, 0x52,
+        0x24, 0xf2, 0x27, 0xd1, 0xfe, 0x39, 0x01, 0x8a,
+    ];
+
     let salt = salt(component, "taker");
+    debug!("initial salt: {:?}", salt);
     let mut key: Credential = [0u8; CREDENTIAL_LEN];
-    
+    debug!("initial key: {:?}", key);
     pbkdf2::derive(
         DIGEST_ALG,
         pbkdf2_iterations,
@@ -270,16 +274,20 @@ pub fn cipher(src: &PathBuf) -> Result<bool, Error> {
         password.as_bytes(),
         &mut key,
     );
+    debug!("pbkdf2-ed key: {:?}", key);
 
     let twofish = Twofish::new_varkey(&key).unwrap();
 
     // let mut plain = GenericArray::default();
     // let mut buf = plain.clone();
-    // let plain = get_file_buffer(src)?;
+
     let f_buf: Vec<u8> = get_file_buffer(src)?;
-    let f_buf: &[u8] = &f_buf;
-    let plain = GenericArray::from_slice(f_buf);
+    // let f_buf: &[u8] = &f_buf;
+    debug!("buffer from file is {:?} bytes long", f_buf.len());
+
+    let plain = GenericArray::as_slice(&f_buf);
     let mut buf = plain.clone();
+    debug!("buffer from GenericArray is {:?} bytes long", plain.len());
 
     twofish.encrypt_block(&mut buf);
     let mut cipher = buf.clone();

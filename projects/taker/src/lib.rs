@@ -321,14 +321,18 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
             if let Ok(tan) = create_archive_name(&home) {
                 info!("compressing {:?}", dst);
                 compress::compress(&dst, &tan)?;
-
-                info!("ciphering {:?}", tan);
-                match encrypter::symmetric(&tan) {
+                let out: PathBuf = tag_name(
+                    &PathBuf::from(&home),
+                    &PathBuf::from(""),
+                    &maybe_expand_dot(&PathBuf::from(tan.file_name().unwrap())),
+                );
+                info!("ciphering {:?} into {:?}", tan, out);
+                match encrypter::symmetric(&tan, &out) {
                     Ok(r) => {
-                        info!("encryption of {:?} was successful ({:?})", &tan, &r);
+                        info!("encryption of {:?} into {:?} was successful ({:?})", &tan, &out, &r);
                         // let p = encrypter::decipher(&r).expect("cannot decrypt; this is bad");
                         // info!("decryption of {:?} was successful ({:?})", &r, &p);
-                    },
+                    }
                     Err(e) => error!("error encrypting {:?}: {}", &tan, e),
                 }
             } else {
@@ -336,7 +340,7 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
             };
         }
     };
-    
+
     Ok(true)
 }
 

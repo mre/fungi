@@ -206,16 +206,20 @@ pub fn decipher(src: &PathBuf) -> Result<PathBuf, Error> {
     };
 }
 
-pub fn symmetric(src: &PathBuf) -> Result<PathBuf, Error> {
+pub fn symmetric(src: &PathBuf, out: &PathBuf) -> Result<PathBuf, Error> {
     let filtered_env: HashMap<String, String> = env::vars()
         .filter(|&(ref k, _)| k == "TERM" || k == "TZ" || k == "LANG" || k == "PATH")
         .collect();
-    let mut dst = src.clone();
-    dst.set_extension("out");
+    let mut dst = out.clone();
+    dst.set_extension("gpg");
     // https://doc.rust-lang.org/std/process/struct.Command.html
     match Command::new("gpg")
         .arg("--symmetric")
-        .arg("--cipher-algo AES256")
+        .args(&["--cipher-algo", "AES256"])
+        .args(&["--compress-level", "6"])
+        .args(&["--compress-algo", "ZLIB"])
+        .args(&["--output", dst.to_str().unwrap()])
+        .arg(src.to_str().unwrap())
         .current_dir(src.parent().expect("src must be a file"))
         .stdin(Stdio::null())
         .stdout(Stdio::inherit())

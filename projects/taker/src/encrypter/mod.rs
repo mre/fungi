@@ -55,7 +55,10 @@ fn get_file_buffer(path: &PathBuf) -> Result<Vec<u8>, Error> {
     let mut reader = BufReader::new(file);
 
     match reader.read_to_end(&mut buffer) {
-        Ok(_) => Ok(buffer),
+        Ok(usz) => {
+            debug!("buffer from {:?} is {:?} bytes long", &path, usz);
+            Ok(buffer)
+        }
         Err(e) => Err(e),
     }
 }
@@ -76,12 +79,12 @@ fn component() -> Vec<u8> {
     ]
 }
 
-pub fn cipher(src: &PathBuf) -> Result<PathBuf, Error> {
+fn tf() -> Twofish {
     let password: String = String::from("foobar");
     let pbkdf2_iterations: u32 = 100_000;
     let salt = salt(component(), "taker");
     let mut key: Credential = [0u8; CREDENTIAL_LEN];
-    
+
     pbkdf2::derive(
         DIGEST_ALG,
         pbkdf2_iterations,
@@ -89,20 +92,22 @@ pub fn cipher(src: &PathBuf) -> Result<PathBuf, Error> {
         password.as_bytes(),
         &mut key,
     );
-
-    let twofish = Twofish::new_varkey(&key).unwrap();
-    let f_buf: Vec<u8> = get_file_buffer(src)?;
-    let f_buf: &[u8] = &f_buf;
-    
     debug!("initial password: {:?}", password);
     debug!("initial salt: {:?}", salt);
     debug!("initial key: {:?}", key);
     debug!("pbkdf2-ed key: {:?}", key);
-    debug!("buffer from file is {:?} bytes long", f_buf.len());
 
+    return Twofish::new_varkey(&key).unwrap();
+}
+
+pub fn cipher(src: &PathBuf) -> Result<PathBuf, Error> {
+    let f_buf: Vec<u8> = get_file_buffer(src)?;
+    let f_buf: &[u8] = &f_buf;
+
+    let twofish = tf();
     let mut encrypted = Vec::new();
-    let mut pb = progressbar::simple(((f_buf.len() as f64)/16.0).ceil() as u64);
-    
+    let mut pb = progressbar::simple(((f_buf.len() as f64) / 16.0).ceil() as u64);
+
     for chunk in f_buf.chunks(16) {
         let plain = GenericArray::from_slice(chunk);
         let mut buf = plain.clone();
@@ -116,16 +121,53 @@ pub fn cipher(src: &PathBuf) -> Result<PathBuf, Error> {
         assert_eq!(plain, &cipher);
         pb.inc();
     }
-    
+
     assert_eq!(f_buf.len(), encrypted.len());
     pb.finish();
 
     let mut dst: PathBuf = src.clone();
     dst.set_extension("enc");
 
-    warn!("encryption dst is {:?}", dst);
+    debug!("encryption dst is {:?}", dst);
     let mut file = File::create(&dst)?;
     return match file.write_all(&encrypted) {
+        Ok(n) => {
+            info!("done with {:?}", n);
+            Ok(dst)
+        }
+        Err(e) => Err(e),
+    };
+}
+
+pub fn decipher(src: &PathBuf) -> Result<PathBuf, Error> {
+    let f_buf: Vec<u8> = get_file_buffer(src)?;
+    let f_buf: &[u8] = &f_buf;
+
+    let twofish = tf();
+    let mut decrypted = Vec::new();
+    let mut pb = progressbar::simple(((f_buf.len() as f64) / 16.0).ceil() as u64);
+
+    for chunk in f_buf.chunks(16) {
+        let enc = GenericArray::from_slice(chunk);
+        let mut buf = enc.clone();
+
+        twofish.decrypt_block(&mut buf);
+
+        let mut plain = buf.clone();
+        // https://doc.rust-lang.org/std/vec/struct.Vec.html#method.extend_from_slice
+        decrypted.extend_from_slice(&plain);
+        pb.inc();
+    }
+
+    assert_eq!(f_buf.len(), decrypted.len());
+    pb.finish();
+
+    let mut dst: PathBuf = src.clone();
+    dst.set_extension("foo");
+
+    debug!("decryption dst is {:?}", dst);
+    let mut file = File::create(&dst)?;
+    return match file.write_all(&decrypted) {
         Ok(n) => {
             info!("done with {:?}", n);
             Ok(dst)

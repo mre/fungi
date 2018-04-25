@@ -282,18 +282,35 @@ pub fn cipher(src: &PathBuf) -> Result<bool, Error> {
     let f_buf: &[u8] = &f_buf;
     debug!("buffer from file is {:?} bytes long", f_buf.len());
 
+    let mut encrypted = Vec::new();
     for chunk in f_buf.chunks(16) {
         // GenericArray has lwngth of 16, no more.
         let plain = GenericArray::from_slice(chunk);
         let mut buf = plain.clone();
-        debug!("buffer from GenericArray is {:?} bytes long", plain.len());
+        debug!("buffer from GenericArray (from chunk) is {:?} bytes long", plain.len());
 
         twofish.encrypt_block(&mut buf);
         let mut cipher = buf.clone();
         twofish.decrypt_block(&mut cipher);
         assert_eq!(plain, &cipher);
+
+        // https://doc.rust-lang.org/std/vec/struct.Vec.html#method.extend_from_slice
+        encrypted.extend_from_slice(&cipher); 
     }
-    Ok(true)
+    assert_eq!(f_buf.len(), encrypted.len());
+    
+    let mut dst: PathBuf = src.clone();
+    dst.set_extension("enc");
+
+    warn!("encryption dst is {:?}", dst);
+    let mut file = File::create(dst)?;
+    return match file.write_all(&encrypted) {
+        Ok(n) => {
+            info!("done with {:?}", n);
+            Ok(true)
+        }
+        Err(e) => Err(e),
+    };
 }
 
 #[allow(dead_code)]

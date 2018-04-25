@@ -24,11 +24,11 @@ extern crate serde_derive;
 extern crate toml;
 
 use std::error::Error;
-use std::io::prelude::*;
+// use std::io::prelude::*;
 use std::iter;
 // use std::fmt;
 use std::env;
-use std::fs::{self, DirBuilder, File};
+use std::fs::{self, DirBuilder};
 use std::io;
 // use std::io::{Error, ErrorKind};
 
@@ -149,16 +149,6 @@ where
         .collect()
 }
 
-fn create_file_in(dir: &PathBuf) -> Result<PathBuf, io::Error> {
-    let mut f_dir: PathBuf = dir.clone();
-    f_dir.push("foo.txt");
-    let mut file = File::create(&f_dir)?;
-    return match file.write_all(b"Hello, world!") {
-        Ok(_) => Ok(f_dir),
-        Err(e) => Err(e),
-    };
-}
-
 fn home_name() -> String {
     match env::home_dir() {
         Some(path) => String::from(path.to_str().unwrap()),
@@ -197,13 +187,10 @@ fn copy_file_in<S: AsRef<Path> + std::fmt::Debug, D: AsRef<Path> + std::fmt::Deb
     };
 }
 
-fn create_token_file_in(dir: &PathBuf) -> Result<PathBuf, io::Error> {
-    create_file_in(&dir)
-}
-
 // https://github.com/rust-lang-nursery/rand/blob/master/src/lib.rs#L601
 // https://github.com/rust-lang-nursery/rand/blob/master/src/lib.rs#L380
 // https://github.com/rust-lang-nursery/rand/blob/0.5.0-pre.0/src/distributions/other.rs
+#[allow(dead_code)]
 fn random_from(seed: &str) -> String {
     let mut rng = thread_rng();
     let distr = &Alphanumeric;
@@ -346,163 +333,6 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
         }
     };
     
-    Ok(true)
-}
-
-pub fn sample(_: config::Config) -> Result<bool, io::Error> {
-    let home: String = home_name();
-    debug!("considering {} as $HOME", home);
-
-    // https://doc.rust-lang.org/std/path/struct.PathBuf.html
-    let mut dir: PathBuf = [&home, BASE_URL].iter().collect();
-    dir.push("test");
-
-    // https://doc.rust-lang.org/std/fs/struct.DirBuilder.html#method.create
-    // Create the specified directory with the options configured in
-    // this builder.
-    //
-    // It is considered an error if the directory already exists unless
-    // recursive mode is enabled.
-    match DirBuilder::new().recursive(false).create(&dir) {
-        // https://doc.rust-lang.org/std/io/type.Result.html
-        Ok(_) => {
-            info!("directory {:?} created", &dir);
-            let f_dir: PathBuf = create_token_file_in(&dir).unwrap();
-            debug!("content written in {:?}", f_dir);
-        }
-        Err(e) => {
-            error!(
-                "cannot create directory {:?}: {}... destroy (try again)!",
-                &dir, e
-            );
-            // https://doc.rust-lang.org/std/fs/fn.remove_dir.html
-            // pub fn remove_dir<P: AsRef<Path>>(path: P) -> Result<()>
-            // Removes an existing, empty directory.
-            //
-            // https://doc.rust-lang.org/std/fs/fn.remove_dir_all.html
-            // pub fn remove_dir_all<P: AsRef<Path>>(path: P) -> Result<()>
-            // Removes a directory at this path, after removing all its
-            // contents. Use carefully!
-            fs::remove_dir_all(&dir)?;
-            return Err(e);
-        }
-    };
-
-    debug!("ensuring that {:?} is a directory", &dir);
-    assert!(fs::metadata(&dir).unwrap().is_dir());
-
-    // https://doc.rust-lang.org/std/path/struct.Path.html
-    // impl AsRef<Path> for String
-    //   fn as_ref(&self) -> &Path
-    let f_target: &str = "foo.txt";
-    let mut src: PathBuf = [&home, BASE_URL, "test", f_target].iter().collect();
-
-    let mut dst_name = random_from("foo");
-    dst_name.push_str(".txt");
-    let mut dst: PathBuf = [&home, BASE_URL, "test", &dst_name].iter().collect();
-
-    if fs::File::open(&src).is_err() {
-        error!("cannot copy {:?} because it's missing", &src);
-        let custom_error = io::Error::new(io::ErrorKind::Other, "missing_src");
-        return Err(custom_error);
-    }
-    if fs::File::open(&dst).is_ok() {
-        error!("cannot copy into {:?} because it's already there", &dst);
-        let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_override");
-        return Err(custom_error);
-    }
-
-    copy_file_in(&src, &dst)?;
-
-    src = [&home, BASE_URL, "test"].iter().collect();
-    dst = [&home, BASE_URL, "tset"].iter().collect();
-
-    if dst.is_dir() {
-        error!("directory {:?} is already there, cannot copy!", &dst);
-        let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_override");
-        return Err(custom_error);
-    } else {
-        // https://doc.rust-lang.org/std/fs/struct.DirBuilder.html#method.create
-        match DirBuilder::new().recursive(true).create(&dst) {
-            // https://doc.rust-lang.org/std/io/type.Result.html
-            Ok(_) => {
-                info!("directory {:?} created", &dst);
-                // let mut f_dir: PathBuf = dir.clone();
-                // f_dir.push("foo.txt");
-                // let mut file = File::create(f_dir)?;
-                // file.write_all(b"Hello, world!")?;
-            }
-            Err(e) => {
-                error!("cannot create directory {:?}: {}", &dir, e);
-                return Err(e);
-            }
-        };
-    }
-
-    // src: mut PathBuf
-    if !src.is_dir() || !dst.is_dir() {
-        error!(
-            "cannot copy {:?} into {:?}: buth must be an existing directory",
-            &src, &dst
-        );
-        let custom_error = io::Error::new(io::ErrorKind::Other, "cannot_copy");
-        return Err(custom_error);
-    }
-
-    info!("copying content of {:?} into {:?}", src, dst);
-    walkers::visit_dirs(&src, &|f_src| {
-        // let f_src_path = f_src.path();
-        debug!("entering {:?} found {:?}", &src, f_src.file_name());
-
-        let home = PathBuf::from(&home);
-
-        let f_dst: PathBuf = tag_name(&home, &dst, &PathBuf::from(f_src.file_name()));
-        debug!("destination filename: {:?}", &f_dst);
-        let f_src_s: PathBuf = [&src, &f_src.path()].iter().collect();
-        debug!("source filename: {:?}", &f_src_s);
-        return copy_file_in(f_src_s, f_dst);
-    })?;
-
-    // https://doc.rust-lang.org/std/fs/struct.DirEntry.html
-    // - if let Ok(ref entries) = &fs::read_dir(&dst) {}
-    // - if let Ok(entries) = fs::read_dir(&dst) {}
-
-    if let Ok(entries) = fs::read_dir(&dst) {
-        // https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.count
-        // Consumes the iterator, counting the number of iterations and returning it.
-        // let c = entries.count();
-
-        let mut c: usize = 0;
-
-        // https://doc.rust-lang.org/std/fs/struct.ReadDir.html
-        // https://doc.rust-lang.org/std/iter/trait.Iterator.html
-        // - entries.map(|entry| {})
-        // - for entry in &entries {}
-
-        for entry in entries {
-            if let Ok(entry) = entry {
-                // Here, `entry` is a `DirEntry`.
-                if let Ok(metadata) = entry.metadata() {
-                    // Now let's show our entry's permissions!
-                    debug!(
-                        "metadata of {:?}: {:?}",
-                        entry.path(),
-                        metadata.permissions()
-                    );
-                } else {
-                    error!("couldn't get metadata for {:?}", entry.path());
-                }
-                c = c + 1;
-            }
-        }
-        info!("inspected {:?} entries in {:?}", c, &dst);
-    }
-
-    // https://doc.rust-lang.org/std/fs/struct.DirBuilder.html
-    // let path = "/tmp/foo/bar/baz";
-    // DirBuilder::new().recursive(true).create(path).unwrap();
-    // assert!(fs::metadata(path).unwrap().is_dir());
-
     Ok(true)
 }
 

@@ -40,6 +40,10 @@ use self::block_cipher_trait::BlockCipher;
 
 use self::twofish::Twofish;
 
+use std::collections::HashMap;
+use std::env;
+use std::process::{Command, Stdio};
+
 mod progressbar;
 mod prompts;
 
@@ -88,7 +92,7 @@ fn tf() -> Twofish {
             Ok(v) => v,
             Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
         };
-        
+
         let pv = prompts::getpass::get_pass("confirm: ");
         let pb = match str::from_utf8(&pv) {
             Ok(v) => v,
@@ -124,6 +128,7 @@ fn tf() -> Twofish {
     return Twofish::new_varkey(&key).unwrap();
 }
 
+#[allow(dead_code)]
 pub fn cipher(src: &PathBuf) -> Result<PathBuf, Error> {
     let f_buf: Vec<u8> = get_file_buffer(src)?;
     let f_buf: &[u8] = &f_buf;
@@ -163,6 +168,7 @@ pub fn cipher(src: &PathBuf) -> Result<PathBuf, Error> {
     };
 }
 
+#[allow(dead_code)]
 pub fn decipher(src: &PathBuf) -> Result<PathBuf, Error> {
     let f_buf: Vec<u8> = get_file_buffer(src)?;
     let f_buf: &[u8] = &f_buf;
@@ -198,4 +204,34 @@ pub fn decipher(src: &PathBuf) -> Result<PathBuf, Error> {
         }
         Err(e) => Err(e),
     };
+}
+
+pub fn symmetric(src: &PathBuf) -> Result<PathBuf, Error> {
+    let filtered_env: HashMap<String, String> = env::vars()
+        .filter(|&(ref k, _)| k == "TERM" || k == "TZ" || k == "LANG" || k == "PATH")
+        .collect();
+    let mut dst = src.clone();
+    dst.set_extension("out");
+    // https://doc.rust-lang.org/std/process/struct.Command.html
+    match Command::new("gpg")
+        .arg("--symmetric")
+        .arg("--cipher-algo AES256")
+        .current_dir(src.parent().expect("src must be a file"))
+        .stdin(Stdio::null())
+        .stdout(Stdio::inherit())
+        .env_clear()
+        .envs(&filtered_env)
+        .spawn()
+    {
+        Ok(child) => {
+            let output = child.wait_with_output().expect("failed to wait on child");
+            info!("Child has finished its execution!");
+            assert!(output.status.success());
+            return Ok(dst);
+        }
+        Err(e) => {
+            error!("ls command didn't start");
+            return Err(e);
+        }
+    }
 }

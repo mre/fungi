@@ -323,11 +323,11 @@ pub fn run(cfg: config::Config) -> Result<bool, io::Error> {
                 compress::compress(&dst, &tan)?;
 
                 info!("ciphering {:?}", tan);
-                match encrypter::cipher(&tan) {
+                match encrypter::symmetric(&tan) {
                     Ok(r) => {
                         info!("encryption of {:?} was successful ({:?})", &tan, &r);
-                        let p = encrypter::decipher(&r).expect("cannot decrypt; this is bad");
-                        info!("decryption of {:?} was successful ({:?})", &r, &p);
+                        // let p = encrypter::decipher(&r).expect("cannot decrypt; this is bad");
+                        // info!("decryption of {:?} was successful ({:?})", &r, &p);
                     },
                     Err(e) => error!("error encrypting {:?}: {}", &tan, e),
                 }

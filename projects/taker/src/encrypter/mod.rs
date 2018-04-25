@@ -1,5 +1,8 @@
+// https://github.com/RustCrypto/traits
+// https://github.com/fizyk20/generic-array
+// http://fizyk20.github.io/generic-array/generic_array/
 
-#![no_std]
+// #![no_std]
 extern crate block_cipher_trait;
 extern crate twofish;
 extern crate crypto;
@@ -28,6 +31,9 @@ use self::crypto::{aes, blockmodes, buffer, symmetriccipher};
 
 use self::ring::{digest, pbkdf2};
 
+// http://fizyk20.github.io/generic-array/generic_array/
+// https://github.com/fizyk20/generic-array
+// https://github.com/RustCrypto/traits
 use self::block_cipher_trait::BlockCipher;
 use self::block_cipher_trait::generic_array::GenericArray;
 
@@ -253,20 +259,23 @@ fn get_file_buffer(path: &PathBuf) -> Result<Vec<u8>, Error> {
 }
 
 pub fn cipher(src: &PathBuf) -> Result<bool, Error> {
-    let mut key = [0u8; 32];
-    let mut cipher;
+    // let key = [0u8; 32];
+    let key = String::from("foobar").into_bytes();
 
     let twofish = Twofish::new_varkey(&key).unwrap();
     
     // let mut plain = GenericArray::default();
     // let mut buf = plain.clone();
-    let plain = get_file_buffer(src)?;
-    let buf = plain.clone();
+    // let plain = get_file_buffer(src)?;
+    let f_buf: Vec<u8> = get_file_buffer(src)?;
+    let f_buf: &[u8] = &f_buf;
+    let plain = GenericArray::from_slice(f_buf);
+    let mut buf = plain.clone();
 
     twofish.encrypt_block(&mut buf);
-    cipher = buf.clone();
-    twofish.decrypt_block(&mut buf);
-    assert_eq!(plain, buf);
+    let mut cipher = buf.clone();
+    twofish.decrypt_block(&mut cipher);
+    assert_eq!(plain, &cipher);
     Ok(true)
 }
 

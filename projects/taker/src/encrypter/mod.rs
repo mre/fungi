@@ -254,12 +254,15 @@ fn get_file_buffer(path: &PathBuf) -> Result<Vec<u8>, Error> {
 
 pub fn cipher(src: &PathBuf) -> Result<bool, Error> {
     let mut key = [0u8; 32];
-    let mut plain = GenericArray::default();
     let mut cipher;
 
     let twofish = Twofish::new_varkey(&key).unwrap();
+    
+    // let mut plain = GenericArray::default();
+    // let mut buf = plain.clone();
+    let plain = get_file_buffer(src)?;
+    let buf = plain.clone();
 
-    let mut buf = plain.clone();
     twofish.encrypt_block(&mut buf);
     cipher = buf.clone();
     twofish.decrypt_block(&mut buf);
@@ -267,7 +270,8 @@ pub fn cipher(src: &PathBuf) -> Result<bool, Error> {
     Ok(true)
 }
 
-pub fn sample(src: &PathBuf) -> Result<bool, Error> {
+#[allow(dead_code)]
+fn sample(src: &PathBuf) -> Result<bool, Error> {
     let mut key: [u8; 32] = [0; 32];
     let mut iv: [u8; 16] = [0; 16];
 
@@ -280,9 +284,6 @@ pub fn sample(src: &PathBuf) -> Result<bool, Error> {
     let mut rng = OsRng::new().ok().unwrap();
     rng.fill_bytes(&mut key);
     rng.fill_bytes(&mut iv);
-
-    let key = "aaa".as_bytes();
-    let iv = "bbb".as_bytes();
 
     // let salt = self.salt(username);
     // let mut to_store: Credential = [0u8; CREDENTIAL_LEN];

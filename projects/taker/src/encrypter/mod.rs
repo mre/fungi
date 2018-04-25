@@ -68,11 +68,7 @@ impl PasswordDatabase {
         self.storage.insert(String::from(username), to_store);
     }
 
-    fn verify_password(
-        &self,
-        username: &str,
-        attempted_password: &str,
-    ) -> Result<(), EncError> {
+    fn verify_password(&self, username: &str, attempted_password: &str) -> Result<(), EncError> {
         match self.storage.get(username) {
             Some(actual_password) => {
                 let salt = self.salt(username);
@@ -90,6 +86,7 @@ impl PasswordDatabase {
     }
 }
 
+#[allow(dead_code)]
 fn ring_sample() {
     // Normally these parameters would be loaded from a configuration file.
     let mut db = PasswordDatabase {
@@ -261,6 +258,16 @@ pub fn sample(src: &PathBuf) -> Result<bool, Error> {
 
     let key = "aaa".as_bytes();
     let iv = "bbb".as_bytes();
+    
+        let salt = self.salt(username);
+        let mut to_store: Credential = [0u8; CREDENTIAL_LEN];
+        pbkdf2::derive(
+            DIGEST_ALG,
+            self.pbkdf2_iterations,
+            &salt,
+            password.as_bytes(),
+            &mut to_store,
+        );
 
     match str::from_utf8(&key) {
         Ok(v) => warn!("encrypting {:?} with key: {}", src, v),

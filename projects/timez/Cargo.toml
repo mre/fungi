@@ -1,7 +1,7 @@
 [package]
 name = "timez"
 version = "0.1.0"
-authors = ["Edoardo Rossi <edd.rossi@gmail.com>"]
+authors = ["zeroed"]
 
 [dependencies]
 # https://github.com/chronotope/chrono
@@ -13,4 +13,3 @@ structopt = "0.2"
 [[bin]]
 name = "timez"
 path = "bin/timez.rs"
-

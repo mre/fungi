@@ -37,12 +37,12 @@ const ONES: [&str; 20] = [
     "nineteen",
 ];
 
-const TENS: [&str; 10] = [
-    "zero", "ten", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
-];
+// const TENS: [&str; 10] = [
+//     "zero", "ten", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+// ];
 
 fn easy(num: u64) -> &'static str {
-    if num < 0 || num >= 20 {
+    if num >= 20 {
         panic!("");
     };
     return match num {

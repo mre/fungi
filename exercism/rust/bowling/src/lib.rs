@@ -167,7 +167,15 @@ impl BowlingGame {
             // the number of pins knocked down in their next throw.
             if is_spare(&f) {
                 println!("frame {} is a spare", i);
-                points = points + fs[i + 1].0.unwrap();
+                let next: (Option<u16>, Option<u16>) = if i + 1 < fs.len() {
+                    fs[i + 1]
+                } else {
+                    self.last
+                };
+                if next.0.is_none() {
+                    return None;
+                }
+                points = points + next.0.unwrap();
             }
 
             // A strike is where all ten pins are knocked down by

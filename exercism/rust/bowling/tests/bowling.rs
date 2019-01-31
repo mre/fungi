@@ -356,7 +356,6 @@ fn if_the_last_frame_is_a_strike_you_cannot_score_before_the_extra_rolls_are_tak
 }
 
 #[test]
-#[ignore]
 fn if_the_last_frame_is_a_spare_you_cannot_create_a_score_before_extra_roll_is_taken() {
     let mut game = BowlingGame::new();
 

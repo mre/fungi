@@ -1,3 +1,6 @@
+
+/// disclaimer: this is gonna be ugly.
+
 #[derive(Debug, PartialEq)]
 pub enum Error {
     NotEnoughPinsLeft,
@@ -22,22 +25,17 @@ impl BowlingGame {
     pub fn roll(&mut self, pins: u16) -> Result<(), Error> {
         // more than 10 frames and and one throw the game is over
         if self.frames.len() > 10 && self.last.0.is_some() {
-            println!("frames > 10");
             return Err(Error::GameComplete);
         }
 
         if pins > 10 {
-            println!("pins > 10");
             return Err(Error::NotEnoughPinsLeft);
         }
 
         // checking the 10th frame
         if self.frames.len() == 10 {
-            println!("frames == 10");
-
             // if was a strike, add a throw
             if is_strike(self.frames.last().unwrap()) {
-                println!("last in frames is a strike");
                 if self.last.0.is_none() {
                     self.last.0 = Some(pins);
                     if pins == 10 {
@@ -60,7 +58,6 @@ impl BowlingGame {
 
             // if was a spare, add the single throw
             if is_spare(self.frames.last().unwrap()) {
-                println!("last in frames is a spare");
                 self.last.0 = Some(pins);
                 self.frames.push(self.last);
                 self.last = (None, None);
@@ -69,15 +66,17 @@ impl BowlingGame {
 
             // if was not a strike, error
             if !is_strike(self.frames.last().unwrap()) {
-                println!("last in frames is not a strike");
                 return Err(Error::GameComplete);
             }
 
             // if was not a spare, error
             if !is_spare(self.frames.last().unwrap()) {
-                println!("last in frames is not a spare");
                 return Err(Error::GameComplete);
             }
+        }
+
+        if self.frames.len() == 11 && !is_strike(self.frames.last().unwrap()) {
+            return Err(Error::GameComplete);
         }
 
         // look at the last throw
@@ -85,7 +84,6 @@ impl BowlingGame {
             // this is a new frame, first shot
             (None, None) => {
                 // account the first attempt
-                // println!("first shot of the frame");
                 self.last.0 = Some(pins);
                 if pins == 10 {
                     self.frames.push(self.last);
@@ -122,16 +120,12 @@ impl BowlingGame {
 
     pub fn score(&self) -> Option<u16> {
         let mut fs: Vec<(Option<u16>, Option<u16>)> = self.frames.clone();
-        println!("counting ({}){:?}", fs.len(), fs);
-        println!("and last {:?}", self.last);
-
         if self.last.0.is_some() {
             fs.push(self.last);
         }
 
         // game is not over
         if fs.len() < 10 {
-            println!("game is not over");
             return None;
         }
 
@@ -159,14 +153,12 @@ impl BowlingGame {
                 continue;
             }
 
-            println!("scoring {:02} : {:?}", i, f);
             points = points + f.0.unwrap_or(0) + f.1.unwrap_or(0);
 
             // A spare is where all ten pins are knocked down by the
             // second throw. The total value of a spare is 10 plus
             // the number of pins knocked down in their next throw.
             if is_spare(&f) {
-                println!("frame {} is a spare", i);
                 let next: (Option<u16>, Option<u16>) = if i + 1 < fs.len() {
                     fs[i + 1]
                 } else {
@@ -191,8 +183,6 @@ impl BowlingGame {
                 } else {
                     self.last
                 };
-                println!("frame {} is a strike", i);
-                println!("next {:?}", next);
                 if next.0.is_none() {
                     return None;
                 }

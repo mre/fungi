@@ -32,15 +32,13 @@ pub fn to_bytes(values: &[u32]) -> Vec<u8> {
 
 /// Given a stream of bytes, extract all numbers which are encoded in there.
 pub fn from_bytes(bytes: &[u8]) -> Result<Vec<u32>, Error> {
-    println!("bytes received: {:?}", bytes);
+    println!("\n---\nbytes received: {:?}", bytes);
     let mut result = Vec::new();
     let mut current: u32 = 0;
     for (idx, byte) in bytes.iter().enumerate() {
-        println!("{:02}: {:04}: {:08b}", idx, byte, byte);
-        //
         // checking for overflow: error: literal out of range for i32
         // if current > 0x1ffffff { return Err(Error::Overflow) }
-        current = current.checked_mul(1 << 7).ok_or(Error::Overflow)?;
+        current.checked_mul(1 << 7).ok_or(Error::Overflow)?;
         //
         // we select the MSBs for the current number
         current <<= 7;

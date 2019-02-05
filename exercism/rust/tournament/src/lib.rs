@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 pub fn tally(match_results: &str) -> String {
     // this is the lazy version: no struct, one-letter variables.
-    // 
+    //
     // - MP: Matches Played
     // - W: Matches Won
     // - D: Matches Drawn (Tied)
@@ -53,15 +53,15 @@ pub fn tally(match_results: &str) -> String {
     let h: &str = "Team                           | MP |  W |  D |  L |  P";
     o.push(h.to_string());
 
-    let mut tv: Vec<(&str, (i32, i32, i32, i32, i32))> = Vec::with_capacity(t.len());
+    let mut tv: Vec<(&str, i32, i32, i32, i32, i32)> = Vec::with_capacity(t.len());
     for (k, v) in t {
-        tv.push((k, v));
+        tv.push((k, v.0, v.1, v.2, v.3, v.4));
     }
-    tv.sort_by(|a, b| (b.1).4.cmp(&(a.1).4));
+    tv.sort_by(|a, b| b.5.cmp(&(a.5)).then(a.0.cmp(b.0)));
     for v in tv.iter() {
         o.push(format!(
             "{:30} | {:2} | {:2} | {:2} | {:2} | {:2}",
-            v.0, (v.1).0, (v.1).1, (v.1).2, (v.1).3, (v.1).4
+            v.0, v.1, v.2, v.3, v.4, v.5
         ));
     }
     return o.join("\n");

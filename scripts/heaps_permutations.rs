@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::env;
 
 // permutations without repetition:
 // where n is the number of objects ((0..10).len())
@@ -22,9 +23,26 @@ fn permute<T, F: FnMut(&[T])>(used: &mut Vec<T>, unused: &mut VecDeque<T>, actio
     }
 }
 
+// return permutations of size "size"
+fn permute_with_limit<T, F: FnMut(&[T])>(
+    size: usize,
+    used: &mut Vec<T>,
+    unused: &mut VecDeque<T>,
+    action: &mut F,
+) {
+    if unused.is_empty() || used.len() == size {
+        action(used);
+    } else {
+        for _ in 0..unused.len() {
+            used.push(unused.pop_front().unwrap());
+            permute_with_limit(size, used, unused, action);
+            unused.push_back(used.pop().unwrap());
+        }
+    }
+}
+
 fn main() {
-    let mut queue = (1..4).collect::<VecDeque<_>>();
-    let mut mtrix: Vec<Vec<i32>> = Vec::new();
+    let mut queue = (1..6).collect::<VecDeque<_>>();
 
     // a closure with trait Fn.
     // permute(&mut Vec::new(), &mut queue, &|perm| println!("{:?}", perm));
@@ -41,15 +59,56 @@ fn main() {
     // &mut self is FnMut | fn by_mut(_: &mut T) {}
     // self is FnOnce     | fn by_ref(_: &T) {}
 
-    fn act_push(m: &mut Vec<Vec<i32>>, v: Vec<i32>) {
-        m.push(v)
+    {
+        let mut mtrix: Vec<Vec<i32>> = Vec::new();
+        permute(&mut Vec::new(), &mut queue, &mut |perm| {
+            mtrix.push(perm.to_vec())
+        });
+
+        // P(n,r) = n!/(n - r)!
+        // 5!/(5 - 5)! = 120
+        println!(
+            "P({},{}) = {}!/({} - {})! = {} permutations of a vector of {} elements",
+            queue.len(),
+            queue.len(),
+            queue.len(),
+            queue.len(),
+            queue.len(),
+            mtrix.len(),
+            queue.len()
+        );
+
+        if env::args().len() > 1 && env::args().nth(1) == Some(String::from("-v")) {
+            for (i, v) in mtrix.iter().enumerate() {
+                println!("- {:02}: {:?}", i, v);
+            }
+        }
     }
 
-    permute(&mut Vec::new(), &mut queue, &mut |perm| {
+    let mut mtrix: Vec<Vec<i32>> = Vec::new();
+    let limit: usize = 3;
+
+    permute_with_limit(limit, &mut Vec::new(), &mut queue, &mut |perm| {
         mtrix.push(perm.to_vec())
     });
 
-    for (i, v) in mtrix.iter().enumerate() {
-        println!("- {:02}: {:?}", i, v);
+    // P(n,r) = n!/(n - r)!
+    // 5!/(5 - 3)! = 60
+    println!(
+        "P({},{}) = {}!/({} - {})! = {} permutations of {} elements of a vector of {} elements",
+        queue.len(),
+        limit,
+        queue.len(),
+        queue.len(),
+        limit,
+        mtrix.len(),
+        limit,
+        queue.len()
+    );
+
+    if env::args().len() > 1 && env::args().nth(1) == Some(String::from("-v")) {
+        for (i, v) in mtrix.iter().enumerate() {
+            println!("- {:02}: {:?}", i, v);
+        }
     }
 }

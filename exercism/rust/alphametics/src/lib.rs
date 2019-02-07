@@ -84,13 +84,17 @@ pub fn solve(input: &str) -> Option<HashMap<char, u8>> {
             });
         }
         // collect the digits in a string and print
-        println!(
-            "- {:02} : {:?} : {} => {}",
-            i,
-            z,
-            input,
-            digits.iter().collect::<String>()
-        );
+        // println!(
+        //     "- {:02} : {:?} : {} => {}",
+        //     i,
+        //     z,
+        //     input,
+        //     digits.iter().collect::<String>()
+        // );
+        // leading_zero_solution_is_invalid
+        if digits.first() == Some(&'0') {
+            continue;
+        }
         // here the digits is the "string" representation of a simple
         // equation that we have to parse and verify
         let equation: String = digits.iter().collect::<String>();
@@ -117,5 +121,5 @@ pub fn solve(input: &str) -> Option<HashMap<char, u8>> {
         }
     }
 
-    return Some(result);
+    return None;
 }

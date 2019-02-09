@@ -33,8 +33,9 @@ fn permute_with_limit<T, F: FnMut(&[T])>(
 // "I + BB == ILL"
 // [('I', 1), ('B', 9), ('L', 0)]
 pub fn solve(input: &str) -> Option<HashMap<char, u8>> {
-    // prepare the resu;t
-    let result: HashMap<char, u8> = HashMap::new();
+    println!("solving \"{}\"", input);
+    // prepare the result
+    // let result: HashMap<char, u8> = HashMap::new();
     // prepare the result that must be in the same order than the input
     let mut results: Vec<HashMap<char, u8>> = Vec::new();
     // filter from the input string all the alphabetic characters
@@ -45,9 +46,9 @@ pub fn solve(input: &str) -> Option<HashMap<char, u8>> {
     // sort and remove the duplicates
     chars.sort();
     chars.dedup();
-    // we have 10 possible values for each char
-    let n: usize = 10; // 0..10 digits
-                       // and there are r positions to fill (Permutations: P(n,r))
+    // we have 10 possible values for each char (0..10 digits)
+    let n: usize = 10;
+    // and there are r positions to fill (Permutations: P(n,r))
     let r: usize = chars.len();
     // the list of possible values
     let mut queue: VecDeque<u8> = (0..n as u8).collect::<VecDeque<u8>>();
@@ -85,18 +86,6 @@ pub fn solve(input: &str) -> Option<HashMap<char, u8>> {
                 None => c,
             });
         }
-        // collect the digits in a string and print
-        // println!(
-        //     "- {:02} : {:?} : {} => {}",
-        //     i,
-        //     z,
-        //     input,
-        //     digits.iter().collect::<String>()
-        // );
-        // leading_zero_solution_is_invalid
-        if digits.first() == Some(&'0') {
-            continue;
-        }
         // here the digits is the "string" representation of a simple
         // equation that we have to parse and verify
         let equation: String = digits.iter().collect::<String>();
@@ -107,8 +96,16 @@ pub fn solve(input: &str) -> Option<HashMap<char, u8>> {
             .collect::<Vec<&str>>();
         // the left side
         let addends = &terms[0..terms.len() - 1];
+        // leading zero numbers are invalid
+        if addends.iter().any(|n| n.starts_with('0')) {
+            continue;
+        }
         // the right side after the equal sign
         let res = terms.last().expect("boom");
+        // leading zero numbers are invalid        
+        if res.starts_with('0') {
+            continue;
+        }
         // fold with add and compare
         if addends
             .iter()
@@ -122,7 +119,8 @@ pub fn solve(input: &str) -> Option<HashMap<char, u8>> {
             results.push(m);
         }
     }
-
-    if results.len() == 0 { return None; }
+    if results.len() == 0 {
+        return None;
+    }
     return Some(results[0].to_owned());
 }

@@ -35,6 +35,8 @@ fn permute_with_limit<T, F: FnMut(&[T])>(
 pub fn solve(input: &str) -> Option<HashMap<char, u8>> {
     // prepare the resu;t
     let result: HashMap<char, u8> = HashMap::new();
+    // prepare the result that must be in the same order than the input
+    let mut results: Vec<HashMap<char, u8>> = Vec::new();
     // filter from the input string all the alphabetic characters
     let mut chars: Vec<char> = input
         .chars()
@@ -57,7 +59,7 @@ pub fn solve(input: &str) -> Option<HashMap<char, u8>> {
     });
     // let's start to brute-force this input.
     // for each permutation
-    for (i, v) in mtrix.iter().enumerate() {
+    for (_i, v) in mtrix.iter().enumerate() {
         // create a vector of pairs (char, value)
         let z: Vec<(&char, &u8)> = chars.iter().zip(v).collect::<Vec<(&char, &u8)>>();
         // transform this vector of pairs in a lookup table (hashmap)
@@ -115,11 +117,12 @@ pub fn solve(input: &str) -> Option<HashMap<char, u8>> {
             .expect("boom")
             == str::parse::<u32>(res).expect("boom")
         {
-            // print the result!
-            println!("stop: {:?}", m);
-            return Some(m);
+            // found one!
+            println!("found: {:?}", m);
+            results.push(m);
         }
     }
 
-    return None;
+    if results.len() == 0 { return None; }
+    return Some(results[0].to_owned());
 }

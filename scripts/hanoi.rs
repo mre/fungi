@@ -94,11 +94,6 @@ impl Tower {
         };
     }
 
-    // public void print() {
-    // System.out.println(“Contents of Tower “ + index()); for (int i = disks.size() - 1; i >= 0; i--) {
-    // System.out.println(“ “ + disks.get(i)); }
-    // }
-
     fn move_disks(&mut self, n: usize, destination: &mut Tower, buffer: &mut Tower) {
         if n > 0 {
             self.move_disks(n - 1, buffer, destination);

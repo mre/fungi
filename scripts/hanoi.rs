@@ -1,5 +1,133 @@
+// We need to move N plates from Tower 1 to Tower 3, but let’s start from the
+// beginning.
+//
+// One plate
+// - 1. move Plate 1 from Tower 1 to Tower 3
+//
+// Two plates
+// - 1. Move Plate 1 from Tower 1 to Tower 2
+// - 2. Move Plate 2 from Tower 1 to Tower 3
+// - 3. Move Plate 1 from Tower 2 to Tower 3
+//
+// Three plates
+// - 1. We know we can move the top two plates around from one Tower to
+//      another (as shown earlier), so let's assume we have moved Plate 1 and
+//      Plate 2 to Tower 2 (buffer).
+//      - 1. Move Plate 1 from Tower 1 to Tower 3
+//      - 2. Move Plate 2 from Tower 1 to Tower 2
+//      - 3. Move Plate 1 from Tower 3 to Tower 2
+// - 2. Move Plate 3 to Tower 3
+// - 3. Again we know we can move the top two plates around, so let's move
+//      them from Tower 2 to Tower 3
+//      - 1. Move Plate 1 from Tower 2 to Tower 1
+//      - 2. Move Plate 2 from Tower 2 to Tower 3
+//      - 3. Move Plate 1 from Tower 1 to Tower 3
+//
+// This approach leads to a natural recursive algorithm.
+
 use std::error::Error;
 use std::fmt;
+
+#[allow(dead_code)]
+fn move_plates(n: usize, source: &mut Tower, destin: &mut Tower, buffer: &mut Tower) -> () {
+    if n == 1 {
+        // move source to destination directly
+        source.move_top_to(destin);
+    }
+    if n == 2 {
+        // move the 1st and 2nd plate using a buffer
+        source.move_top_to(buffer);
+        source.move_top_to(destin);
+        buffer.move_top_to(destin);
+    }
+    if n == 3 {
+        // move the 1st and 2nd plate using a buffer (from t1 to t2)
+        // move from source to buffer.
+        source.move_top_to(destin);
+        source.move_top_to(buffer);
+        destin.move_top_to(buffer);
+        
+        // move the 3rd plate to destination (from t1 to t3)
+        // move from source to destination.
+        source.move_top_to(destin);
+        
+        // move the 1st and 2nd place using a buffer (from t2 to t3)
+        // move from buffer to destination.
+        buffer.move_top_to(source);
+        buffer.move_top_to(destin);
+        source.move_top_to(destin);
+    }
+    if n == 4 {
+        // move disk 0 from 0 to 1
+        // move disk 1 from 0 to 2
+        // move disk 0 from 1 to 2
+        
+        // move disk 2 from 0 to 1
+        
+        // move disk 0 from 2 to 0
+        // move disk 1 from 2 to 1
+        // move disk 0 from 0 to 1
+        
+        // move disk 3 from 0 to 2
+        
+        // move disk 0 from 1 to 2
+        // move disk 1 from 1 to 0
+        // move disk 0 from 2 to 0
+        
+        // move disk 2 from 1 to 2
+        
+        // move disk 0 from 0 to 1
+        // move disk 1 from 0 to 2
+        // move disk 0 from 1 to 2
+    }
+    if n == 5 {
+         // move disk 0 from 0 to 2 
+         // move disk 1 from 0 to 1 
+         // move disk 0 from 2 to 1 
+        
+         // move disk 2 from 0 to 2 
+        
+         // move disk 0 from 1 to 0 
+         // move disk 1 from 1 to 2 
+         // move disk 0 from 0 to 2 
+        
+         // move disk 3 from 0 to 1 
+        
+         // move disk 0 from 2 to 1 
+         // move disk 1 from 2 to 0 
+         // move disk 0 from 1 to 0 
+        
+         // move disk 2 from 2 to 1 
+        
+         // move disk 0 from 0 to 2 
+         // move disk 1 from 0 to 1 
+         // move disk 0 from 2 to 1 
+        
+         // move disk 4 from 0 to 2 
+        
+         // move disk 0 from 1 to 0 
+         // move disk 1 from 1 to 2 
+         // move disk 0 from 0 to 2 
+        
+         // move disk 2 from 1 to 0 
+        
+         // move disk 0 from 2 to 1 
+         // move disk 1 from 2 to 0 
+         // move disk 0 from 1 to 0 
+        
+         // move disk 3 from 1 to 2 
+        
+         // move disk 0 from 0 to 2 
+         // move disk 1 from 0 to 1 
+         // move disk 0 from 2 to 1 
+        
+         // move disk 2 from 0 to 2 
+        
+         // move disk 0 from 1 to 0 
+         // move disk 1 from 1 to 2 
+         // move disk 0 from 0 to 2 
+    }
+}
 
 #[allow(dead_code)]
 fn initialise(n: usize) -> Vec<Tower> {
@@ -39,6 +167,9 @@ fn main() -> () {
     // using the middle tower (t1) as buffer.
     t0.move_disks(n, &mut t2, &mut t1);
 
+    // iterative
+    // move_plates(3, &mut t0, &mut t2, &mut t1);
+    
     println!("--");
     println!("{}", &t0);
     println!("{}", &t1);
@@ -95,6 +226,12 @@ impl Tower {
     }
 
     fn move_disks(&mut self, n: usize, destination: &mut Tower, buffer: &mut Tower) {
+        // what we need to recurse here is a case, where for any n > 1
+        // we do 3 steps:
+        //  1. (decrease n) move orig to buff
+        //  2. (direct)     move orig to dest
+        //  3. (decrease n) move buff to dest
+        // alternating these steps we traverse the tree of moves.
         if n > 0 {
             self.move_disks(n - 1, buffer, destination);
             self.move_top_to(destination);

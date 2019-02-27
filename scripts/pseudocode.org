@@ -1,0 +1,59 @@
+* pseudocode
+
+** is_reachable
+
+Given a directed graph, design an algorithm to find out whether there is
+a route between two nodes.
+
+#+begin_example
+enum {
+  unvisited // default
+  visiting
+  visited
+}
+
+fn find(g: graph, target: node, start: node) {
+    stack: Vec<Node>;
+    nodes: Vec<Node> = g.nodes();
+    start.visiting;
+    stack.push(start);
+    for current in nodes.pop() {
+        for u in current.adiacents() {
+            if u != unvisited {
+                continue;
+            }
+            if u == end {
+                return true;
+            }
+            u.visiting;
+            stack.push(u);
+        }
+        current.visited;
+    }
+    return false;
+}
+#+end_example
+
+** vec_to_binary_tree
+
+Given a sorted (increasing order) array, write an algorithm to create a
+binary tree with minimal height.
+
+#+begin_example
+fn add(nodes: Vec<i32>, start: usize, end: usize) -> Option(node) {
+    if start > end {
+        return None;
+    }
+    //       4     6     9
+    // ......|.....|.....|......
+    middle = (start + end ) / 2;
+    n: Node(nodes[middle]);
+    n.left = add(nodes, 0, middle - 1);
+    n.right = add(nodes, middle + 1, end);
+    return n;
+}
+
+fn to_binary(nodes: Vec<i32>) -> node {
+    return add(nodes, 0, nodes.len() - 1);
+}
+#+end_example

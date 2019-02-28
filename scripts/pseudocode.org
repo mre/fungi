@@ -142,6 +142,14 @@ Pre-order: F, B, A, D, C, E, G, I, H.
 The pre-order traversal is a topologically sorted one, because a parent
 node is processed before any of its child nodes is done.
 
+: preorder(node)
+:   if (node = null)
+:     return
+:   visit(node)
+:   preorder(node.left)
+:   preorder(node.right)
+
+
 *** In-order (LNR)
 
 In-order: A, B, C, D, E, F, G, H, I.
@@ -152,6 +160,13 @@ In-order: A, B, C, D, E, F, G, H, I.
 - Traverse the right subtree by recursively calling the in-order function.
 
 In a binary search tree, in-order traversal retrieves data in sorted order
+
+: inorder(node)
+:   if (node = null)
+:     return
+:   inorder(node.left)
+:   visit(node)
+:   inorder(node.right)
 
 *** Out-order (RNL)
 
@@ -172,6 +187,13 @@ Post-order: A, C, E, D, B, H, I, G, F.
 - Traverse the right subtree by recursively calling the post-order function.
 - Display the data part of the root (or current node).
 
+: postorder(node)
+:   if (node = null)
+:     return
+:   postorder(node.left)
+:   postorder(node.right)
+:   visit(node)
+
 The trace of a traversal is called a sequentialisation of the tree. The
 traversal trace is a list of each visited root. No one sequentialisation
 according to pre-, in- or post-order describes the underlying tree
@@ -179,6 +201,21 @@ uniquely. Given a tree with distinct elements, either pre-order or
 post-order paired with in-order is sufficient to describe the tree
 uniquely. However, pre-order with post-order leaves some ambiguity in
 the tree structure.
+
+[[https://en.wikipedia.org/wiki/Breadth-first_search][Breadth-first search (wikipedia)]]
+
+#+begin_example
+levelorder(root)
+  q ← empty queue
+  q.enqueue(root)
+  while (not q.isEmpty())
+    node ← q.dequeue()
+    visit(node)
+    if (node.left ≠ null)
+      q.enqueue(node.left)
+    if (node.right ≠ null)
+      q.enqueue(node.right)
+#+end_example
 
 ** in_order_next
 

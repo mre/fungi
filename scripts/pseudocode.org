@@ -224,5 +224,32 @@ a given node in a binary search tree where each node has a link to its
 parent.
 
 #+begin_example
-
+fn in_order_next(n: Node) -> Option(Node) {
+    // this is a node with a right branch; the next will be the node
+    // in the left most position of this right sub-tree.
+    if n.right.is_some {
+        // find the left most node from the right branch starting from here.
+        let l = n.right;
+        while l.is_some {
+            l = l.left;
+        }
+        // this is the leftmost node.
+        return l;
+    }
+    // otherwise we look at its parent
+    p = n.parent
+    while p.is_some {
+         // if the starting node was already the left node of its parent
+         // we can return the parent because this will be the next in LNR.
+         if p.left == n {
+             // then the parent is the next
+             break;
+         }
+         // otherwise we keep going up until we reach the left side.
+         // the node to be considered will be the parent of the current one.
+         n = p
+         p = n.parent
+     }
+     return p;
+}
 #+end_example

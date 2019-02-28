@@ -57,3 +57,135 @@ fn to_binary(nodes: Vec<i32>) -> node {
     return add(nodes, 0, nodes.len() - 1);
 }
 #+end_example
+
+** vec_at_depth
+
+Given a binary search tree, design an algorithm which creates a linked
+list of all the nodes at each depth (eg, if you have a tree with depth
+D, you’ll have D linked lists).
+
+#+begin_example
+fn graph_to_list_of_vec_by_depth(root: Node) -> Vec<Vec<Node>> {
+    result = Vec::new();
+    list = Vec::new();
+    level = 0;
+    list.push(root);
+    result[level] = list;
+    loop {
+        list = Vec::new();
+        for n in result[level] {
+	    list.push(n.left);
+            list.push(n.right);
+        }
+        if list.len() > 0 {
+	    level ++;
+	    result[level] = list;
+        } else {
+            break;
+        }
+    }
+    return result;
+}
+#+end_example
+
+** tree traversal
+
+[[https://en.wikipedia.org/wiki/Tree_traversal#Depth-first_search][Tree traversal (wikipedia.com)]]
+
+Traversing a tree involves iterating over all nodes in some
+manner. Because from a given node there is more than one possible next
+node (it is not a linear data structure), then, assuming sequential
+computation (not parallel), some nodes must be deferred—stored in some
+way for later visiting. This is often done via a stack (LIFO) or queue
+(FIFO). As a tree is a self-referential (recursively defined) data
+structure, traversal can be defined by recursion or, more subtly,
+corecursion, in a very natural and clear fashion; in these cases the
+deferred nodes are stored implicitly in the call stack.
+
+Depth-first search is easily implemented via a stack, including
+recursively (via the call stack), while breadth-first search is easily
+implemented via a queue, including corecursively.
+
+*** Depth-first search
+
+Main article: Depth-first search
+
+These searches are referred to as depth-first search (DFS), as the
+search tree is deepened as much as possible on each child before going
+to the next sibling. For a binary tree, they are defined as display
+operations recursively at each node, starting with the root, whose
+algorithm is as follows:
+
+The general recursive pattern for traversing a (non-empty) binary tree
+is this: At node N do the following:
+
+- (L) Recursively traverse its left subtree. This step is finished at
+  the node N again.
+- (R) Recursively traverse its right subtree. This step is finished at
+  the node N again.
+- (N) Process N itself.
+
+These steps can be done in any order. If (L) is done before (R), the
+process is called left-to-right traversal, otherwise it is called
+right-to-left traversal. The following methods show left-to-right
+traversal:
+
+*** Pre-order (NLR)
+
+Pre-order: F, B, A, D, C, E, G, I, H.
+
+- Check if the current node is empty or null.
+- Display the data part of the root (or current node).
+- Traverse the left subtree by recursively calling the pre-order function.
+- Traverse the right subtree by recursively calling the pre-order function.
+
+The pre-order traversal is a topologically sorted one, because a parent
+node is processed before any of its child nodes is done.
+
+*** In-order (LNR)
+
+In-order: A, B, C, D, E, F, G, H, I.
+
+- Check if the current node is empty or null.
+- Traverse the left subtree by recursively calling the in-order function.
+- Display the data part of the root (or current node).
+- Traverse the right subtree by recursively calling the in-order function.
+
+In a binary search tree, in-order traversal retrieves data in sorted order
+
+*** Out-order (RNL)
+
+- Check if the current node is empty or null.
+- Traverse the right subtree by recursively calling the out-order function.
+- Display the data part of the root (or current node).
+- Traverse the left subtree by recursively calling the out-order function.
+
+In a binary search tree, out-order traversal retrieves data in reverse
+sorted order.
+
+*** Post-order (LRN)
+
+Post-order: A, C, E, D, B, H, I, G, F.
+
+- Check if the current node is empty or null.
+- Traverse the left subtree by recursively calling the post-order function.
+- Traverse the right subtree by recursively calling the post-order function.
+- Display the data part of the root (or current node).
+
+The trace of a traversal is called a sequentialisation of the tree. The
+traversal trace is a list of each visited root. No one sequentialisation
+according to pre-, in- or post-order describes the underlying tree
+uniquely. Given a tree with distinct elements, either pre-order or
+post-order paired with in-order is sufficient to describe the tree
+uniquely. However, pre-order with post-order leaves some ambiguity in
+the tree structure.
+
+** in_order_next
+
+Write an algorithm to find the 'next' node (eg, in-order successor) of
+a given node in a binary search tree where each node has a link to its
+parent.
+
+#+begin_example
+
+#+end_example

@@ -253,3 +253,25 @@ fn in_order_next(n: Node) -> Option(Node) {
      return p;
 }
 #+end_example
+
+given this tree with LNR traversal [A,B,C,D,E,F,G,H,I].
+
+#+begin_example
+     [ F ]
+    /     \
+   B       G
+  / \       \
+ A   D       I
+    / \     /
+   C   E   H
+#+end_example
+
+for example:
+
+#+begin_example
+- [G] has_right_node -> leftmost_of(I) -> return [H]
+- [E] has_parent -> D.left != E
+                 -> D.has_parent -> B.left != D
+                                 -> B.has_parent -> F.left = B
+                                                 -> return [E]
+#+end_example

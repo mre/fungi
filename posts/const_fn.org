@@ -1,4 +1,4 @@
-* Announcing Rust 1.31 and Rust 2018 
+* Announcing Rust 1.31 and Rust 2018
 
 [[https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html#const-fn][(blog.rust-lang.org)]]
 
@@ -49,7 +49,7 @@ For full details, please see the reference.
 
 With =const fn=, you can now do way more things! Specifically:
 
-- irrefutable destructuring patterns (e.g. 
+- irrefutable destructuring patterns (e.g.
   =const fn foo((x, y): (u8, u8)) { ... })=
 - let bindings (e.g. let x = 1;)
 - mutable let bindings (e.g. let mut x = 1;)
@@ -57,7 +57,7 @@ With =const fn=, you can now do way more things! Specifically:
   expressions, even where the assignment target is a projection (e.g. a
   struct field or index operation like x[3] = 42)
 - expression statements (e.g. 3;)
-  
+
 You're also able to call const unsafe fns inside a const fn, like this:
 
 : const unsafe fn foo() -> i32 { 5 }
@@ -136,4 +136,3 @@ Exhaustive list of permitted structures in const functions:
   may only do the following unsafe operations:
 
   - calls to const unsafe functions
-

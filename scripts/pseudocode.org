@@ -1,5 +1,66 @@
 * pseudocode
 
+** delete_dups
+
+without buffer
+
+#+begin_example
+deleteDups(LinkedListNode head) {
+    if (head == null) return;
+    LinkedListNode previous = head;
+    LinkedListNode current = previous.next;
+    while (current != null) {
+        LinkedListNode runner = head;
+        while (runner != current) { // Check for earlier dups
+            if (runner.data == current.data) {
+                LinkedListNode tmp = current.next; // remove current
+                previous.next = tmp;
+                current = tmp; // update current to next node
+		break; // all other dups have already been removed
+	    }
+            runner = runner.next;
+        }
+        if (runner == current) { // current not updated - update now
+            previous = current;
+            current = current.next;
+        }
+    }
+}
+#+end_example
+
+** find_beginning
+
+#+begin_example
+LinkedListNode FindBeginning(LinkedListNode head) {
+    LinkedListNode n1 = head;
+    LinkedListNode n2 = head;
+
+    // Find meeting point
+    while (n2.next != null) {
+        n1 = n1.next;
+        n2 = n2.next.next;
+        if (n1 == n2) {
+            break;
+        }
+    }
+    // Error check - there is no meeting point, and therefore no loop
+    if (n2.next == null) {
+        return null;
+    }
+    /* Move n1 to Head. Keep n2 at Meeting Point. Each are k steps
+    /* from the Loop Start. If they move at the same pace, they must
+    ,* meet at Loop Start.
+    ,*/
+    n1 = head;
+    while (n1 != n2) {
+        n1 = n1.next;
+        n2 = n2.next;
+    }
+    // Now n2 points to the start of the loop.
+    return n2;
+}
+#+end_example
+
 ** is_reachable
 
 Given a directed graph, design an algorithm to find out whether there is
@@ -149,7 +210,6 @@ node is processed before any of its child nodes is done.
 :   preorder(node.left)
 :   preorder(node.right)
 
-
 *** In-order (LNR)
 
 In-order: A, B, C, D, E, F, G, H, I.
@@ -281,3 +341,51 @@ for example:
 Design an algorithm and write code to find the first common ancestor of
 two nodes in a binary tree Avoid storing additional nodes in a data
 structure NOTE: This is not necessarily a binary search tree.
+
+#+begin_example
+commonAncestor(Tree root, Tree p, Tree q) Tree {
+  if (covers(root.left, p) && covers(root.left, q))
+      return commonAncestor(root.left, p, q);
+  if (covers(root.right, p) && covers(root.right, q))
+      return commonAncestor(root.right, p, q);
+  return root;
+}
+
+private boolean covers(Tree root, Tree p) { /* is p a child of root? */
+    if (root == null) return false;
+    if (root == p) return true;
+    return covers(root.left, p) || covers(root.right, p);
+}
+#+end_example
+
+** is_subtree
+
+#+begin_example
+// entry point of recursion
+containsTree(TreeNode t1, TreeNode t2) bool {
+    if (t2 == null) return true; // The empty tree is always a subtree
+    else return subTree(t1, t2);
+}
+
+subTree(TreeNode r1, TreeNode r2) bool {
+    // false if t1 (the biggest) is empty
+    if (r1 == null) return false;
+    // the we found the point where t2 starts in r1
+    if (r1.data == r2.data) {
+        // return true if r2 matches the subtree from this point
+        if (matchTree(r1,r2)) return true;
+    }
+    // recursing, looking for the point where r2 starts in r1
+    return (subTree(r1.left, r2) || subTree(r1.right, r2));
+}
+
+matchTree(TreeNode r1, TreeNode r2) bool {
+    if (r2 == null && r1 == null) return true;
+    if (r1 == null || r2 != null) return false;
+    if (r1.data != r2.data) return false;
+    return (
+        matchTree(r1.left, r2.left) &&
+	matchTree(r1.right, r2.right));
+    );
+}
+#+end_example

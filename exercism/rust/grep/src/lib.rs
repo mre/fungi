@@ -59,12 +59,22 @@ impl Flags {
 }
 
 #[derive(Debug, Fail)]
-enum IOError {
+enum GrepIOError {
     #[fail(display = "File not found: {}", path)]
     FileNotFoundError { path: String },
 
-    #[fail(display = "File could not be read: {}", path)]
-    FileReadError { path: String },
+    // #[fail(display = "File could not be read: {}", path)]
+    // FileReadError { path: String },
+}
+
+fn check_file(file: &str) -> Result<(), GrepIOError> {
+        let path = Path::new(file);
+        if !path.is_file() {
+            return Err(GrepIOError::FileNotFoundError {
+                path: String::from(file),
+             });
+        }
+    return Ok(());
 }
 
 pub fn grep(pattern: &str, flags: &Flags, files: &[&str]) -> Result<Vec<String>, Error> {
@@ -77,12 +87,7 @@ pub fn grep(pattern: &str, flags: &Flags, files: &[&str]) -> Result<Vec<String>,
     let invert: bool = flags.contains(Flags::INVERSE_MATCH);
 
     for file in files {
-        // let path = Path::new(file);
-        // if !path.is_file() {
-        //     return Err(GrepIOError::FileNotFoundError {
-        //         path: String::from(*file),
-        //     });
-        // }
+        check_file(file)?;
         let fh = File::open(file)?;
 
         for (n, line) in BufReader::new(fh).lines().enumerate() {

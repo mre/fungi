@@ -375,7 +375,7 @@ subTree(TreeNode r1, TreeNode r2) bool {
         // return true if r2 matches the subtree from this point
         if (matchTree(r1,r2)) return true;
     }
-    // recursing, looking for the point where r2 starts in r1
+    // recursing, looking for another point where r2 starts in r1.
     return (subTree(r1.left, r2) || subTree(r1.right, r2));
 }
 
@@ -383,9 +383,53 @@ matchTree(TreeNode r1, TreeNode r2) bool {
     if (r2 == null && r1 == null) return true;
     if (r1 == null || r2 != null) return false;
     if (r1.data != r2.data) return false;
+    // if r1 and r2 are matching we fork and recurse on left and right.
     return (
         matchTree(r1.left, r2.left) &&
 	matchTree(r1.right, r2.right));
     );
 }
 #+end_example
+
+** find_sum
+
+You are given a binary tree in which each node contains a value. Design
+an algorithm to print all paths which sum up to that value. Note that it
+can be any path in the tree. it does not have to start at the root.
+
+// we don't stop when we find the sum because negative values can unblock
+// different paths:
+// sum 5): 2 + 3 + –4 + 3 + 1 + 2
+
+#+begin_example
+// start from the root, buffer empty and level 1
+findSum(head: Option<Node>, sum: i32, buffer: Vec<i32>, level: i32) {
+    // if the node is empty, we stop
+    if (head == None) return;
+    // let's take a mutable copy of the sum we want to check 
+    let mut tmp: i32 = sum;
+    // we build the path up to this point
+    buffer.push(head.data);
+    // we decrease from here, doing "level" steps back in our path.
+    for (int i = level; i >- 1; i--){
+        // i is the current level we are checking
+        tmp -= buffer.get(i);
+        // if the sum is zero, we print the path, starting from i to level.
+        if (tmp == 0) print(buffer, i, level);
+    }
+    // we don't stop at the sum even if was found, because we can find other
+    // intermediate results.
+    c1 buffer.clone();
+    c2 buffer.clone();
+    // forking left and right
+    findSum(head.left, sum, c1, level + 1);
+    findSum(head.right, sum, c2, level + 1);
+}
+print(buffer: Vec<i32>, start: i32, end: i32) {
+    for (int i = start; i <= end; i++) {
+        print(buffer.get(i) + " ");
+    }
+    println("---");
+}
+#+end_example
+

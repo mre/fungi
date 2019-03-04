@@ -406,7 +406,7 @@ can be any path in the tree. it does not have to start at the root.
 findSum(head: Option<Node>, sum: i32, buffer: Vec<i32>, level: i32) {
     // if the node is empty, we stop
     if (head == None) return;
-    // let's take a mutable copy of the sum we want to check 
+    // let's take a mutable copy of the sum we want to check
     let mut tmp: i32 = sum;
     // we build the path up to this point
     buffer.push(head.data);
@@ -470,3 +470,41 @@ fn updateBits(n: u32, m: u32, i: u32, j: u32) {
     return (n & mask) | (m << i);
 }
 #+end_example
+
+** non_integer_binary
+
+print a non-integer number.
+
+by analogy to a decimal number, the number
+n = 0.101 = 1 * (1/2^1) + 0 * (1/2^2) + 1 * (1/2^3).
+
+parse_int(string(split_at('.'))
+
+To print the decimal part
+
+multiply by 2 and check if the 2*n is greater than or equal to one.
+"shifting" the fractional sum.
+
+r = 2*n = 2*0.101 = 1*(1 / 2^0) + 0*(1 / 2^1) + 1*(1 / 2^2) = 1.01
+
+If r >= 1, then we know that n had a 1 right after the decimal point.
+
+print the int part
+
+: int_string: String = String::from("");
+: while (int_n > 0) {
+:     r: u32 = int_n % 2;
+:     int_n >>= 1;
+:     int_string = r + int_string;
+: }
+
+print the decimal part
+
+: double r = decPart * 2;
+: if (r >= 1) {
+:     dec_string.append(1);
+:     decPart = r - 1;
+: } else {
+:     dec_string.append(0);
+:     decPart = r;
+: }

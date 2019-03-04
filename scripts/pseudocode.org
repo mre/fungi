@@ -433,3 +433,40 @@ print(buffer: Vec<i32>, start: i32, end: i32) {
 }
 #+end_example
 
+** update_bits
+
+#+begin_example
+fn updateBits(n: u32, m: u32, i: u32, j: u32) {
+    // bitwise negation
+    // max: 11111111111111111111111111111111
+    let max:u32 = !0;
+    println!("{:032b}", max);
+
+    // 1's through position j, then 0's
+    // 1 << 6 = 1000000
+    // (1 << 6) - 1 = 0111111
+    // left: 11111111111111111111111111000000
+    let left: u32 = max - ((1 << j) - 1);
+    println!("{:032b}", left);
+
+    // 1's after position i
+    // (1 << 2) - 1 = 00011
+    let right: u32 = ((1 << i) - 1);
+
+    // 1’s, with 0s between i and j
+    // mask: 11111111111111111111111111000011
+    int mask = left | right;
+    println!("{:032b}", mask);
+
+    // Clear i through j, then put m in there
+    // n = 10000000000
+    // m =       10101
+    // n & mask = 0010000000000
+    // shift left m
+    // m = 10101
+    // i = 2
+    // m << 2 = 0000001010100
+    // result = 10001010100
+    return (n & mask) | (m << i);
+}
+#+end_example

@@ -599,3 +599,25 @@ set bit at index
 :     countOnes++;
 : }
 : n = SetBit(n, index, true);
+
+** check_if_power_of_two
+
+A is a power of 2 if (A & (A - 1) == 0.
+
+A & B == 0 iff they don't have a bit in the same position
+
+: 10101
+: 01010
+: -----
+: 00000
+
+A - 1 is flipping the LSB
+
+: 10101 - 1
+: 10100
+:
+: 10100 - 1
+: 10011
+
+if A don't share a bit with A - 1 then A has to be one of 10, 100, 1000,
+10000... thus a power of two.

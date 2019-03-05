@@ -508,3 +508,94 @@ print the decimal part
 :     dec_string.append(0);
 :     decPart = r;
 : }
+
+** get_next_and_prev_by_ones
+
+bruteforce
+
+#+begin_example
+// as_string: "101010"
+// 41, 101001
+// 44, 101100
+// 42, (44, 41)
+
+fn get_next_and_prev_by_ones(n: u32) -> (u32, u32) {
+    let as_string: String = format!("{:b}", n);
+    println!("as_string: {:?}", as_string);
+    let mut ones: u32 = 0;
+    for c in as_string.chars() {
+        if c == '1' {
+            ones += 1;
+        }
+    }
+    let mut previous: u32 = n - 1;
+    while previous > 0 {
+        let mut p_ones: u32 = 0;
+        let as_string: String = format!("{:b}", previous);
+        for c in as_string.chars() {
+            if c == '1' {
+                p_ones += 1;
+            }
+        }
+        if p_ones == ones {
+            println!("{:?}, {:b}", previous, previous);
+            break;
+        }
+        previous -= 1;
+    }
+    let mut next: u32 = n + 1;
+    loop {
+        let mut n_ones: u32 = 0;
+        let as_string: String = format!("{:b}", next);
+        for c in as_string.chars() {
+            if c == '1' {
+                n_ones += 1;
+            }
+        }
+        if n_ones == ones {
+            println!("{:?}, {:b}", next, next);
+            break;
+        }
+        next += 1
+    }
+    return (next, previous);
+}
+
+fn main() -> () {
+    let n: u32 = 42;
+    println!("{:?}, {:?}", n, get_next_and_prev_by_ones(n));
+}
+#+end_example
+
+get bit at index
+
+: fn get_bit_at(n: u32, index: u32) -> u32 {
+:     let bit: u32 = if ((n & (1 << index)) > 0) { 1 } else { 0 };
+:     println!("{:?}, {:b}, {:?}", index, n, bit);
+:     return bit;
+: }
+
+set bit at index
+
+: fn set_bit_at(n: u32, index: u32, b: bool) -> u32 {
+:     if b {
+:         return n | (1 << index);
+:     } else {
+:         let mask: u32 = !(1 << index);
+:         return n & mask;
+:     }
+: }
+
+- when flip on a 0, balance flipping off a 1;
+- flip on a bit at i and flip off a bit at j, the number changes by 2^i - 2^j.
+- to get a bigger number with the same number of 1s and 0s, i must be bigger
+  than j.
+
+: // Find first one.
+: while (!GetBit(n, index)) index++;
+: // Turn on next zero.
+: while (GetBit(n, index)) {
+:     index++;
+:     countOnes++;
+: }
+: n = SetBit(n, index, true);

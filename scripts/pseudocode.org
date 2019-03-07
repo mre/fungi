@@ -635,3 +635,43 @@ fn bit_swaps(a: u32, b: u32) {
     }
     return count;
 }
+
+** insertion_sort
+
+#+begin_example
+let i = 1;
+while i < A.length()
+    let j = i;
+    // check and swap backward
+    while j > 0 and A[j-1] > A[j]
+        swap(A[j], A[j-1])
+        j = j - 1
+    end while
+    i = i + 1
+end while
+#+end_example
+
+** quick_sort
+
+#+begin_example
+Quicksort(A as array, low as int, high as int){
+    if (low < high){
+        pivot_location = Partition(A,low,high)
+        Quicksort(A,low, pivot_location)
+        Quicksort(A, pivot_location + 1, high)
+    }
+}
+Partition(A as array, low as int, high as int){
+     pivot = A[low]
+     leftwall = low
+
+     for i = low + 1 to high{
+         if (A[i] < pivot) then{
+             swap(A[i], A[leftwall + 1])
+             leftwall = leftwall + 1
+         }
+     }
+     swap(pivot,A[leftwall])
+
+    return (leftwall)}
+#+end_example

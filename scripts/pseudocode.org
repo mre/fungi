@@ -653,25 +653,84 @@ end while
 
 ** quick_sort
 
+The algorithm maintains index i as it scans the array using another
+index j such that the elements lo through i (inclusive) are less than or
+equal to the pivot, and the elements i+1 through j-1 (inclusive) are
+greater than the pivot.
+
 #+begin_example
-Quicksort(A as array, low as int, high as int){
-    if (low < high){
-        pivot_location = Partition(A,low,high)
-        Quicksort(A,low, pivot_location)
-        Quicksort(A, pivot_location + 1, high)
+quicksort(A: Vec<i32>, low: u32, high: u32) {
+    if low < high {
+        let pivot_location = partition(A, low, high);
+        quicksort(A, low, pivot_location)
+        quicksort(A, pivot_location + 1, high)
     }
 }
-Partition(A as array, low as int, high as int){
-     pivot = A[low]
-     leftwall = low
 
-     for i = low + 1 to high{
-         if (A[i] < pivot) then{
-             swap(A[i], A[leftwall + 1])
-             leftwall = leftwall + 1
+partition(A: Vec<i32>, low: u32, high: u32){
+     let pivot = A[high];
+     let i = low;
+
+     for j in low .. high - 1 {
+         if A[j] < pivot {
+             swap(A[i], A[j])
+             i = i + 1
          }
      }
-     swap(pivot,A[leftwall])
+     swap(A[i], A[high]);
+     return i
+}
+#+end_example
 
-    return (leftwall)}
+** merge_sort
+
+#+begin_example
+func mergeSort(items []int) []int {
+    var num = len(items)
+    if num == 1 {
+        return items
+    }
+    middle := int(num / 2)
+    var (
+        left = make([]int, middle)
+        right = make([]int, num - middle)
+    )
+    for i := 0; i < num; i++ {
+        if i < middle {
+            left[i] = items[i]
+        } else {
+            right[i - middle] = items[i]
+        }
+    }
+    return merge(
+        mergeSort(left), 
+        mergeSort(right),
+    )
+}
+  
+func merge(left, right []int) (result []int) {
+    result = make([]int, len(left) + len(right))
+    i := 0
+    for len(left) > 0 && len(right) > 0 {
+        if left[0] < right[0] {
+            result[i] = left[0]
+            left = left[1:]
+        } else {
+            result[i] = right[0]
+            right = right[1:]
+        }
+        i++
+    }
+    // fill with the left remaining if any
+    for j := 0; j < len(left); j++ {
+        result[i] = left[j]
+        i++
+    }
+    // fill with the right remaining if any
+    for j := 0; j < len(right); j++ {
+        result[i] = right[j]
+        i++
+    }
+    return
+}
 #+end_example

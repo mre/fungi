@@ -40,14 +40,15 @@ pub enum Note {
 // - chromatic sharp: A, A#, B, C, C#, D, D#, E, F, F#, G, G#
 // - chromatic flat:  A, Bb, B, C, Db, D, Eb, E, F, Gb, G, Ab
 // diatonic scale: 7 pitches
-// - No Sharps or Flats: C major a minor
-// - Use Sharps: G, D,  A,  E,  B,  F# major e, b, f#, c#, g#, d# minor
-// - Use Flats:  F, Bb, Eb, Ab, Db, Gb major d, g, c,  f,  bb, eb minor
+// - No Sharps or Flats: C major, a minor
+// - Use Sharps: G, D,  A,  E,  B,  F# major, e, b, f#, c#, g#, d# minor
+// - Use Flats:  F, Bb, Eb, Ab, Db, Gb major, d, g, c,  f,  bb, eb minor
 //
 // An interval is the space between two pitches.
 // m: interval between two adjacent notes: "half step", or "minor second"
 // M: interval between two notes that have an interceding note, a "whole step"
 //    or "major second"
+//
 // The diatonic scales are built using only these two intervals between
 // adjacent notes.
 // Non-diatonic scales can contain other intervals.
@@ -73,6 +74,7 @@ impl Scale {
         .to_vec();
         return sharp;
     }
+
     fn flat() -> Vec<Note> {
         let flat = [
             Note::A,
@@ -91,6 +93,20 @@ impl Scale {
         .to_vec();
         return flat;
     }
+
+    fn is_flat(tonic: &str) -> bool {
+        return match tonic {
+            "Ab" | "Bb" | "Db" | "Eb" | "F" | "Gb" | "d" | "g" | "c" | "f" | "bb" | "eb" => true,
+            _ => false,
+        };
+    }
+
+    fn is_sharp(tonic: &str) -> bool {
+        return match tonic {
+            "G" | "D" | "A" | "E" | "B" | "Fs" | "e" | "b" | "fs" | "cs" | "gs" | "ds" => true,
+            _ => false,
+        };
+    }
 }
 
 impl Scale {
@@ -102,7 +118,14 @@ impl Scale {
         let mut scale: Vec<Note> = Vec::new();
         // take an iterator on the intervals
         let mut i: std::str::Chars = intervals.chars();
-        
+
+        if Scale::is_flat(tonic) {
+        }
+        else if Scale::is_sharp(tonic) {
+        }
+        else {
+            return Err(Error::from("nor flat, nor sharp, panic!"));
+        }
         return Ok(Scale { notes: scale });
     }
 

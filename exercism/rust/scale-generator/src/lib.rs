@@ -1,3 +1,7 @@
+use std::error;
+use std::error::Error;
+use std::fmt;
+
 // You should change this.
 //
 // Depending on your implementation, there are a variety of potential errors
@@ -9,7 +13,52 @@
 // One common idiom is to define an Error enum which wraps all potential
 // errors. Another common idiom is to use a helper type such as failure::Error
 // which does more or less the same thing but automatically.
-pub type Error = ();
+
+#[derive(Debug)]
+pub enum ScaleError {
+    InvalidTonic,
+    InvalidInterval,
+    SomeError(Box<dyn Error>),
+}
+
+impl fmt::Display for ScaleError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            // Both underlying errors already impl `Display`, so we defer to
+            // their implementations.
+            InvalidTonic => write!(f, "invalid tonic"),
+            InvalidInterval => write!(f, "invalid interval"),
+            ScaleError::SomeError(ref err) => write!(f, "error: {}", err),
+        }
+    }
+}
+
+impl error::Error for ScaleError {
+    fn description(&self) -> &str {
+        // Both underlying errors already impl `Error`, so we defer to their
+        // implementations.
+        match *self {
+            ScaleError::InvalidTonic => "invalid tonic",
+            ScaleError::InvalidInterval => "invalid interval",
+            // Normally we can just write `err.description()`, but the error
+            // type has a concrete method called `description`, which conflicts
+            // with the trait method. For now, we must explicitly call
+            // `description` through the `Error` trait.
+            ScaleError::SomeError(ref err) => &format!("Some error {}", err),
+        }
+    }
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match *self {
+            // N.B. Both of these implicitly cast `err` from their concrete
+            // types (either `&io::Error` or `&num::ParseIntError`)
+            // to a trait object `&Error`. This works because both error types
+            // implement `Error`.
+            ScaleError::InvalidTonic => None,
+            ScaleError::InvalidInterval => None,
+            ScaleError::SomeError(ref err) => None,
+        }
+    }
+}
 
 pub struct Scale {
     notes: Vec<Note>,
@@ -113,23 +162,22 @@ impl Scale {
     // Given a tonic, or starting note, and a set of intervals, generate
     // the musical scale starting with the tonic and following the
     // specified interval pattern.
-    pub fn new(tonic: &str, intervals: &str) -> Result<Scale, Error> {
+    pub fn new(tonic: &str, intervals: &str) -> Result<Scale, ScaleError> {
         // prepare the scale as empty vec of notes
         let mut scale: Vec<Note> = Vec::new();
         // take an iterator on the intervals
         let mut i: std::str::Chars = intervals.chars();
 
         if Scale::is_flat(tonic) {
-        }
-        else if Scale::is_sharp(tonic) {
-        }
-        else {
-            return Err(Error::from("nor flat, nor sharp, panic!"));
+        } else if Scale::is_sharp(tonic) {
+        } else {
+            // SomeError::from("nor flat, nor sharp, panic!");
+            return Err(ScaleError::InvalidTonic);
         }
         return Ok(Scale { notes: scale });
     }
 
-    pub fn chromatic(tonic: &str) -> Result<Scale, Error> {
+    pub fn chromatic(tonic: &str) -> Result<Scale, ScaleError> {
         unimplemented!("Construct a new chromatic scale with tonic {}", tonic)
     }
 

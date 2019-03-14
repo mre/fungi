@@ -23,11 +23,11 @@ pub enum ScaleError {
 
 impl fmt::Display for ScaleError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+        match self {
             // Both underlying errors already impl `Display`, so we defer to
             // their implementations.
-            InvalidTonic => write!(f, "invalid tonic"),
-            InvalidInterval => write!(f, "invalid interval"),
+            ScaleError::InvalidTonic => write!(f, "invalid tonic"),
+            ScaleError::InvalidInterval => write!(f, "invalid interval"),
             ScaleError::SomeError(ref err) => write!(f, "error: {}", err),
         }
     }
@@ -37,14 +37,15 @@ impl error::Error for ScaleError {
     fn description(&self) -> &str {
         // Both underlying errors already impl `Error`, so we defer to their
         // implementations.
-        match *self {
+        match self {
             ScaleError::InvalidTonic => "invalid tonic",
             ScaleError::InvalidInterval => "invalid interval",
             // Normally we can just write `err.description()`, but the error
             // type has a concrete method called `description`, which conflicts
             // with the trait method. For now, we must explicitly call
             // `description` through the `Error` trait.
-            ScaleError::SomeError(ref err) => &format!("Some error {}", err),
+            // &format!("Some error {}", err),
+            ScaleError::SomeError(ref _err) => "some error",
         }
     }
     fn source(&self) -> Option<&(dyn Error + 'static)> {
@@ -55,7 +56,7 @@ impl error::Error for ScaleError {
             // implement `Error`.
             ScaleError::InvalidTonic => None,
             ScaleError::InvalidInterval => None,
-            ScaleError::SomeError(ref err) => None,
+            ScaleError::SomeError(ref _err) => None,
         }
     }
 }
@@ -83,6 +84,31 @@ pub enum Note {
     Gb,
     G,
     Gs,
+}
+
+impl Note {
+    pub fn new(note: &str) -> Note {
+        match note {
+            "Ab" => Note::Ab,
+            "A" | "a" => Note::A,
+            "A#" => Note::As,
+            "Bb" | "bb" => Note::Bb,
+            "B" | "b" => Note::B,
+            "C" | "c" => Note::C,
+            "C#" | "c#" => Note::Cs,
+            "Db" => Note::Db,
+            "D" | "d" => Note::D,
+            "D#" => Note::Ds,
+            "Eb" | "eb" => Note::Eb,
+            "E" | "e" => Note::E,
+            "F" | "f" => Note::F,
+            "F#" | "f#" => Note::Fs,
+            "Gb" => Note::Gb,
+            "G" | "g" => Note::G,
+            "G#" | "g#" => Note::Gs,
+            _ => panic!("wut?"),
+        }
+    }
 }
 
 // chromatic scale, 12 pitches
@@ -169,6 +195,16 @@ impl Scale {
         let mut i: std::str::Chars = intervals.chars();
 
         if Scale::is_flat(tonic) {
+            let sharp = Scale::sharp().clone().into_iter().cycle();
+            scale = sharp
+                .skip(
+                    Scale::sharp()
+                        .iter()
+                        .position(|x| *x == Note::new(tonic))
+                        .unwrap(),
+                )
+                .take(12)
+                .collect::<Vec<Note>>();
         } else if Scale::is_sharp(tonic) {
         } else {
             // SomeError::from("nor flat, nor sharp, panic!");

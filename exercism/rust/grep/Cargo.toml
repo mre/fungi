@@ -1,8 +1,0 @@
-[dependencies]
-failure = "0.1.5"
-bitflags = "1.0"
-
-[package]
-edition = "2018"
-name = "grep"
-version = "1.2.0"

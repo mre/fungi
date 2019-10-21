@@ -6,7 +6,7 @@
 This small piece of code follows a post written by Matthias Endler,
 published on 9th of March 2018 /"A Tiny =ls= Clone Written in Rust"/.
 
-Original post [[https://matthias-endler.de/2018/ls/][here]].
+Original post [[https://endler.dev/2018/ls/][here]].
 
 Some useful link:
 
